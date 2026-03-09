@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOAHL モール変換ツール</title>
+<style>
+:root {
+  --primary: #97887d; --primary-dark: #7a6d63; --accent: #ddd6cd;
+  --bg: #faf8f6; --card: #ffffff; --text: #333333; --text-light: #666666;
+  --border: #e8e2dc; --success: #5a9e6f; --warning: #d4a843;
+  --danger: #c45c5c; --info: #5b8dbe;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+header h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
+header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+.header-right { display: flex; gap: 8px; }
+.header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s; }
+.header-right button:hover { background: rgba(255,255,255,0.25); }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.steps { display: flex; margin-bottom: 24px; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.step { flex: 1; padding: 14px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
+.step.active { background: var(--accent); border-bottom-color: var(--primary); }
+.step.done { background: #f0ede9; border-bottom-color: var(--success); }
+.step-number { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--border); color: var(--text-light); font-size: 12px; font-weight: 700; margin-right: 6px; vertical-align: middle; }
+.step.active .step-number { background: var(--primary); color: white; }
+.step.done .step-number { background: var(--success); color: white; }
+.step-label { font-size: 13px; font-weight: 600; }
+.panel { display: none; background: var(--card); border-radius: 12px; padding: 28px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+.panel.active { display: block; animation: fadeIn 0.3s ease; }
+.panel h2 { font-size: 17px; margin-bottom: 4px; color: var(--primary-dark); }
+.panel .desc { font-size: 12px; color: var(--text-light); margin-bottom: 20px; }
+.upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 44px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fdfcfb; margin-bottom: 12px; }
+.upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: var(--accent); }
+.upload-area .icon { font-size: 42px; margin-bottom: 10px; }
+.upload-area p { font-size: 14px; color: var(--text-light); }
+.upload-area .formats { font-size: 11px; color: #999; margin-top: 6px; }
+.source-select { display: flex; gap: 10px; margin-bottom: 16px; }
+.source-btn { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 13px; font-weight: 600; }
+.source-btn.selected { border-color: var(--primary); background: var(--accent); color: var(--primary-dark); }
+.source-btn:hover { border-color: var(--primary); }
+.summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0; }
+.summary-card { background: #fdfcfb; border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+.summary-card .num { font-size: 26px; font-weight: 700; color: var(--primary-dark); }
+.summary-card .label { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.table-wrapper { overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { background: var(--accent); padding: 8px 10px; text-align: left; font-weight: 600; font-size: 11px; color: var(--primary-dark); white-space: nowrap; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid var(--primary); }
+tbody td { padding: 6px 10px; border-bottom: 1px solid #f0ede9; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top; }
+tbody tr:hover { background: #faf8f6; }
+td[contenteditable="true"] { cursor: text; outline: none; min-width: 60px; }
+td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 2px var(--warning); white-space: normal; overflow: visible; }
+.row-product { background: #faf8f5; font-weight: 600; }
+.row-sku { background: #ffffff; }
+.col-idx { width: 36px; text-align: center; color: #bbb; font-size: 10px; }
+.product-cards { display: grid; gap: 14px; margin: 16px 0; }
+.product-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.product-card-header { background: var(--accent); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.product-card-header h3 { font-size: 13px; color: var(--primary-dark); flex: 1; }
+.product-card-body { padding: 14px 16px; display: none; }
+.product-card.open .product-card-body { display: block; }
+.product-card-header .arrow { transition: transform 0.2s; font-size: 12px; color: var(--text-light); }
+.product-card.open .product-card-header .arrow { transform: rotate(180deg); }
+.field-row { display: grid; grid-template-columns: 130px 1fr; gap: 6px; margin-bottom: 6px; align-items: start; }
+.field-label { font-size: 11px; font-weight: 600; color: var(--primary-dark); padding-top: 5px; }
+.field-value { font-size: 12px; padding: 3px 6px; border: 1px solid transparent; border-radius: 4px; min-height: 26px; line-height: 1.5; }
+.field-value[contenteditable="true"]:hover { border-color: var(--border); }
+.field-value[contenteditable="true"]:focus { border-color: var(--primary); background: #fff8e8; outline: none; }
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 9px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #4e8c60; }
+.btn-outline { background: white; color: var(--primary-dark); border: 2px solid var(--border); }
+.btn-outline:hover { border-color: var(--primary); }
+.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 5px; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.download-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 16px 0; }
+.download-card { border: 2px solid var(--border); border-radius: 12px; padding: 22px; text-align: center; transition: all 0.2s; }
+.download-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.download-card .mall-name { font-size: 16px; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+.download-card .mall-desc { font-size: 11px; color: var(--text-light); margin-bottom: 14px; }
+.view-toggle { display: flex; gap: 3px; background: #f0ede9; border-radius: 6px; padding: 2px; }
+.view-toggle button { padding: 5px 12px; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-light); }
+.view-toggle button.active { background: white; color: var(--primary-dark); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.search-box { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; width: 220px; }
+.search-box:focus { outline: none; border-color: var(--primary); }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.badge-sku { background: #e8f4ea; color: var(--success); }
+.badge-product { background: #f0e8d8; color: #b08a3e; }
+.badge-img { background: #e8ecf4; color: var(--info); }
+.tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+.tab { padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-light); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab.active { color: var(--primary-dark); border-bottom-color: var(--primary); }
+.tab:hover { color: var(--primary-dark); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
+.master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
+.master-card textarea { width: 100%; height: 120px; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 12px; font-family: monospace; resize: vertical; }
+.master-card textarea:focus { outline: none; border-color: var(--primary); }
+.master-card .hint { font-size: 10px; color: #999; margin-top: 4px; }
+.notification { position: fixed; top: 20px; right: 20px; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: white; z-index: 1000; animation: fadeIn 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+.notification.success { background: var(--success); }
+.notification.info { background: var(--primary); }
+.notification.warning { background: var(--warning); }
+.img-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+.img-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
+.img-more { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #f0ede9; border-radius: 4px; font-size: 11px; color: #999; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .panel { padding: 16px; }
+  .upload-area { padding: 28px 12px; }
+  .source-select { flex-direction: column; }
+  .master-grid { grid-template-columns: 1fr; }
+  .steps { flex-wrap: wrap; }
+  .step { flex: none; width: 33.33%; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>NOAHL モール変換ツール</h1>
+    <div class="subtitle">楽天CSV / 自社CSV → 各モール別CSVに変換 (v2.1)</div>
+  </div>
+  <div class="header-right">
+    <button onclick="openMaster()">⚙ マスタ設定</button>
+    <button onclick="exportState()">💾 バックアップ</button>
+    <button onclick="document.getElementById('import-state').click()">📂 復元</button>
+    <input type="file" id="import-state" accept=".json" style="display:none" onchange="importState(this.files[0])">
+  </div>
+</header>
+<div class="container">
+  <div class="steps">
+    <div class="step active" data-step="1" onclick="goToStep(1)">
+      <span class="step-number">1</span><span class="step-label">アップロード</span>
+    </div>
+    <div class="step" data-step="2" onclick="goToStep(2)">
+      <span class="step-number">2</span><span class="step-label">確認・編集</span>
+    </div>
+    <div class="step" data-step="3" onclick="goToStep(3)">
+      <span class="step-number">3</span><span class="step-label">ダウンロード</span>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="panel active" id="panel-1">
+    <h2>CSVファイルをアップロード</h2>
+    <p class="desc">楽天RMSからダウンロードしたCSV（normal-item.csv等）または自社SHOPLINE CSVをアップロードしてください。</p>
+    <div class="source-select">
+      <div class="source-btn selected" data-source="rakuten" onclick="selectSource('rakuten')">🏪 楽天CSV（RMS）</div>
+      <div class="source-btn" data-source="shopline" onclick="selectSource('shopline')">🏠 自社（SHOPLINE）CSV</div>
+    </div>
+    <div class="upload-area" id="upload-area"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault(); this.classList.add('dragover')"
+      ondragleave="this.classList.remove('dragover')"
+      ondrop="handleDrop(event)">
+      <div class="icon">📄</div>
+      <p>ここにCSVファイルをドロップ<br>またはクリックして選択</p>
+      <div class="formats">対応形式：CSV（UTF-8 / Shift-JIS 自動判別）</div>
+    </div>
+    <input type="file" id="file-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+    <div id="upload-status" style="display:none; margin-top:12px;">
+      <div style="display:flex; align-items:center; gap:10px; padding:12px; background:#f0f8f0; border-radius:8px; border:1px solid #d4e8d4;">
+        <span style="font-size:22px;">✅</span>
+        <div>
+          <div style="font-weight:600; font-size:14px;" id="file-name"></div>
+          <div style="font-size:11px; color:#666;" id="file-info"></div>
+        </div>
+      </div>
+    </div>
+    <div id="parse-log" style="display:none; margin-top:12px; padding:12px; background:#fdfcfb; border:1px solid var(--border); border-radius:8px; font-size:12px; max-height:200px; overflow:auto;"></div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="processAndGoStep2()" id="btn-next-1" disabled>確認画面へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="panel" id="panel-2">
+    <h2>商品データの確認・編集</h2>
+    <p class="desc">データをクリックして直接編集できます。編集はダウンロード時に自動反映されます。</p>
+    <div class="summary-cards" id="summary-cards"></div>
+    <div class="toolbar">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" class="search-box" placeholder="🔍 商品名・品番で検索..." oninput="filterProducts(this.value)">
+        <div class="view-toggle">
+          <button class="active" onclick="setView('card', this)">カード</button>
+          <button onclick="setView('table', this)">テーブル</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="expandAll()">すべて展開</button>
+        <button class="btn btn-outline btn-sm" onclick="collapseAll()">すべて閉じる</button>
+      </div>
+    </div>
+    <div id="card-view" class="product-cards"></div>
+    <div id="table-view" class="table-wrapper" style="display:none; max-height:600px; overflow:auto;"></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>
+      <button class="btn btn-primary" onclick="goToStep(3)">ダウンロードへ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="panel" id="panel-3">
+    <h2>モール別CSVをダウンロード</h2>
+    <p class="desc">変換先のモールを選んでCSVをダウンロードしてください。マスタ設定とインライン編集が反映されます。</p>
+    <div id="summary-cards-dl" class="summary-cards"></div>
+    <div class="download-grid" id="download-grid"></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="goToStep(2)">← 編集に戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- MASTER MODAL -->
+<div id="master-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; width:90%; max-width:900px; max-height:85vh; overflow:auto; padding:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="font-size:17px; color:var(--primary-dark);">マスタ設定</h2>
+      <button class="btn btn-sm btn-outline" onclick="closeMaster()">✕ 閉じる</button>
+    </div>
+    <div class="tabs" id="master-tabs">
+      <div class="tab active" onclick="switchMasterTab('color-order', this)">カラー表示順</div>
+      <div class="tab" onclick="switchMasterTab('name-clean', this)">商品名クリーニング</div>
+      <div class="tab" onclick="switchMasterTab('price-rule', this)">価格設定</div>
+      <div class="tab" onclick="switchMasterTab('delete-tpl', this)">削除テンプレート</div>
+    </div>
+    <div class="tab-panel active" id="tab-color-order">
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
+      <textarea id="master-color-order" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999"></textarea>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMaster('colorOrder')">保存</button>
+        <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-name-clean">
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
+      <textarea id="master-name-clean" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="NOAHL｜&#10;《[^》]*》&#10;【メール便】"></textarea>
+      <div style="margin-top:8px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMaster('nameClean')">保存</button>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-price-rule">
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">デフォルト掛率（定価計算用）とモール別の価格調整を設定します。</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:400px;">
+        <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
+        <input type="number" id="master-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:12px; font-weight:600;">楽天税込：</label>
+        <select id="master-tax" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+          <option value="1">税込み</option>
+          <option value="0">税抜き</option>
+        </select>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMaster('priceRule')">保存</button>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-delete-tpl">
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">PC用販売説明文から削除するHTMLブロック（コメントタグ基準）を1行ずつ記入してください。</p>
+      <textarea id="master-delete-tpl" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="&lt;!--配送について--&gt;&#10;&lt;!--ご注意--&gt;&#10;&lt;!--レビューを書いて--&gt;"></textarea>
+      <div style="margin-top:8px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMaster('deleteTpl')">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// ============================================================
+// GLOBALS
+// ============================================================
+let sourceType = 'rakuten';
+let rawRows = [];
+let headers = [];
+let products = [];
+let editedFields = {};
+let CI = {};
+let MASTER = {
+  colorOrder: {}, nameCleanPatterns: [],
+  priceRate: 40, taxType: 1, deleteTemplates: []
+};
+
+// ============================================================
+// DEFAULT MASTER DATA
+// ============================================================
+const DEFAULT_COLOR_ORDER = `F(M)フリー,1
+Sサイズ,1
+Mサイズ,2
+Lサイズ,3
+ホワイト,1
+オフホワイト,2
+オートミール,3
+アイボリー,4
+クリーム,5
+クリーム×イエロー,6
+ライトベージュ,7
+ベージュ,8
+ライトブルー,9
+ピンク,10
+イエロー,11
+バターイエロー,12
+ブルー,13
+ミント,14
+ミントグレー,15
+ベージュ×ブラック,16
+グレー×ブルー,17
+グレージュ,18
+グレージュ×ピンク,19
+ブラウン,20
+ブラウンMIX,21
+チャコール,22
+チャコールMIX,23
+ブラック,9999
+スミクロ,9999
+クリームイエロー,6
+ダークブラウン,21`;
+
+const DEFAULT_NAME_CLEAN = `NOAHL｜\nNOAHL\\|\n《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
+const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レビューを書いて-->\n<!--コンセプト-->\n<!--よくある質問-->`;
+
+// ============================================================
+// INIT
+// ============================================================
+(function initMaster() {
+  try {
+    const saved = localStorage.getItem('noahl_master');
+    if (saved) {
+      const d = JSON.parse(saved);
+      if (d.colorOrder) MASTER.colorOrder = d.colorOrder;
+      if (d.nameCleanPatterns) MASTER.nameCleanPatterns = d.nameCleanPatterns;
+      if (d.priceRate) MASTER.priceRate = d.priceRate;
+      if (d.taxType !== undefined) MASTER.taxType = d.taxType;
+      if (d.deleteTemplates) MASTER.deleteTemplates = d.deleteTemplates;
+    }
+  } catch(e) {}
+  if (Object.keys(MASTER.colorOrder).length === 0) {
+    MASTER.colorOrder = parseColorOrderText(DEFAULT_COLOR_ORDER);
+  }
+  if (MASTER.nameCleanPatterns.length === 0) {
+    MASTER.nameCleanPatterns = DEFAULT_NAME_CLEAN.split('\n').filter(l => l.trim());
+  }
+  if (MASTER.deleteTemplates.length === 0) {
+    MASTER.deleteTemplates = DEFAULT_DELETE_TPL.split('\n').filter(l => l.trim());
+  }
+})();
+
+function parseColorOrderText(text) {
+  const map = {};
+  text.split('\n').forEach(line => {
+    const parts = line.trim().split(',');
+    if (parts.length >= 2) {
+      map[parts[0].trim()] = parseInt(parts[1].trim()) || 9999;
+    }
+  });
+  return map;
+}
+
+// ============================================================
+// MASTER UI
+// ============================================================
+function openMaster() {
+  document.getElementById('master-modal').style.display = 'block';
+  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
+  document.getElementById('master-color-order').value = co;
+  document.getElementById('master-name-clean').value = MASTER.nameCleanPatterns.join('\n');
+  document.getElementById('master-price-rate').value = MASTER.priceRate;
+  document.getElementById('master-tax').value = String(MASTER.taxType);
+  document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
+}
+
+function closeMaster() {
+  document.getElementById('master-modal').style.display = 'none';
+}
+
+function switchMasterTab(id, el) {
+  document.querySelectorAll('#master-tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+function saveMaster(which) {
+  if (which === 'colorOrder') {
+    MASTER.colorOrder = parseColorOrderText(document.getElementById('master-color-order').value);
+  } else if (which === 'nameClean') {
+    MASTER.nameCleanPatterns = document.getElementById('master-name-clean').value.split('\n').filter(l => l.trim());
+  } else if (which === 'priceRule') {
+    MASTER.priceRate = parseInt(document.getElementById('master-price-rate').value) || 40;
+    MASTER.taxType = parseInt(document.getElementById('master-tax').value);
+  } else if (which === 'deleteTpl') {
+    MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
+  }
+  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
+  notify(`マスタ「${which}」を保存しました`, 'success');
+}
+
+function loadDefaultColorOrder() {
+  document.getElementById('master-color-order').value = DEFAULT_COLOR_ORDER;
+  notify('デフォルトのカラー表示順を読み込みました', 'info');
+}
+
+// ============================================================
+// PRODUCT NAME CLEANING
+// ============================================================
+function cleanProductName(name) {
+  if (!name) return '';
+  let cleaned = name;
+  MASTER.nameCleanPatterns.forEach(pattern => {
+    try {
+      const re = new RegExp(pattern, 'g');
+      cleaned = cleaned.replace(re, '');
+    } catch(e) {}
+  });
+  return cleaned.replace(/\s{2,}/g, ' ').trim();
+}
+
+// ============================================================
+// PRICE CALCULATION
+// ============================================================
+function calcListPrice(sellPrice) {
+  const p = parseInt(sellPrice);
+  if (!p || isNaN(p)) return '';
+  return Math.round(p / (MASTER.priceRate / 100));
+}
+
+// ============================================================
+// SOURCE SELECTION
+// ============================================================
+function selectSource(type) {
+  sourceType = type;
+  document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.source-btn[data-source="${type}"]`).classList.add('selected');
+}
+
+// ============================================================
+// FILE HANDLING
+// ============================================================
+function handleDrop(e) {
+  e.preventDefault();
+  e.target.closest('.upload-area').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const buf = e.target.result;
+    const uint8 = new Uint8Array(buf);
+    let text;
+    try {
+      const utf8 = new TextDecoder('utf-8', { fatal: true });
+      text = utf8.decode(uint8);
+    } catch(err) {
+      const sjis = new TextDecoder('shift-jis');
+      text = sjis.decode(uint8);
+    }
+    if (text.charCodeAt(0) === 0xFEFF) { text = text.substring(1); }
+    parseCSVText(text, file);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseCSVText(text, file) {
+  const parsed = parseCSV(text);
+  if (parsed.length < 2) { notify('CSVの読み込みに失敗しました', 'warning'); return; }
+  headers = parsed[0];
+  rawRows = parsed.slice(1);
+  CI = {};
+  headers.forEach((h, i) => { CI[h] = i; });
+
+  const log = document.getElementById('parse-log');
+  let logHTML = '';
+  if (sourceType === 'rakuten') {
+    const requiredCols = ['商品管理番号（商品URL）', '商品名', 'SKU管理番号', 'バリエーション項目キー定義'];
+    const found = requiredCols.filter(c => CI[c] !== undefined);
+    const missing = requiredCols.filter(c => CI[c] === undefined);
+    logHTML += `<div style="color:var(--success);">✓ 検出ヘッダー: ${headers.length}列</div>`;
+    logHTML += `<div style="color:var(--success);">✓ 必須列一致: ${found.join(', ')}</div>`;
+    if (missing.length > 0) {
+      logHTML += `<div style="color:var(--danger);">✗ 未検出列: ${missing.join(', ')}</div>`;
+    }
+  } else {
+    const requiredCols = ['Handle', 'SKU'];
+    const found = requiredCols.filter(c => CI[c] !== undefined);
+    logHTML += `<div style="color:var(--success);">✓ SHOPLINE形式 検出: ${found.join(', ')}</div>`;
+  }
+
+  let prodCount = 0, skuCount = 0;
+  if (sourceType === 'rakuten') {
+    rawRows.forEach(row => {
+      const name = col(row, '商品名');
+      if (name && name.trim()) prodCount++;
+      else if (col(row, 'SKU管理番号')) skuCount++;
+    });
+  }
+  logHTML += `<div>→ 商品行: ${prodCount}, SKU行: ${skuCount}, 合計: ${rawRows.length}行</div>`;
+  log.innerHTML = logHTML;
+  log.style.display = 'block';
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-info').textContent = `${headers.length}列 × ${rawRows.length}行 ｜ ソース: ${sourceType === 'rakuten' ? '楽天' : '自社(SHOPLINE)'}`;
+  document.getElementById('upload-status').style.display = 'block';
+  document.getElementById('btn-next-1').disabled = false;
+  notify('CSVを読み込みました', 'success');
+}
+
+function col(row, name) {
+  return CI[name] !== undefined ? (row[CI[name]] || '') : '';
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let current = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ',') { current.push(field); field = ''; }
+      else if (c === '\n' || (c === '\r' && next === '\n')) {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = [];
+        if (c === '\r') i++;
+      } else if (c === '\r') {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = [];
+      } else { field += c; }
+    }
+  }
+  current.push(field);
+  if (current.length > 1 || current[0] !== '') rows.push(current);
+  return rows;
+}
+
+// ============================================================
+// PROCESS DATA
+// ============================================================
+function processAndGoStep2() {
+  if (sourceType === 'rakuten') { products = structureRakuten(); }
+  else { products = structureShopline(); }
+  editedFields = {};
+  renderStep2();
+  goToStep(2);
+}
+
+function structureRakuten() {
+  const prods = [];
+  let currentProduct = null;
+  for (let r = 0; r < rawRows.length; r++) {
+    const row = rawRows[r];
+    while (row.length < headers.length) row.push('');
+    const productName = col(row, '商品名');
+    const productId = col(row, '商品管理番号（商品URL）');
+    const skuMgmtNo = col(row, 'SKU管理番号');
+    if (productName && productName.trim()) {
+      currentProduct = {
+        rowIndex: r, id: productId, number: col(row, '商品番号'),
+        name: productName, cleanName: cleanProductName(productName),
+        genreId: col(row, 'ジャンルID'), catchCopy: col(row, 'キャッチコピー'),
+        pcDesc: col(row, 'PC用商品説明文'), spDesc: col(row, 'スマートフォン用商品説明文'),
+        pcSaleDesc: col(row, 'PC用販売説明文'),
+        varDef: { keys: col(row, 'バリエーション項目キー定義'), names: col(row, 'バリエーション項目名定義'), options: [] },
+        images: [], skus: [], raw: row
+      };
+      for (let v = 1; v <= 6; v++) {
+        const optDef = col(row, `バリエーション${v}選択肢定義`);
+        if (optDef) currentProduct.varDef.options.push(optDef);
+      }
+      for (let img = 1; img <= 20; img++) {
+        const imgType = col(row, `商品画像タイプ${img}`);
+        const imgPath = col(row, `商品画像パス${img}`);
+        if (imgPath) currentProduct.images.push({ type: imgType, path: imgPath });
+      }
+      prods.push(currentProduct);
+    } else if (skuMgmtNo && currentProduct) {
+      const sku = {
+        rowIndex: r, parentId: productId, skuMgmtNo: skuMgmtNo,
+        systemSku: col(row, 'システム連携用SKU番号'), price: col(row, '通常購入販売価格'),
+        catalogId: col(row, 'カタログID'), catalogNoReason: col(row, 'カタログIDなしの理由'),
+        skuImgType: col(row, 'SKU画像タイプ'), skuImgPath: col(row, 'SKU画像パス'),
+        variants: [], customFields: [], raw: row
+      };
+      for (let k = 1; k <= 6; k++) {
+        const vKey = col(row, `バリエーション項目キー${k}`);
+        const vVal = col(row, `バリエーション項目選択肢${k}`);
+        if (vKey) sku.variants.push({ key: vKey, value: vVal });
+      }
+      for (let f = 1; f <= 5; f++) {
+        const label = col(row, `自由入力行（項目）${f}`);
+        const val = col(row, `自由入力行（値）${f}`);
+        if (label || val) sku.customFields.push({ label, value: val });
+      }
+      currentProduct.skus.push(sku);
+    }
+  }
+  return prods;
+}
+
+function structureShopline() {
+  const prods = [];
+  const grouped = {};
+  for (let r = 0; r < rawRows.length; r++) {
+    const row = rawRows[r];
+    while (row.length < headers.length) row.push('');
+    const handle = col(row, 'Handle');
+    if (!handle) continue;
+    if (!grouped[handle]) {
+      grouped[handle] = {
+        rowIndex: r, id: handle,
+        name: col(row, 'Title*') || col(row, 'Title') || '',
+        subtitle: col(row, 'Subtitle'), description: col(row, 'Product description html'),
+        spu: col(row, 'SPU'), vendor: col(row, 'Vendor'), tags: col(row, 'Tags'),
+        collections: col(row, 'Collections'), images: [], skus: [], raw: row
+      };
+      prods.push(grouped[handle]);
+    }
+    const prod = grouped[handle];
+    const masterImg = col(row, 'Master image');
+    if (masterImg && !prod.images.find(i => i.url === masterImg)) {
+      prod.images.push({ url: masterImg, alt: col(row, 'Image Alt Text') });
+    }
+    const skuVal = col(row, 'SKU');
+    if (skuVal) {
+      const skuObj = {
+        rowIndex: r, skuId: skuVal, price: col(row, 'SKU price'),
+        comparePrice: col(row, 'SKU compare at price'), image: col(row, 'Image'),
+        inventory: col(row, 'SKU Inventory Quantity'), options: [], raw: row
+      };
+      for (let o = 1; o <= 5; o++) {
+        const nm = col(row, `Option${o} name`);
+        const vl = col(row, `Option${o} value`);
+        if (nm || vl) skuObj.options.push({ name: nm, value: vl });
+      }
+      prod.skus.push(skuObj);
+    }
+  }
+  return prods;
+}
+
+// ============================================================
+// IMAGE URL
+// ============================================================
+function buildRakutenImgUrl(imgPath) {
+  if (!imgPath) return '';
+  return `https://image.rakuten.co.jp/noahl/cabinet${imgPath}`;
+}
+
+// ============================================================
+// RENDER STEP 2
+// ============================================================
+function renderStep2() {
+  const totalProducts = products.length;
+  const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
+  const totalImages = products.reduce((s, p) => s + p.images.length, 0);
+  const src = sourceType === 'rakuten' ? '楽天' : '自社';
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
+    <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
+    <div class="summary-card"><div class="num">${totalImages}</div><div class="label">画像数</div></div>
+    <div class="summary-card"><div class="num">${src}</div><div class="label">ソース</div></div>
+  `;
+  renderCardView();
+  renderTableView();
+}
+
+function renderCardView() {
+  const container = document.getElementById('card-view');
+  let html = '';
+  products.forEach((prod, pi) => {
+    const displayName = sourceType === 'rakuten' ? (prod.cleanName || prod.name) : prod.name;
+    html += `<div class="product-card" data-pi="${pi}" data-search="${esc(prod.name + ' ' + prod.id)}">`;
+    html += `<div class="product-card-header" onclick="toggleCard(this)">`;
+    html += `<h3>${esc(displayName)}</h3>`;
+    html += `<div style="display:flex;gap:6px;align-items:center;">`;
+    html += `<span class="badge badge-product">${esc(prod.id)}</span>`;
+    html += `<span class="badge badge-sku">SKU: ${prod.skus.length}</span>`;
+    html += `<span class="badge badge-img">画像: ${prod.images.length}</span>`;
+    html += `<span class="arrow">▼</span>`;
+    html += `</div></div>`;
+    html += `<div class="product-card-body">`;
+    if (sourceType === 'rakuten') {
+      const fields = [
+        ['商品管理番号', 'id', prod.id],
+        ['商品番号', 'number', prod.number],
+        ['商品名（原文）', 'name', prod.name],
+        ['商品名（クリーン）', 'cleanName', prod.cleanName],
+        ['ジャンルID', 'genreId', prod.genreId],
+        ['キャッチコピー', 'catchCopy', prod.catchCopy],
+        ['バリエーション定義', '_varDef', prod.varDef.names + ' → ' + prod.varDef.options.join(' | ')],
+        ['販売価格', '_price', prod.skus.length > 0 ? prod.skus[0].price : ''],
+        ['定価(掛率' + MASTER.priceRate + '%)', '_listPrice', prod.skus.length > 0 ? calcListPrice(prod.skus[0].price) : ''],
+      ];
+      fields.forEach(([label, key, value]) => {
+        const editable = !key.startsWith('_');
+        html += `<div class="field-row">`;
+        html += `<div class="field-label">${label}</div>`;
+        html += `<div class="field-value"${editable ? ` contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')"` : ''}>${esc(trunc(value, 200))}</div>`;
+        html += `</div>`;
+      });
+      html += `<div class="field-row"><div class="field-label">PC用商品説明文</div>`;
+      html += `<div><div class="field-value" style="max-height:80px;overflow:hidden;font-size:11px;color:#888;" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'80px':'none'">${esc(trunc(prod.pcDesc, 300))}</div></div></div>`;
+    } else {
+      const fields = [
+        ['Handle', 'id', prod.id],
+        ['タイトル', 'name', prod.name],
+        ['サブタイトル', 'subtitle', prod.subtitle],
+        ['SPU', 'spu', prod.spu],
+        ['ブランド', 'vendor', prod.vendor],
+        ['タグ', 'tags', prod.tags],
+      ];
+      fields.forEach(([label, key, value]) => {
+        html += `<div class="field-row">`;
+        html += `<div class="field-label">${label}</div>`;
+        html += `<div class="field-value" contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')">${esc(trunc(value, 200))}</div>`;
+        html += `</div>`;
+      });
+    }
+    if (prod.images.length > 0) {
+      html += `<div class="field-row"><div class="field-label">商品画像</div><div class="img-grid">`;
+      const showMax = 8;
+      prod.images.slice(0, showMax).forEach(img => {
+        const url = sourceType === 'rakuten' ? buildRakutenImgUrl(img.path) : img.url;
+        html += `<img src="${url}" class="img-thumb" onerror="this.style.display='none'" loading="lazy">`;
+      });
+      if (prod.images.length > showMax) {
+        html += `<div class="img-more">+${prod.images.length - showMax}</div>`;
+      }
+      html += `</div></div>`;
+    }
+    if (prod.skus.length > 0) {
+      html += `<div style="margin-top:10px;"><div class="field-label" style="margin-bottom:6px;">SKU一覧 (${prod.skus.length}件)</div>`;
+      html += `<div class="table-wrapper"><table><thead><tr>`;
+      if (sourceType === 'rakuten') {
+        html += `<th>SKU管理番号</th><th>システム連携SKU</th><th>バリエーション</th><th>価格</th><th>カタログID</th><th>型番</th><th>SKU画像</th>`;
+      } else {
+        html += `<th>SKU</th><th>オプション</th><th>価格</th><th>在庫</th><th>画像</th>`;
+      }
+      html += `</tr></thead><tbody>`;
+      prod.skus.forEach((sku, si) => {
+        html += `<tr>`;
+        if (sourceType === 'rakuten') {
+          const vars = sku.variants.map(v => v.value).join(' / ');
+          const typeNo = sku.customFields.find(f => f.label === '型番');
+          const skuImgUrl = sku.skuImgPath ? buildRakutenImgUrl(sku.skuImgPath) : '';
+          html += `<td title="${esc(sku.skuMgmtNo)}">${esc(sku.skuMgmtNo)}</td>`;
+          html += `<td title="${esc(sku.systemSku)}">${esc(sku.systemSku)}</td>`;
+          html += `<td>${esc(vars)}</td>`;
+          html += `<td contenteditable="true" onblur="onSkuEdit(this,${pi},${si},'price')">${esc(sku.price)}</td>`;
+          html += `<td>${esc(sku.catalogId || sku.catalogNoReason)}</td>`;
+          html += `<td>${esc(typeNo ? typeNo.value : '')}</td>`;
+          html += `<td>${skuImgUrl ? `<img src="${skuImgUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:3px;" onerror="this.style.display='none'" loading="lazy">` : ''}</td>`;
+        } else {
+          const opts = sku.options.map(o => `${o.name}:${o.value}`).join(' / ');
+          html += `<td>${esc(sku.skuId)}</td>`;
+          html += `<td>${esc(opts)}</td>`;
+          html += `<td contenteditable="true" onblur="onSkuEdit(this,${pi},${si},'price')">${esc(sku.price)}</td>`;
+          html += `<td>${esc(sku.inventory)}</td>`;
+          html += `<td>${sku.image ? `<img src="${sku.image}" style="width:36px;height:36px;object-fit:cover;border-radius:3px;" onerror="this.style.display='none'" loading="lazy">` : ''}</td>`;
+        }
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div></div>`;
+    }
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderTableView() {
+  const container = document.getElementById('table-view');
+  let keyCols;
+  if (sourceType === 'rakuten') {
+    keyCols = ['商品管理番号（商品URL）','商品名','商品番号','キャッチコピー','バリエーション項目名定義','SKU管理番号','システム連携用SKU番号','バリエーション項目選択肢1','バリエーション項目選択肢2','通常購入販売価格','カタログID'];
+  } else {
+    keyCols = ['Handle','Title*','SKU','Option1 name','Option1 value','Option2 name','Option2 value','SKU price','SKU Inventory Quantity'];
+  }
+  const colIndices = keyCols.map(c => CI[c]).filter(i => i !== undefined);
+  const colNames = keyCols.filter(c => CI[c] !== undefined);
+  let html = '<table><thead><tr><th class="col-idx">#</th>';
+  colNames.forEach(cn => { html += `<th>${esc(cn)}</th>`; });
+  html += '</tr></thead><tbody>';
+  rawRows.forEach((row, ri) => {
+    const hasName = sourceType === 'rakuten' ? (col(row, '商品名') || '').trim() : (col(row, 'Title*') || col(row, 'Title') || '').trim();
+    html += `<tr class="${hasName ? 'row-product' : 'row-sku'}">`;
+    html += `<td class="col-idx">${ri + 1}</td>`;
+    colIndices.forEach(ci => {
+      const val = row[ci] || '';
+      html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}" onblur="onCellEdit(this,${ri},${ci})">${esc(trunc(val, 60))}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ============================================================
+// EDIT HANDLERS
+// ============================================================
+function onFieldEdit(el, pi, key) {
+  const val = el.innerText.trim();
+  if (products[pi] && products[pi][key] !== undefined) products[pi][key] = val;
+}
+
+function onSkuEdit(el, pi, si, field) {
+  const val = el.innerText.trim();
+  if (products[pi] && products[pi].skus[si]) {
+    products[pi].skus[si][field] = val;
+    const sku = products[pi].skus[si];
+    if (field === 'price') {
+      const priceCol = sourceType === 'rakuten' ? '通常購入販売価格' : 'SKU price';
+      if (CI[priceCol] !== undefined) rawRows[sku.rowIndex][CI[priceCol]] = val;
+    }
+  }
+}
+
+function onCellEdit(el, ri, ci) {
+  const val = el.innerText.trim();
+  if (rawRows[ri]) rawRows[ri][ci] = val;
+}
+
+// ============================================================
+// VIEW HELPERS
+// ============================================================
+function setView(mode, btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('card-view').style.display = mode === 'card' ? 'block' : 'none';
+  document.getElementById('table-view').style.display = mode === 'table' ? 'block' : 'none';
+}
+
+function toggleCard(hdr) { hdr.closest('.product-card').classList.toggle('open'); }
+function expandAll() { document.querySelectorAll('.product-card').forEach(c => c.classList.add('open')); }
+function collapseAll() { document.querySelectorAll('.product-card').forEach(c => c.classList.remove('open')); }
+function filterProducts(q) {
+  const lq = q.toLowerCase();
+  document.querySelectorAll('.product-card').forEach(card => {
+    const s = (card.dataset.search || '').toLowerCase();
+    card.style.display = (lq === '' || s.includes(lq)) ? '' : 'none';
+  });
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goToStep(n) {
+  if (n > 1 && products.length === 0) return;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${n}`).classList.add('active');
+  document.querySelectorAll('.step').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.classList.remove('active', 'done');
+    if (sn === n) s.classList.add('active');
+    else if (sn < n) s.classList.add('done');
+  });
+  if (n === 3) renderStep3();
+}
+
+// ============================================================
+// STEP 3: DOWNLOAD
+// ============================================================
+const MALLS = {
+  rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
+  shopline: { name: 'SHOPLINE（自社）', desc: 'SHOPLINE商品インポートCSV' },
+  yahoo: { name: 'Yahoo!ショッピング', desc: 'Yahoo!ストアクリエイター CSV' },
+  amazon: { name: 'Amazon', desc: 'Amazon フラットファイル（簡易版）' },
+  qoo10: { name: 'Qoo10', desc: 'Qoo10 商品一括登録CSV' },
+};
+
+function renderStep3() {
+  const totalProducts = products.length;
+  const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
+  document.getElementById('summary-cards-dl').innerHTML = `
+    <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
+    <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
+    <div class="summary-card"><div class="num">${Object.keys(MALLS).length}</div><div class="label">出力先モール</div></div>
+  `;
+  let html = '';
+  Object.entries(MALLS).forEach(([key, mall]) => {
+    const isSame = (key === sourceType);
+    html += `<div class="download-card">`;
+    html += `<div class="mall-name">${mall.name}</div>`;
+    html += `<div class="mall-desc">${mall.desc}</div>`;
+    if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
+    html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ CSVダウンロード</button>`;
+    html += `</div>`;
+  });
+  document.getElementById('download-grid').innerHTML = html;
+}
+
+function downloadMall(mallKey) {
+  let result;
+  switch(mallKey) {
+    case 'rakuten': result = convertToRakuten(); break;
+    case 'shopline': result = convertToShopline(); break;
+    case 'yahoo': result = convertToYahoo(); break;
+    case 'amazon': result = convertToAmazon(); break;
+    case 'qoo10': result = convertToQoo10(); break;
+    default: return;
+  }
+  const csvStr = buildCSV(result.headers, result.rows);
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvStr], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${mallKey}_products_${dateStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  notify(`${MALLS[mallKey].name}のCSVをダウンロードしました`, 'success');
+}
+
+// ============================================================
+// CONVERSION: Rakuten
+// ============================================================
+function convertToRakuten() {
+  if (sourceType === 'rakuten') return { headers, rows: rawRows };
+  const rH = ['商品管理番号（商品URL）','商品番号','商品名','ジャンルID','キャッチコピー','PC用商品説明文','スマートフォン用商品説明文','PC用販売説明文','バリエーション項目キー定義','バリエーション項目名定義','バリエーション1選択肢定義','バリエーション2選択肢定義','SKU管理番号','システム連携用SKU番号','バリエーション項目キー1','バリエーション項目選択肢1','バリエーション項目キー2','バリエーション項目選択肢2','通常購入販売価格','カタログIDなしの理由','自由入力行（項目）1','自由入力行（値）1'];
+  const rows = [];
+  products.forEach(prod => {
+    const optMap = {};
+    prod.skus.forEach(sku => {
+      sku.options.forEach(o => {
+        if (o.name && !optMap[o.name]) optMap[o.name] = new Set();
+        if (o.name) optMap[o.name].add(o.value);
+      });
+    });
+    const optKeys = Object.keys(optMap);
+    const pRow = new Array(rH.length).fill('');
+    pRow[0] = prod.id.replace(/-/g, '');
+    pRow[1] = prod.spu || pRow[0];
+    pRow[2] = prod.name;
+    pRow[4] = prod.subtitle || '';
+    pRow[5] = prod.description || '';
+    pRow[8] = optKeys.map((_, i) => `key${i+1}`).join('|');
+    pRow[9] = optKeys.join('|');
+    pRow[10] = optKeys[0] ? [...optMap[optKeys[0]]].join('|') : '';
+    pRow[11] = optKeys[1] ? [...optMap[optKeys[1]]].join('|') : '';
+    rows.push(pRow);
+    prod.skus.forEach(sku => {
+      const sRow = new Array(rH.length).fill('');
+      sRow[0] = pRow[0];
+      sRow[12] = sku.skuId;
+      sRow[13] = sku.skuId;
+      if (sku.options[0]) { sRow[14] = 'key1'; sRow[15] = sku.options[0].value; }
+      if (sku.options[1]) { sRow[16] = 'key2'; sRow[17] = sku.options[1].value; }
+      sRow[18] = sku.price;
+      sRow[19] = '3';
+      sRow[20] = '型番';
+      sRow[21] = sku.skuId;
+      rows.push(sRow);
+    });
+  });
+  return { headers: rH, rows };
+}
+
+// ============================================================
+// CONVERSION: Shopline
+// ============================================================
+function convertToShopline() {
+  if (sourceType === 'shopline') return { headers, rows: rawRows };
+  const slH = ['spuid','skuid','Handle','Title*','Subtitle','Product description html','SPU','Vendor','Tags','Collections','Master image','Image Alt Text','SEO title','SEO description','SEO keywords','Published','Status','Standardized Product Type','Custom Product Type','Created time','SKU','Option1 name','Option1 value','Option2 name','Option2 value','Option3 name','Option3 value','Option4 name','Option4 value','Option5 name','Option5 value','Image','SKU price','SKU compare at price','SKU weight','SKU weight unit','SKU Inventory Tracker','SKU Inventory Policy','SKU Inventory Quantity','Cost per item','Barcode (ISBN, UPC, GTIN, etc.)','SKU tax policy','SKU shipping policy','Google Shopping / Google Product Category','Google Shopping / Gender','Google Shopping / Age Group','Google Shopping / MPN','Google Shopping / AdWords Grouping','Google Shopping / AdWords Labels','Google Shopping / Condition','Google Shopping / Custom Product','Google Shopping / Custom Label 0','Google Shopping / Custom Label 1','Google Shopping / Custom Label 2','Google Shopping / Custom Label 3','Google Shopping / Custom Label 4','Path','HS code','Shipping origin','Included / Japan'];
+  const SL = {};
+  slH.forEach((h,i) => SL[h] = i);
+  const rows = [];
+  products.forEach(prod => {
+    const handle = prod.cleanName.replace(/\s+/g, '-').substring(0, 60);
+    const varNames = prod.varDef.names ? prod.varDef.names.split('|') : [];
+    prod.skus.forEach((sku, si) => {
+      const r = new Array(slH.length).fill('');
+      r[SL['Handle']] = handle;
+      if (si === 0) {
+        r[SL['Title*']] = prod.cleanName;
+        r[SL['Subtitle']] = prod.catchCopy || '';
+        r[SL['Product description html']] = prod.pcDesc || '';
+        r[SL['SPU']] = prod.number || '';
+        r[SL['Vendor']] = 'NOAHL';
+        if (prod.images.length > 0) r[SL['Master image']] = buildRakutenImgUrl(prod.images[0].path);
+        r[SL['Image Alt Text']] = prod.cleanName;
+        r[SL['SEO title']] = prod.cleanName;
+        r[SL['Published']] = 'Y';
+        r[SL['Status']] = 'Y';
+      }
+      const typeNo = sku.customFields.find(f => f.label === '型番');
+      r[SL['SKU']] = typeNo ? typeNo.value : sku.systemSku;
+      if (sku.variants[0]) { r[SL['Option1 name']] = varNames[0] || 'カラー'; r[SL['Option1 value']] = sku.variants[0].value; }
+      if (sku.variants[1]) { r[SL['Option2 name']] = varNames[1] || 'サイズ'; r[SL['Option2 value']] = sku.variants[1].value; }
+      if (sku.skuImgPath) r[SL['Image']] = buildRakutenImgUrl(sku.skuImgPath);
+      r[SL['SKU price']] = sku.price;
+      r[SL['SKU compare at price']] = sku.price;
+      r[SL['SKU weight']] = '10';
+      r[SL['SKU weight unit']] = 'g';
+      r[SL['SKU Inventory Tracker']] = 'T';
+      r[SL['SKU Inventory Policy']] = 'deny';
+      r[SL['SKU Inventory Quantity']] = '0';
+      r[SL['Cost per item']] = '0';
+      r[SL['SKU tax policy']] = 'T';
+      r[SL['SKU shipping policy']] = 'T';
+      r[SL['Path']] = `/products/${handle}`;
+      r[SL['Included / Japan']] = 'TRUE';
+      rows.push(r);
+    });
+    prod.images.slice(1).forEach(img => {
+      const r = new Array(slH.length).fill('');
+      r[SL['Handle']] = handle;
+      r[SL['Master image']] = buildRakutenImgUrl(img.path);
+      r[SL['Image Alt Text']] = prod.cleanName;
+      rows.push(r);
+    });
+  });
+  return { headers: slH, rows };
+}
+
+// ============================================================
+// CONVERSION: Yahoo
+// ============================================================
+function convertToYahoo() {
+  const yH = ['path','name','code','sub-code','original-price','price','sale-price','options','headline','caption','abstract','explanation','additional1','additional2','additional3','sp-additional','relevant-links','ship-weight','taxable','delivery','condition','product-category','spec1','spec2','spec3','spec4','spec5','display','in-stock','lead-time-instock','lead-time-outstock'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = sourceType === 'rakuten' ? prod.cleanName : prod.name;
+    const code = sourceType === 'rakuten' ? prod.id : (prod.spu || prod.id);
+    const desc = sourceType === 'rakuten' ? prod.pcDesc : prod.description;
+    let optStr = '';
+    if (sourceType === 'rakuten' && prod.varDef) {
+      const names = prod.varDef.names.split('|');
+      const optSets = prod.varDef.options;
+      optStr = names.map((n, i) => optSets[i] ? `${n}:${optSets[i].replace(/\|/g, ',')}` : '').filter(x=>x).join(';');
+    } else {
+      const m = {};
+      prod.skus.forEach(sku => sku.options.forEach(o => {
+        if (!m[o.name]) m[o.name] = new Set();
+        m[o.name].add(o.value);
+      }));
+      optStr = Object.entries(m).map(([k,v]) => `${k}:${[...v].join(',')}`).join(';');
+    }
+    const basePrice = prod.skus.length > 0 ? prod.skus[0].price : '';
+    const r = new Array(yH.length).fill('');
+    r[1] = name; r[2] = code;
+    r[4] = calcListPrice(basePrice) || basePrice;
+    r[5] = basePrice;
+    r[7] = optStr;
+    r[8] = sourceType === 'rakuten' ? prod.catchCopy : (prod.subtitle || '');
+    r[9] = desc || '';
+    r[27] = '1'; r[28] = '1';
+    rows.push(r);
+  });
+  return { headers: yH, rows };
+}
+
+// ============================================================
+// CONVERSION: Amazon
+// ============================================================
+function convertToAmazon() {
+  const aH = ['item_sku','item_name','external_product_id','external_product_id_type','brand_name','manufacturer','item_type','main_image_url','other_image_url1','other_image_url2','other_image_url3','parent_child','parent_sku','relationship_type','variation_theme','color_name','size_name','standard_price','quantity','product_description','bullet_point1','bullet_point2','bullet_point3','generic_keywords','fulfillment_channel'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = sourceType === 'rakuten' ? prod.cleanName : prod.name;
+    const parentSku = sourceType === 'rakuten' ? prod.id : (prod.spu || prod.id);
+    const desc = sourceType === 'rakuten' ? (prod.pcDesc || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 2000) : (prod.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 2000);
+    let mainImg = '';
+    if (sourceType === 'rakuten' && prod.images.length > 0) mainImg = buildRakutenImgUrl(prod.images[0].path);
+    else if (prod.images.length > 0) mainImg = prod.images[0].url;
+    const pR = new Array(aH.length).fill('');
+    pR[0] = parentSku; pR[1] = name; pR[4] = 'NOAHL'; pR[5] = 'NOAHL';
+    pR[7] = mainImg; pR[11] = 'parent'; pR[14] = 'ColorSize'; pR[19] = desc;
+    rows.push(pR);
+    prod.skus.forEach(sku => {
+      const cR = new Array(aH.length).fill('');
+      cR[0] = sourceType === 'rakuten' ? (sku.customFields.find(f=>f.label==='型番')?.value || sku.systemSku) : sku.skuId;
+      cR[1] = name; cR[4] = 'NOAHL'; cR[5] = 'NOAHL';
+      cR[11] = 'child'; cR[12] = parentSku; cR[13] = 'Variation'; cR[14] = 'ColorSize';
+      if (sourceType === 'rakuten') {
+        const hVar = sku.variants.find(v => v.key === 'horizontal-key');
+        const vVar = sku.variants.find(v => v.key === 'vertical-key');
+        cR[15] = hVar ? hVar.value : ''; cR[16] = vVar ? vVar.value : '';
+      } else {
+        cR[15] = sku.options[0]?.value || ''; cR[16] = sku.options[1]?.value || '';
+      }
+      cR[17] = sku.price; cR[18] = '0';
+      rows.push(cR);
+    });
+  });
+  return { headers: aH, rows };
+}
+
+// ============================================================
+// CONVERSION: Qoo10
+// ============================================================
+function convertToQoo10() {
+  const qH = ['flag','seller_code','item_title','item_price','item_qty','industrial_code_type','industrial_code','brief_description','item_description','item_image','option_type','option_info','shipping_group','item_condition','return_policy','keyword','model_nm','brand_nm','manufacture_nm','material','adult_yn','contact_info'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = sourceType === 'rakuten' ? prod.cleanName : prod.name;
+    const code = sourceType === 'rakuten' ? prod.id : (prod.spu || prod.id);
+    const desc = sourceType === 'rakuten' ? prod.pcDesc : prod.description;
+    const price = prod.skus.length > 0 ? prod.skus[0].price : '';
+    let optInfo = '';
+    if (prod.skus.length > 1) {
+      optInfo = prod.skus.map(sku => {
+        let label = '';
+        if (sourceType === 'rakuten') label = sku.variants.map(v => v.value).join('/');
+        else label = sku.options.map(o => o.value).join('/');
+        return `${label}:${sku.price}:0`;
+      }).join('|');
+    }
+    let imgUrl = '';
+    if (sourceType === 'rakuten' && prod.images.length > 0) imgUrl = buildRakutenImgUrl(prod.images[0].path);
+    else if (prod.images.length > 0) imgUrl = prod.images[0].url;
+    const r = new Array(qH.length).fill('');
+    r[0] = 'I'; r[1] = code; r[2] = name; r[3] = price; r[4] = '0';
+    r[7] = sourceType === 'rakuten' ? prod.catchCopy : (prod.subtitle || '');
+    r[8] = desc || ''; r[9] = imgUrl;
+    r[10] = prod.skus.length > 1 ? 'Y' : 'N';
+    r[11] = optInfo; r[13] = 'NEW'; r[17] = 'NOAHL'; r[18] = 'NOAHL'; r[20] = 'N';
+    rows.push(r);
+  });
+  return { headers: qH, rows };
+}
+
+// ============================================================
+// CSV BUILDER
+// ============================================================
+function buildCSV(hdrs, rows) {
+  const escCSV = (v) => {
+    if (v == null) return '';
+    const s = String(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+  let csv = hdrs.map(escCSV).join(',') + '\n';
+  rows.forEach(row => {
+    const padded = [...row];
+    while (padded.length < hdrs.length) padded.push('');
+    csv += padded.map(escCSV).join(',') + '\n';
+  });
+  return csv;
+}
+
+// ============================================================
+// BACKUP / RESTORE
+// ============================================================
+function exportState() {
+  const state = { version: '2.1', date: new Date().toISOString(), master: MASTER, sourceType, headers, rawRows, products };
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `noahl_backup_${dateStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('バックアップを保存しました', 'success');
+}
+
+function importState(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const state = JSON.parse(e.target.result);
+      if (state.master) { MASTER = state.master; localStorage.setItem('noahl_master', JSON.stringify(MASTER)); }
+      if (state.headers) headers = state.headers;
+      if (state.rawRows) rawRows = state.rawRows;
+      if (state.products) products = state.products;
+      if (state.sourceType) sourceType = state.sourceType;
+      CI = {};
+      headers.forEach((h, i) => { CI[h] = i; });
+      if (products.length > 0) { renderStep2(); goToStep(2); }
+      notify('バックアップを復元しました', 'success');
+    } catch(err) {
+      notify('JSONの読み込みに失敗しました', 'warning');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function trunc(str, len) {
+  if (!str) return '';
+  const s = String(str);
+  return s.length > len ? s.substring(0, len) + '…' : s;
+}
+
+function dateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function notify(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `notification ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+</script>
+</body>
+</html>
