@@ -103,6 +103,16 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .master-mall-panel.active { display: block; }
 .rakuten-tab-panel { display: none; }
 .rakuten-tab-panel.active { display: block; }
+/* モール選択タブ（上位） */
+.mall-tab { padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); border-bottom: 3px solid transparent; transition: all 0.2s; }
+.mall-tab:hover { color: rgba(255,255,255,0.9); }
+.mall-tab.active { color: white; border-bottom-color: white; background: rgba(255,255,255,0.1); }
+/* サブタブ（カテゴリ切替） */
+.sub-tab { padding: 7px 16px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-light); background: white; border: 1px solid var(--border); border-radius: 20px; transition: all 0.2s; }
+.sub-tab:hover { border-color: var(--primary); color: var(--primary); }
+.sub-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+/* マスタフォームカード */
+.master-form-card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 16px 20px; margin-top: 0; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
 .master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
@@ -227,67 +237,66 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
 <!-- MASTER MODAL -->
 <div id="master-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100;">
-  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; width:90%; max-width:960px; max-height:85vh; overflow:auto; padding:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h2 style="font-size:17px; color:var(--primary-dark);">マスタ設定（モール別）</h2>
-      <button class="btn btn-sm btn-outline" onclick="closeMaster()">✕ 閉じる</button>
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#f5f5f5; border-radius:12px; width:90%; max-width:960px; max-height:85vh; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:var(--primary-dark); border-radius:12px 12px 0 0;">
+      <h2 style="font-size:16px; color:white; margin:0;">マスタ設定</h2>
+      <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="closeMaster()">✕ 閉じる</button>
     </div>
-    <!-- モール選択タブ -->
-    <div class="tabs" id="master-mall-tabs" style="margin-bottom:0; border-bottom:2px solid var(--primary);">
-      <div class="tab active" onclick="switchMasterMall('common', this)" style="font-weight:700;">共通</div>
-      <div class="tab" onclick="switchMasterMall('rakuten', this)">楽天</div>
-      <div class="tab" onclick="switchMasterMall('shopline', this)">SHOPLINE</div>
-      <div class="tab" onclick="switchMasterMall('yahoo', this)">Yahoo!</div>
-      <div class="tab" onclick="switchMasterMall('amazon', this)">Amazon</div>
-      <div class="tab" onclick="switchMasterMall('qoo10', this)">Qoo10</div>
+    <!-- モール選択タブ（横ナビ） -->
+    <div id="master-mall-tabs" style="display:flex; background:var(--primary); padding:0 16px;">
+      <div class="mall-tab active" onclick="switchMasterMall('common', this)">共通</div>
+      <div class="mall-tab" onclick="switchMasterMall('rakuten', this)">楽天</div>
+      <div class="mall-tab" onclick="switchMasterMall('shopline', this)">SHOPLINE</div>
+      <div class="mall-tab" onclick="switchMasterMall('yahoo', this)">Yahoo!</div>
+      <div class="mall-tab" onclick="switchMasterMall('amazon', this)">Amazon</div>
+      <div class="mall-tab" onclick="switchMasterMall('qoo10', this)">Qoo10</div>
     </div>
 
+    <div style="padding:20px 24px; min-height:420px;">
     <!-- 共通設定 -->
-    <div class="master-mall-panel active" id="mall-common" style="padding-top:16px;">
-      <div class="tabs" id="master-tabs-common">
-        <div class="tab active" onclick="switchMasterTab('color-order', this)">カラー表示順</div>
-        <div class="tab" onclick="switchMasterTab('name-clean', this)">商品名クリーニング</div>
-        <div class="tab" onclick="switchMasterTab('delete-tpl', this)">削除テンプレート</div>
+    <div class="master-mall-panel active" id="mall-common">
+      <div id="master-tabs-common" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
+        <div class="sub-tab active" onclick="switchMasterTab('color-order', this)">カラー表示順</div>
+        <div class="sub-tab" onclick="switchMasterTab('name-clean', this)">商品名クリーニング</div>
+        <div class="sub-tab" onclick="switchMasterTab('delete-tpl', this)">削除テンプレート</div>
       </div>
-      <div class="tab-panel active" id="tab-color-order">
+      <div class="tab-panel active master-form-card" id="tab-color-order">
         <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
-        <textarea id="master-color-order" style="width:100%; height:260px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999"></textarea>
-        <div style="margin-top:8px; display:flex; gap:8px;">
+        <textarea id="master-color-order" style="width:100%; height:240px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999"></textarea>
+        <div style="margin-top:10px; display:flex; gap:8px;">
           <button class="btn btn-sm btn-primary" onclick="saveMaster('colorOrder')">保存</button>
           <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
         </div>
       </div>
-      <div class="tab-panel" id="tab-name-clean">
+      <div class="tab-panel master-form-card" id="tab-name-clean">
         <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
-        <textarea id="master-name-clean" style="width:100%; height:260px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="《[^》]*》&#10;【メール便】"></textarea>
-        <div style="margin-top:8px;">
+        <textarea id="master-name-clean" style="width:100%; height:240px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="《[^》]*》&#10;【メール便】"></textarea>
+        <div style="margin-top:10px;">
           <button class="btn btn-sm btn-primary" onclick="saveMaster('nameClean')">保存</button>
         </div>
       </div>
-      <div class="tab-panel" id="tab-delete-tpl">
+      <div class="tab-panel master-form-card" id="tab-delete-tpl">
         <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">PC用販売説明文から削除するHTMLブロック（コメントタグ基準）を1行ずつ記入してください。</p>
-        <textarea id="master-delete-tpl" style="width:100%; height:260px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="&lt;!--配送について--&gt;&#10;&lt;!--ご注意--&gt;&#10;&lt;!--レビューを書いて--&gt;"></textarea>
-        <div style="margin-top:8px;">
+        <textarea id="master-delete-tpl" style="width:100%; height:240px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="&lt;!--配送について--&gt;&#10;&lt;!--ご注意--&gt;&#10;&lt;!--レビューを書いて--&gt;"></textarea>
+        <div style="margin-top:10px;">
           <button class="btn btn-sm btn-primary" onclick="saveMaster('deleteTpl')">保存</button>
         </div>
       </div>
     </div>
 
     <!-- 楽天 固有設定 -->
-    <div class="master-mall-panel" id="mall-rakuten" style="display:none; padding-top:16px;">
-      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">楽天 固有設定（自社Excel → 楽天 新規登録用）</h3>
-
-      <div class="tabs" id="master-tabs-rakuten">
-        <div class="tab active" onclick="switchRakutenTab('basic', this)">基本設定</div>
-        <div class="tab" onclick="switchRakutenTab('price', this)">価格・税</div>
-        <div class="tab" onclick="switchRakutenTab('shipping', this)">配送</div>
-        <div class="tab" onclick="switchRakutenTab('display', this)">表示・説明文</div>
-        <div class="tab" onclick="switchRakutenTab('image', this)">画像</div>
+    <div class="master-mall-panel" id="mall-rakuten" style="display:none;">
+      <div id="master-tabs-rakuten" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
+        <div class="sub-tab active" onclick="switchRakutenTab('basic', this)">基本設定</div>
+        <div class="sub-tab" onclick="switchRakutenTab('price', this)">価格・税</div>
+        <div class="sub-tab" onclick="switchRakutenTab('shipping', this)">配送</div>
+        <div class="sub-tab" onclick="switchRakutenTab('display', this)">表示・説明文</div>
+        <div class="sub-tab" onclick="switchRakutenTab('image', this)">画像</div>
       </div>
 
       <!-- 基本設定 -->
-      <div class="rakuten-tab-panel active" id="rtab-basic">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+      <div class="rakuten-tab-panel active master-form-card" id="rtab-basic">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
           <label style="font-size:12px; font-weight:600;">コントロールカラム：</label>
           <select id="mall-rakuten-control-col" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
             <option value="n">n（新規登録）</option>
@@ -320,8 +329,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
 
       <!-- 価格・税 -->
-      <div class="rakuten-tab-panel" id="rtab-price" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+      <div class="rakuten-tab-panel master-form-card" id="rtab-price" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
           <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
           <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
           <label style="font-size:12px; font-weight:600;">消費税：</label>
@@ -339,8 +348,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
 
       <!-- 配送 -->
-      <div class="rakuten-tab-panel" id="rtab-shipping" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+      <div class="rakuten-tab-panel master-form-card" id="rtab-shipping" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
           <label style="font-size:12px; font-weight:600;">送料：</label>
           <select id="mall-rakuten-shipping-fee" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
             <option value="0">0: 送料込み（税込価格に含む）</option>
@@ -366,8 +375,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
 
       <!-- 表示・説明文 -->
-      <div class="rakuten-tab-panel" id="rtab-display" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+      <div class="rakuten-tab-panel master-form-card" id="rtab-display" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
           <label style="font-size:12px; font-weight:600;">PC用商品説明文テンプレ：</label>
           <textarea id="mall-rakuten-pc-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート（{素材}{採寸サイズ}等で置換）"></textarea>
           <label style="font-size:12px; font-weight:600;">SP用商品説明文テンプレ：</label>
@@ -382,8 +391,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
 
       <!-- 画像 -->
-      <div class="rakuten-tab-panel" id="rtab-image" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+      <div class="rakuten-tab-panel master-form-card" id="rtab-image" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
           <label style="font-size:12px; font-weight:600;">画像キャビネットパス：</label>
           <input type="text" id="mall-rakuten-img-cabinet" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: /01/">
           <label style="font-size:12px; font-weight:600;">画像タイプ（デフォルト）：</label>
@@ -474,6 +483,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         <button class="btn btn-sm btn-primary" onclick="saveMallMaster('qoo10')">保存</button>
       </div>
     </div>
+    </div><!-- /padding wrapper -->
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -645,7 +655,7 @@ function closeMaster() {
 }
 
 function switchMasterMall(mallId, el) {
-  document.querySelectorAll('#master-mall-tabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#master-mall-tabs .mall-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.master-mall-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   const panel = document.getElementById('mall-' + mallId);
@@ -654,14 +664,14 @@ function switchMasterMall(mallId, el) {
 
 function switchMasterTab(id, el) {
   const container = el.closest('.master-mall-panel') || document;
-  container.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  container.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
 }
 
 function switchRakutenTab(id, el) {
-  document.querySelectorAll('#master-tabs-rakuten .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#master-tabs-rakuten .sub-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.rakuten-tab-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   const panel = document.getElementById('rtab-' + id);
