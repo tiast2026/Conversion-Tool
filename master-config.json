@@ -1,0 +1,97 @@
+{
+  "colorOrder": {
+    "F(M)フリー": 1,
+    "Sサイズ": 1,
+    "Mサイズ": 2,
+    "Lサイズ": 3,
+    "ホワイト": 1,
+    "オフホワイト": 2,
+    "オートミール": 3,
+    "アイボリー": 4,
+    "クリーム": 5,
+    "クリーム×イエロー": 6,
+    "ライトベージュ": 7,
+    "ベージュ": 8,
+    "ライトブルー": 9,
+    "ピンク": 10,
+    "イエロー": 11,
+    "バターイエロー": 12,
+    "ブルー": 13,
+    "ミント": 14,
+    "ミントグレー": 15,
+    "ベージュ×ブラック": 16,
+    "グレー×ブルー": 17,
+    "グレージュ": 18,
+    "グレージュ×ピンク": 19,
+    "ブラウン": 20,
+    "ブラウンMIX": 21,
+    "チャコール": 22,
+    "チャコールMIX": 23,
+    "ブラック": 9999,
+    "スミクロ": 9999,
+    "クリームイエロー": 6,
+    "ダークブラウン": 21
+  },
+  "nameCleanPatterns": [
+    "《[^》]*》",
+    "【メール便】",
+    "\\s*\\d{6}$"
+  ],
+  "deleteTemplates": [
+    "<!--配送について-->",
+    "<!--ご注意-->",
+    "<!--レビューを書いて-->",
+    "<!--コンセプト-->",
+    "<!--よくある質問-->"
+  ],
+  "malls": {
+    "rakuten": {
+      "controlCol": "n",
+      "genreId": "",
+      "catalogReason": "3",
+      "stockType": "1",
+      "restockBtn": "0",
+      "namePrefix": "",
+      "nameSuffix": "",
+      "priceRate": 40,
+      "taxType": "0",
+      "pointRate": 1,
+      "pointStart": "",
+      "pointEnd": "",
+      "shippingFee": "0",
+      "indivShipping": 0,
+      "shippingSet": "",
+      "shippingName": "",
+      "asuraku": "",
+      "deliveryInfo": "",
+      "noshi": "0",
+      "pcDescTpl": "",
+      "spDescTpl": "",
+      "saleDescTpl": "",
+      "imgCabinet": "",
+      "imgType": "0"
+    },
+    "shopline": {
+      "priceRate": 100,
+      "defaultStock": 0,
+      "namePrefix": "",
+      "nameSuffix": ""
+    },
+    "yahoo": {
+      "priceRate": 40,
+      "namePrefix": "",
+      "nameSuffix": ""
+    },
+    "amazon": {
+      "priceRate": 100,
+      "brand": "",
+      "namePrefix": "",
+      "nameSuffix": ""
+    },
+    "qoo10": {
+      "priceRate": 100,
+      "namePrefix": "",
+      "nameSuffix": ""
+    }
+  }
+}

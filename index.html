@@ -258,7 +258,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
   <div style="position:absolute; inset:0; background:#f5f5f5; display:flex; flex-direction:column; overflow:hidden;">
     <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:var(--primary-dark); border-radius:12px 12px 0 0;">
       <h2 style="font-size:16px; color:white; margin:0;">マスタ設定</h2>
-      <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="closeMaster()">✕ 閉じる</button>
+      <div style="display:flex; gap:8px;">
+        <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="exportMasterConfig()">JSONエクスポート</button>
+        <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="closeMaster()">✕ 閉じる</button>
+      </div>
     </div>
     <!-- モール選択タブ（横ナビ） -->
     <div id="master-mall-tabs" style="display:flex; background:var(--primary); padding:0 16px;">
@@ -809,25 +812,41 @@ const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レ
 // ============================================================
 // INIT
 // ============================================================
-(function initMaster() {
+function applyMasterData(d) {
+  if (d.colorOrder) MASTER.colorOrder = d.colorOrder;
+  if (d.nameCleanPatterns) MASTER.nameCleanPatterns = d.nameCleanPatterns;
+  if (d.deleteTemplates) MASTER.deleteTemplates = d.deleteTemplates;
+  if (d.malls) {
+    Object.keys(d.malls).forEach(mall => {
+      if (MASTER.malls[mall]) Object.assign(MASTER.malls[mall], d.malls[mall]);
+    });
+  }
+}
+
+(async function initMaster() {
+  // 1) master-config.json を取得（リポジトリ同梱の共有設定）
   try {
-    const saved = localStorage.getItem('noahl_master');
-    if (saved) {
-      const d = JSON.parse(saved);
-      if (d.colorOrder) MASTER.colorOrder = d.colorOrder;
-      if (d.nameCleanPatterns) MASTER.nameCleanPatterns = d.nameCleanPatterns;
-      if (d.deleteTemplates) MASTER.deleteTemplates = d.deleteTemplates;
-      // モール別設定の復元
-      if (d.malls) {
-        Object.keys(d.malls).forEach(mall => {
-          if (MASTER.malls[mall]) Object.assign(MASTER.malls[mall], d.malls[mall]);
-        });
-      }
-      // 旧形式からの移行
-      if (d.priceRate && !d.malls) MASTER.malls.rakuten.priceRate = d.priceRate;
-      if (d.taxType !== undefined && !d.malls) MASTER.malls.rakuten.taxType = d.taxType;
+    const res = await fetch('master-config.json?t=' + Date.now());
+    if (res.ok) {
+      const remote = await res.json();
+      applyMasterData(remote);
+      // リモート設定をlocalStorageにも反映
+      localStorage.setItem('noahl_master', JSON.stringify(MASTER));
     }
-  } catch(e) {}
+  } catch(e) {
+    // fetch失敗時はlocalStorageから復元
+    try {
+      const saved = localStorage.getItem('noahl_master');
+      if (saved) {
+        const d = JSON.parse(saved);
+        applyMasterData(d);
+        // 旧形式からの移行
+        if (d.priceRate && !d.malls) MASTER.malls.rakuten.priceRate = d.priceRate;
+        if (d.taxType !== undefined && !d.malls) MASTER.malls.rakuten.taxType = d.taxType;
+      }
+    } catch(e2) {}
+  }
+  // デフォルト値の補完
   if (Object.keys(MASTER.colorOrder).length === 0) {
     MASTER.colorOrder = parseColorOrderText(DEFAULT_COLOR_ORDER);
   }
@@ -838,6 +857,19 @@ const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レ
     MASTER.deleteTemplates = DEFAULT_DELETE_TPL.split('\n').filter(l => l.trim());
   }
 })();
+
+// マスタ設定をJSONファイルとしてエクスポート
+function exportMasterConfig() {
+  const json = JSON.stringify(MASTER, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'master-config.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('master-config.json をダウンロードしました。リポジトリにコミットすると全ブラウザに反映されます。', 'success');
+}
 
 function parseColorOrderText(text) {
   const map = {};
