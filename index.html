@@ -1491,24 +1491,24 @@ function renderRmsPreview() {
     html += '<div style="margin-top:6px; font-size:10px; color:#bf0000; cursor:default;">商品ページURLコピー</div>';
     html += '</div>';
 
-    // 基本情報フォーム風
+    // 基本情報フォーム風 (編集可能フィールド)
+    const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="this.style.borderColor=\'#bf0000\'" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
     html += '<div style="flex:1; min-width:0;">';
     // 商品管理番号 + 商品番号 横並び
     html += '<div style="display:flex; gap:24px; margin-bottom:12px;">';
     html += '<div style="flex:1;"><div style="font-size:12px; font-weight:600; color:#333; margin-bottom:4px;">商品管理番号（商品URL）</div>';
-    html += '<div style="font-size:13px; color:#333;">' + esc(v('商品管理番号（商品URL）')) + '</div></div>';
+    html += '<div data-rms-field="number" ' + E + '>' + esc(v('商品管理番号（商品URL）')) + '</div></div>';
     html += '<div style="flex:1;"><div style="font-size:12px; font-weight:600; color:#333; margin-bottom:4px;">商品番号 <span style="color:#999; font-weight:400;">全角16文字以内</span></div>';
-    html += '<div style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px;">' + esc(v('商品番号')) + '</div></div>';
+    html += '<div data-rms-field="number" ' + E + '>' + esc(v('商品番号')) + '</div></div>';
     html += '</div>';
     // 商品名
     html += '<div style="margin-bottom:12px;"><div style="font-size:12px; font-weight:600; color:#333; margin-bottom:4px;">商品名 <span style="background:#e53935; color:#fff; font-size:9px; padding:1px 6px; border-radius:3px; font-weight:700;">必須</span></div>';
-    html += '<div style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; word-break:break-all;">' + esc(v('商品名')) + '</div>';
+    html += '<div data-rms-field="cleanName" ' + E + ' style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; word-break:break-all; outline:none; cursor:text;">' + esc(v('商品名')) + '</div>';
     const nameLen = v('商品名').length;
     html += '<div style="font-size:10px; color:#888; margin-top:2px;">' + nameLen + '文字 / 全角' + Math.ceil(nameLen * 2) + '文字</div></div>';
     // キャッチコピー
     html += '<div style="margin-bottom:12px;"><div style="font-size:12px; font-weight:600; color:#333; margin-bottom:4px;">キャッチコピー</div>';
-    const cc = v('キャッチコピー');
-    html += '<div style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; min-height:20px; color:' + (cc ? '#333' : '#ccc') + ';">' + (cc ? esc(cc) : '（未設定）') + '</div></div>';
+    html += '<div data-rms-field="catchCopy" ' + E + ' style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; min-height:20px; outline:none; cursor:text;">' + esc(v('キャッチコピー')) + '</div></div>';
     // 倉庫指定 + サーチ表示
     html += '<div style="display:flex; gap:24px;">';
     html += '<div style="display:flex; align-items:center; gap:8px;"><span style="font-size:12px; font-weight:600; color:#333;">倉庫指定</span>';
@@ -1577,8 +1577,8 @@ function renderRmsPreview() {
         html += '<td style="padding:6px 8px; border:1px solid #ddd;">' + esc(sRow[RI['バリエーション項目選択肢1']] || '') + '</td>';
         html += '<td style="padding:6px 8px; border:1px solid #ddd;">' + esc(sRow[RI['バリエーション項目選択肢2']] || '') + '</td>';
         const skuP = sRow[RI['通常購入販売価格']] || '';
-        html += '<td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">' + (skuP ? '¥' + Number(skuP).toLocaleString() : '') + '</td>';
-        html += '<td style="padding:6px 8px; border:1px solid #ddd; text-align:center;">' + esc(sRow[RI['SKU在庫数']] || '0') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="price" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="padding:6px 8px; border:1px solid #ddd; text-align:right; outline:none; cursor:text;">' + esc(skuP) + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="stock" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="padding:6px 8px; border:1px solid #ddd; text-align:center; outline:none; cursor:text;">' + esc(sRow[RI['SKU在庫数']] || '0') + '</td>';
         html += '<td style="padding:6px 8px; border:1px solid #ddd;">' + esc(sRow[RI['自由入力行（値）1']] || '') + '</td>';
         html += '</tr>';
       });
@@ -1598,9 +1598,9 @@ function renderRmsPreview() {
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">価格設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">通常購入販売価格 <span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px;">必須</span><br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; display:inline-block; background:#fff; min-width:100px;">' + (v('販売価格') ? Number(v('販売価格')).toLocaleString() : '') + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="sellPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; display:inline-block; background:#fff; min-width:100px; outline:none; cursor:text;">' + esc(v('販売価格')) + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">表示価格<br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; display:inline-block; background:#fff; min-width:100px; color:' + (v('表示価格') ? '#333' : '#ccc') + ';">' + (v('表示価格') ? Number(v('表示価格')).toLocaleString() : '表示しない') + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="displayPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; display:inline-block; background:#fff; min-width:100px; outline:none; cursor:text;">' + esc(v('表示価格') || '') + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">消費税</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + (v('消費税') === '0' ? '税込み' : esc(v('消費税'))) + '</td></tr>';
     html += '</table>';
@@ -1716,6 +1716,33 @@ function switchRmsProduct(idx, btn) {
     btn.closest('div').querySelectorAll('button').forEach(b => { b.classList.remove('btn-primary'); b.classList.add('btn-outline'); });
     btn.classList.remove('btn-outline');
     btn.classList.add('btn-primary');
+  }
+}
+
+// RMSプレビュー編集ハンドラ: 商品フィールド
+function onRmsEdit(el, gi) {
+  const field = el.dataset.rmsField;
+  const val = el.innerText.trim();
+  if (!field || !products[gi]) return;
+  const prod = products[gi];
+  switch (field) {
+    case 'number': prod.number = val; prod.id = val; break;
+    case 'cleanName': prod.cleanName = val; prod.name = val; break;
+    case 'catchCopy': prod._catchCopy = val; break;
+    case 'sellPrice': prod.sellPrice = val; break;
+    case 'displayPrice': prod._displayPrice = val; break;
+  }
+}
+
+// RMSプレビュー編集ハンドラ: SKUフィールド
+function onRmsSkuEdit(el, gi, si) {
+  const field = el.dataset.rmsSku;
+  const val = el.innerText.trim();
+  if (!products[gi] || !products[gi].skus[si]) return;
+  const sku = products[gi].skus[si];
+  switch (field) {
+    case 'price': sku.price = val; break;
+    case 'stock': sku._stock = val; break;
   }
 }
 
@@ -2082,7 +2109,7 @@ function convertToRakuten() {
       pRow[RI['商品番号']] = prod.number;
       pRow[RI['商品名']] = applyMallName(prod.cleanName || prod.name, 'rakuten');
       pRow[RI['販売価格']] = prod.sellPrice;
-      pRow[RI['表示価格']] = prod.sellPrice || '';
+      pRow[RI['表示価格']] = prod._displayPrice || prod.sellPrice || '';
       pRow[RI['ジャンルID']] = rm.genreId || '';
       pRow[RI['消費税']] = rm.taxType || '0';
       pRow[RI['送料']] = rm.shippingFee || '0';
@@ -2093,7 +2120,7 @@ function convertToRakuten() {
       pRow[RI['のし対応']] = rm.noshi || '0';
       pRow[RI['在庫タイプ']] = rm.stockType || '1';
       pRow[RI['再入荷お知らせボタン']] = rm.restockBtn || '0';
-      pRow[RI['キャッチコピー']] = '';
+      pRow[RI['キャッチコピー']] = prod._catchCopy || '';
       pRow[RI['PC用商品説明文']] = applyDescTemplate(rm.pcDescTpl, prod);
       pRow[RI['スマートフォン用商品説明文']] = applyDescTemplate(rm.spDescTpl, prod);
       pRow[RI['PC用販売説明文']] = applyDescTemplate(rm.saleDescTpl, prod);
@@ -2125,17 +2152,30 @@ function convertToRakuten() {
         const sRow = new Array(rH.length).fill('');
         sRow[RI['コントロールカラム']] = rm.controlCol || 'n';
         sRow[RI['商品管理番号（商品URL）']] = prod.number;
-        // SKU管理番号: 商品番号から親番号を引いた残り（例: nlpt495-2602-EC-M → -EC-M）
-        const skuSuffix = (sku.skuMgmtNo && prod.number && sku.skuMgmtNo.startsWith(prod.number))
-          ? sku.skuMgmtNo.substring(prod.number.length)
-          : (sku.skuMgmtNo || sku.jan);
+        // SKU管理番号: 商品番号の先頭部分を除いたサフィックス（例: nlpt495-2602-EC-M → -EC-M）
+        let skuSuffix = '';
+        const skuFull = (sku.skuMgmtNo || '').trim();
+        const parentNo = (prod.number || '').trim();
+        if (skuFull && parentNo && skuFull.startsWith(parentNo)) {
+          skuSuffix = skuFull.substring(parentNo.length);
+        } else if (skuFull && parentNo) {
+          // startsWith が失敗する場合: 先頭2セグメントを除去して残りをサフィックスにする
+          const parts = skuFull.split('-');
+          if (parts.length > 2) {
+            skuSuffix = '-' + parts.slice(2).join('-');
+          } else {
+            skuSuffix = skuFull;
+          }
+        } else {
+          skuSuffix = skuFull || sku.jan;
+        }
         sRow[RI['SKU管理番号']] = skuSuffix;
         // システム連携用SKU番号: 親番号 + サフィックス（例: nlpt495-2602-EC-M）
         sRow[RI['システム連携用SKU番号']] = sku.skuMgmtNo || (prod.number + skuSuffix);
         if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'カラー'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
         if (hasSize) { sRow[RI['バリエーション項目キー2']] = 'サイズ'; sRow[RI['バリエーション項目選択肢2']] = sku.size; }
         sRow[RI['通常購入販売価格']] = sku.price || prod.sellPrice;
-        sRow[RI['SKU在庫数']] = '0';
+        sRow[RI['SKU在庫数']] = sku._stock || '0';
         sRow[RI['カタログIDなしの理由']] = rm.catalogReason || '3';
         sRow[RI['自由入力行（項目）1']] = '型番';
         sRow[RI['自由入力行（値）1']] = sku.jan || sku.skuMgmtNo;
