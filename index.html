@@ -113,21 +113,24 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .sub-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
 /* マスタフォームカード */
 .master-form-card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 16px 20px; margin-top: 0; }
-.master-label { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
-.master-csv-col { display: block; font-size: 10px; font-weight: 400; color: var(--primary); opacity: 0.7; }
-.master-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; }
-/* マッピングテーブル */
-.mapping-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.mapping-table th { background: #f8f8f8; padding: 8px 10px; text-align: left; font-weight: 700; border-bottom: 2px solid var(--border); font-size: 11px; color: var(--text-light); }
-.mapping-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
-.mapping-table tr:hover td { background: #fafafa; }
-.mapping-section td { background: var(--primary-dark) !important; color: white; font-weight: 700; font-size: 11px; padding: 6px 10px; }
-.badge-req { background: #fee; color: #c33; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; }
-.src-excel { background: #e8f5e9; color: #2e7d32; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-.src-master { background: #e3f2fd; color: #1565c0; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-.src-auto { background: #fff3e0; color: #e65100; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-.src-fixed { background: #f3e5f5; color: #7b1fa2; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-.src-none { background: #fafafa; color: #999; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; border: 1px solid #ddd; }
+/* データ元バッジ */
+.badge-req { background: #c33; color: white; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+.src-excel { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+.src-master { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+.src-auto { background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+.src-fixed { background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+.src-none { background: #fafafa; color: #999; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; border: 1px solid #ddd; margin-right: 4px; }
+/* RMS風タブ */
+.rms-tab { padding: 10px 18px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-light); background: #f0f0f0; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; margin-right: 2px; transition: all 0.2s; }
+.rms-tab:hover { background: #e8e8e8; }
+.rms-tab.active { background: white; color: var(--primary-dark); border-color: var(--primary); border-bottom: 2px solid white; margin-bottom: -3px; position: relative; z-index: 1; }
+/* RMS風フォーム */
+.rms-form { width: 100%; border-collapse: collapse; background: white; border: 1px solid var(--border); border-top: none; font-size: 12px; }
+.rms-form th { background: #f8f6f2; padding: 10px 14px; text-align: left; font-weight: 600; color: #333; border: 1px solid #e0dcd6; width: 220px; vertical-align: top; line-height: 1.6; }
+.rms-form td { padding: 10px 14px; border: 1px solid #e0dcd6; vertical-align: middle; line-height: 1.8; color: #444; }
+.rms-form .rms-section td { background: var(--primary-dark); color: white; font-weight: 700; font-size: 12px; padding: 8px 14px; }
+.rms-input { padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; }
+.rms-textarea { width: 100%; height: 90px; border: 1px solid #ccc; border-radius: 3px; padding: 8px; font-size: 11px; font-family: monospace; margin-top: 6px; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
 .master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
@@ -299,182 +302,346 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
     </div>
 
-    <!-- 楽天 固有設定 -->
+    <!-- 楽天 固有設定（RMS風レイアウト） -->
     <div class="master-mall-panel" id="mall-rakuten" style="display:none;">
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → 楽天CSV</span>
-        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">楽天CSVに出力する固定値・テンプレートを設定</span>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+        <span style="font-size:15px; font-weight:700; color:var(--primary-dark);">自社Excel → 楽天CSV 新規登録</span>
       </div>
-      <div id="master-tabs-rakuten" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
-        <div class="sub-tab active" onclick="switchRakutenTab('mapping', this)">列マッピング一覧</div>
-        <div class="sub-tab" onclick="switchRakutenTab('basic', this)">基本設定</div>
-        <div class="sub-tab" onclick="switchRakutenTab('price', this)">価格・税</div>
-        <div class="sub-tab" onclick="switchRakutenTab('shipping', this)">配送</div>
-        <div class="sub-tab" onclick="switchRakutenTab('display', this)">表示・説明文</div>
-        <div class="sub-tab" onclick="switchRakutenTab('image', this)">画像</div>
+      <p style="font-size:11px; color:var(--text-light); margin:0 0 12px 0;">
+        <span class="src-excel">自社Excel</span> Excelから自動取得
+        <span class="src-master">マスタ</span> この画面で設定する値
+        <span class="src-auto">自動</span> 自動生成
+        <span class="badge-req">必須</span> 楽天の新規登録に必須
+      </p>
+
+      <!-- RMS風タブ -->
+      <div id="master-tabs-rakuten" style="display:flex; border-bottom:3px solid var(--primary); margin-bottom:0;">
+        <div class="rms-tab active" onclick="switchRakutenTab('basic', this)">商品基本情報</div>
+        <div class="rms-tab" onclick="switchRakutenTab('price', this)">販売・価格</div>
+        <div class="rms-tab" onclick="switchRakutenTab('shipping', this)">在庫・配送</div>
+        <div class="rms-tab" onclick="switchRakutenTab('variation', this)">バリエーション</div>
+        <div class="rms-tab" onclick="switchRakutenTab('display', this)">説明文</div>
+        <div class="rms-tab" onclick="switchRakutenTab('image', this)">画像</div>
       </div>
 
-      <!-- 列マッピング一覧 -->
-      <div class="rakuten-tab-panel active master-form-card" id="rtab-mapping">
-        <p style="font-size:12px; color:var(--text-light); margin:0 0 12px 0;">自社Excelの各列が楽天CSVのどこに変換されるかの一覧です。<span style="background:#fee; color:#c33; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:700;">必須</span> = 楽天新規登録に必須の項目</p>
-        <table class="mapping-table">
-          <thead>
-            <tr><th style="width:220px;">楽天CSV列名</th><th style="width:50px;">必須</th><th>データ元</th><th>説明</th></tr>
-          </thead>
-          <tbody>
-            <tr class="mapping-section"><td colspan="4">商品基本情報（商品行）</td></tr>
-            <tr><td>コントロールカラム</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → コントロールカラム</td></tr>
-            <tr><td>商品管理番号（商品URL）</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「商品番号」列をそのまま使用</td></tr>
-            <tr><td>商品番号</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「商品番号」列をそのまま使用</td></tr>
-            <tr><td>商品名</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span> + <span class="src-master">マスタ</span></td><td>「商品名」列 + 前後の文字付与 + クリーニング</td></tr>
-            <tr><td>販売価格</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「販売金額(税込)」列をそのまま使用</td></tr>
-            <tr><td>表示価格</td><td></td><td><span class="src-auto">自動計算</span></td><td>販売金額 × 定価掛率（価格・税タブで設定）</td></tr>
-            <tr><td>ジャンルID</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → 全商品共通ジャンルID</td></tr>
-            <tr><td>消費税</td><td></td><td><span class="src-master">マスタ</span></td><td>価格・税 → 消費税</td></tr>
-            <tr><td>送料</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → 送料</td></tr>
-            <tr><td>個別送料（税込）</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → 個別送料</td></tr>
-            <tr><td>配送方法セット管理番号</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → 配送方法セット管理番号</td></tr>
-            <tr><td>あす楽配送管理番号</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → あす楽配送管理番号</td></tr>
-            <tr><td>のし対応</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → のし対応</td></tr>
-            <tr><td>在庫タイプ</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → 在庫タイプ</td></tr>
-            <tr><td>再入荷お知らせボタン</td><td></td><td><span class="src-master">マスタ</span></td><td>基本設定 → 再入荷お知らせボタン</td></tr>
-            <tr><td>キャッチコピー</td><td></td><td><span class="src-none">未設定</span></td><td>現在空欄で出力</td></tr>
-            <tr><td>PC用商品説明文</td><td></td><td><span class="src-master">マスタ</span></td><td>表示・説明文 → テンプレートで生成</td></tr>
-            <tr><td>スマートフォン用商品説明文</td><td></td><td><span class="src-master">マスタ</span></td><td>表示・説明文 → テンプレートで生成</td></tr>
-            <tr><td>PC用販売説明文</td><td></td><td><span class="src-master">マスタ</span></td><td>表示・説明文 → テンプレートで生成</td></tr>
-            <tr><td>ポイント変倍率</td><td></td><td><span class="src-master">マスタ</span></td><td>価格・税 → ポイント変倍率</td></tr>
-            <tr><td>ポイント変倍率適用期間</td><td></td><td><span class="src-master">マスタ</span></td><td>価格・税 → 開始/終了</td></tr>
-
-            <tr class="mapping-section"><td colspan="4">バリエーション定義（商品行）</td></tr>
-            <tr><td>バリエーション項目キー定義</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>カラー/サイズの有無から自動設定</td></tr>
-            <tr><td>バリエーション項目名定義</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>「カラー」「サイズ」を自動設定</td></tr>
-            <tr><td>バリエーション1選択肢定義</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「カラー」列の全選択肢（表示順でソート）</td></tr>
-            <tr><td>バリエーション2選択肢定義</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「サイズ」列の全選択肢（サイズ順でソート）</td></tr>
-
-            <tr class="mapping-section"><td colspan="4">SKU情報（SKU行 = カラー×サイズごとに1行）</td></tr>
-            <tr><td>SKU管理番号</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「JAN」列を使用</td></tr>
-            <tr><td>システム連携用SKU番号</td><td></td><td><span class="src-excel">自社Excel</span></td><td>「JAN」列を使用</td></tr>
-            <tr><td>バリエーション項目キー1</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>horizontal-key（カラー用）</td></tr>
-            <tr><td>バリエーション項目選択肢1</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「カラー」列の値</td></tr>
-            <tr><td>バリエーション項目キー2</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>vertical-key（サイズ用）</td></tr>
-            <tr><td>バリエーション項目選択肢2</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「サイズ」列の値</td></tr>
-            <tr><td>通常購入販売価格</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「販売金額(税込)」列</td></tr>
-            <tr><td>SKU在庫数</td><td></td><td><span class="src-fixed">固定値</span></td><td>0（初期値）</td></tr>
-            <tr><td>カタログIDなしの理由</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → カタログIDなしの理由</td></tr>
-            <tr><td>自由入力行（項目）1</td><td></td><td><span class="src-fixed">固定値</span></td><td>「型番」固定</td></tr>
-            <tr><td>自由入力行（値）1</td><td></td><td><span class="src-excel">自社Excel</span></td><td>「JAN」列の値</td></tr>
-          </tbody>
+      <!-- 商品基本情報 -->
+      <div class="rakuten-tab-panel active" id="rtab-basic" style="display:block;">
+        <table class="rms-form">
+          <tr>
+            <th>商品管理番号（商品URL）<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「商品番号」列をそのまま使用</td>
+          </tr>
+          <tr>
+            <th>商品番号<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「商品番号」列をそのまま使用</td>
+          </tr>
+          <tr>
+            <th>コントロールカラム<span class="badge-req">必須</span></th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-control-col" class="rms-input">
+                <option value="n">n（新規登録）</option>
+                <option value="u">u（更新）</option>
+                <option value="d">d（削除）</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>商品名<span class="badge-req">必須</span></th>
+            <td>
+              <span class="src-excel">自社Excel</span> 「商品名」列 + クリーニング<br>
+              <div style="margin-top:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span class="src-master">マスタ</span>
+                <span style="font-size:11px;">前に付ける文字</span>
+                <input type="text" id="mall-rakuten-name-prefix" class="rms-input" style="width:160px;" placeholder="例: 【送料無料】">
+                <span style="font-size:11px;">後に付ける文字</span>
+                <input type="text" id="mall-rakuten-name-suffix" class="rms-input" style="width:160px;" placeholder="例: ◆レディース">
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>キャッチコピー</th>
+            <td><span class="src-none">未設定</span> 現在は空欄で出力</td>
+          </tr>
+          <tr>
+            <th>ジャンルID<span class="badge-req">必須</span></th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-genre-id" class="rms-input" style="width:160px;" placeholder="例: 565004">
+              <span style="font-size:10px; color:var(--text-light);">全商品共通</span>
+            </td>
+          </tr>
+          <tr>
+            <th>カタログIDなしの理由<span class="badge-req">必須</span></th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-catalog-reason" class="rms-input">
+                <option value="3">3: 該当なし</option>
+                <option value="1">1: JANなし</option>
+                <option value="2">2: セット商品</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>倉庫指定</th>
+            <td><span class="src-none">未設定</span> 現在は空欄で出力</td>
+          </tr>
         </table>
       </div>
 
-      <!-- 基本設定 -->
-      <div class="rakuten-tab-panel master-form-card" id="rtab-basic" style="display:none;">
-        <p style="font-size:11px; color:var(--text-light); margin:0 0 12px 0;">自社Excelにない項目を、楽天CSVに出力する固定値として設定します。</p>
-        <div style="display:grid; grid-template-columns:200px 1fr; gap:10px 16px; align-items:center; max-width:650px;">
-          <label class="master-label">コントロールカラム<span class="master-csv-col">→ コントロールカラム</span></label>
-          <select id="mall-rakuten-control-col" class="master-input" style="width:200px;">
-            <option value="n">n（新規登録）</option>
-            <option value="u">u（更新）</option>
-            <option value="d">d（削除）</option>
-          </select>
-          <label class="master-label">全商品共通ジャンルID<span class="master-csv-col">→ ジャンルID</span></label>
-          <input type="text" id="mall-rakuten-genre-id" class="master-input" style="width:200px;" placeholder="例: 565004">
-          <label class="master-label">カタログIDなしの理由<span class="master-csv-col">→ カタログIDなしの理由</span></label>
-          <select id="mall-rakuten-catalog-reason" class="master-input" style="width:200px;">
-            <option value="3">3: 該当なし</option>
-            <option value="1">1: JANなし</option>
-            <option value="2">2: セット商品</option>
-          </select>
-          <label class="master-label">在庫タイプ<span class="master-csv-col">→ 在庫タイプ</span></label>
-          <select id="mall-rakuten-stock-type" class="master-input" style="width:200px;">
-            <option value="1">1: 通常在庫</option>
-            <option value="2">2: 項目選択肢別在庫</option>
-          </select>
-          <label class="master-label">再入荷お知らせボタン<span class="master-csv-col">→ 再入荷お知らせボタン</span></label>
-          <select id="mall-rakuten-restock-btn" class="master-input" style="width:200px;">
-            <option value="0">0: 非表示</option>
-            <option value="1">1: 表示</option>
-          </select>
-          <label class="master-label">商品名の前に付ける文字<span class="master-csv-col">→ 商品名の先頭に追加</span></label>
-          <input type="text" id="mall-rakuten-name-prefix" class="master-input" placeholder="例: 【送料無料】">
-          <label class="master-label">商品名の後に付ける文字<span class="master-csv-col">→ 商品名の末尾に追加</span></label>
-          <input type="text" id="mall-rakuten-name-suffix" class="master-input" placeholder="例: ◆レディース">
-        </div>
+      <!-- 販売・価格 -->
+      <div class="rakuten-tab-panel" id="rtab-price" style="display:none;">
+        <table class="rms-form">
+          <tr>
+            <th>通常購入販売価格<span class="badge-req">必須</span><br><span style="font-size:10px; color:#888;">SKU毎に入力</span></th>
+            <td><span class="src-excel">自社Excel</span> 「販売金額(税込)」列をそのまま使用</td>
+          </tr>
+          <tr>
+            <th>表示価格</th>
+            <td>
+              <span class="src-auto">自動</span> 販売金額 ×
+              <span class="src-master">マスタ</span>
+              定価掛率
+              <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" class="rms-input" style="width:70px;">
+              <span style="font-size:12px;">%</span>
+            </td>
+          </tr>
+          <tr>
+            <th>消費税</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-tax" class="rms-input">
+                <option value="0">0: 税込み</option>
+                <option value="1">1: 税別</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>商品別ポイント変倍</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="number" id="mall-rakuten-point-rate" value="1" min="1" max="20" class="rms-input" style="width:60px;">
+              <span style="font-size:12px;">倍</span>
+              <span style="font-size:11px; margin-left:12px;">期間</span>
+              <input type="text" id="mall-rakuten-point-start" class="rms-input" style="width:120px;" placeholder="開始日">
+              〜
+              <input type="text" id="mall-rakuten-point-end" class="rms-input" style="width:120px;" placeholder="終了日">
+            </td>
+          </tr>
+        </table>
       </div>
 
-      <!-- 価格・税 -->
-      <div class="rakuten-tab-panel master-form-card" id="rtab-price" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
-          <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
-          <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
-          <label style="font-size:12px; font-weight:600;">消費税：</label>
-          <select id="mall-rakuten-tax" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
-            <option value="0">0: 税込み</option>
-            <option value="1">1: 税別</option>
-          </select>
-          <label style="font-size:12px; font-weight:600;">ポイント変倍率：</label>
-          <input type="number" id="mall-rakuten-point-rate" value="1" min="1" max="20" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
-          <label style="font-size:12px; font-weight:600;">ポイント変倍期間開始：</label>
-          <input type="text" id="mall-rakuten-point-start" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 2026-04-01">
-          <label style="font-size:12px; font-weight:600;">ポイント変倍期間終了：</label>
-          <input type="text" id="mall-rakuten-point-end" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 2026-04-30">
-        </div>
+      <!-- 在庫・配送 -->
+      <div class="rakuten-tab-panel" id="rtab-shipping" style="display:none;">
+        <table class="rms-form">
+          <tr>
+            <th>在庫タイプ<span class="badge-req">必須</span></th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-stock-type" class="rms-input">
+                <option value="1">1: 通常在庫</option>
+                <option value="2">2: 項目選択肢別在庫</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>SKU在庫数</th>
+            <td><span class="src-fixed">固定値</span> 0（初期値。登録後にRMSで変更）</td>
+          </tr>
+          <tr>
+            <th>再入荷お知らせボタン</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-restock-btn" class="rms-input">
+                <option value="0">0: 非表示</option>
+                <option value="1">1: 表示</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>送料</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-shipping-fee" class="rms-input">
+                <option value="0">0: 送料込み（税込価格に含む）</option>
+                <option value="1">1: 送料別</option>
+                <option value="2">2: 送料無料</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>個別送料（税込）</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="number" id="mall-rakuten-indiv-shipping" value="0" min="0" class="rms-input" style="width:100px;"> 円
+            </td>
+          </tr>
+          <tr>
+            <th>配送方法セット管理番号</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-shipping-set" class="rms-input" style="width:200px;" placeholder="例: shipping-001">
+            </td>
+          </tr>
+          <tr>
+            <th>配送方法セット名</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-shipping-name" class="rms-input" style="width:200px;" placeholder="">
+            </td>
+          </tr>
+          <tr>
+            <th>あす楽配送管理番号</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-asuraku" class="rms-input" style="width:200px;" placeholder="">
+            </td>
+          </tr>
+          <tr>
+            <th>納期情報</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-delivery-info" class="rms-input" style="width:260px;" placeholder="例: 1-3営業日以内に発送">
+            </td>
+          </tr>
+          <tr>
+            <th>のし対応</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-noshi" class="rms-input">
+                <option value="0">0: 非対応</option>
+                <option value="1">1: 対応</option>
+              </select>
+            </td>
+          </tr>
+        </table>
       </div>
 
-      <!-- 配送 -->
-      <div class="rakuten-tab-panel master-form-card" id="rtab-shipping" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
-          <label style="font-size:12px; font-weight:600;">送料：</label>
-          <select id="mall-rakuten-shipping-fee" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
-            <option value="0">0: 送料込み（税込価格に含む）</option>
-            <option value="1">1: 送料別</option>
-            <option value="2">2: 送料無料</option>
-          </select>
-          <label style="font-size:12px; font-weight:600;">個別送料（円）：</label>
-          <input type="number" id="mall-rakuten-indiv-shipping" value="0" min="0" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
-          <label style="font-size:12px; font-weight:600;">配送方法セット管理番号：</label>
-          <input type="text" id="mall-rakuten-shipping-set" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: shipping-001">
-          <label style="font-size:12px; font-weight:600;">配送方法セット名：</label>
-          <input type="text" id="mall-rakuten-shipping-name" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="">
-          <label style="font-size:12px; font-weight:600;">あす楽配送管理番号：</label>
-          <input type="text" id="mall-rakuten-asuraku" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="">
-          <label style="font-size:12px; font-weight:600;">納期情報：</label>
-          <input type="text" id="mall-rakuten-delivery-info" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 1-3営業日以内に発送">
-          <label style="font-size:12px; font-weight:600;">のし対応：</label>
-          <select id="mall-rakuten-noshi" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
-            <option value="0">0: 非対応</option>
-            <option value="1">1: 対応</option>
-          </select>
-        </div>
+      <!-- バリエーション -->
+      <div class="rakuten-tab-panel" id="rtab-variation" style="display:none;">
+        <table class="rms-form">
+          <tr>
+            <th>バリエーション項目キー定義<span class="badge-req">必須</span></th>
+            <td><span class="src-auto">自動</span> カラー/サイズの有無から自動設定（horizontal-key | vertical-key）</td>
+          </tr>
+          <tr>
+            <th>バリエーション項目名定義<span class="badge-req">必須</span></th>
+            <td><span class="src-auto">自動</span> 「カラー」「サイズ」を自動設定</td>
+          </tr>
+          <tr>
+            <th>バリエーション1 選択肢定義<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「カラー」列の全選択肢（マスタのカラー表示順でソート）</td>
+          </tr>
+          <tr>
+            <th>バリエーション2 選択肢定義<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「サイズ」列の全選択肢（S→M→L順でソート）</td>
+          </tr>
+          <tr class="rms-section"><td colspan="2">SKU行（カラー×サイズの組み合わせごとに1行）</td></tr>
+          <tr>
+            <th>SKU管理番号<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「JAN」列を使用</td>
+          </tr>
+          <tr>
+            <th>システム連携用SKU番号</th>
+            <td><span class="src-excel">自社Excel</span> 「JAN」列を使用</td>
+          </tr>
+          <tr>
+            <th>バリエーション項目キー1<span class="badge-req">必須</span></th>
+            <td><span class="src-auto">自動</span> horizontal-key</td>
+          </tr>
+          <tr>
+            <th>バリエーション項目選択肢1<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「カラー」列のそのSKUの値</td>
+          </tr>
+          <tr>
+            <th>バリエーション項目キー2<span class="badge-req">必須</span></th>
+            <td><span class="src-auto">自動</span> vertical-key</td>
+          </tr>
+          <tr>
+            <th>バリエーション項目選択肢2<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「サイズ」列のそのSKUの値</td>
+          </tr>
+          <tr>
+            <th>通常購入販売価格<span class="badge-req">必須</span></th>
+            <td><span class="src-excel">自社Excel</span> 「販売金額(税込)」列</td>
+          </tr>
+          <tr>
+            <th>自由入力行（項目）1</th>
+            <td><span class="src-fixed">固定値</span> 「型番」</td>
+          </tr>
+          <tr>
+            <th>自由入力行（値）1</th>
+            <td><span class="src-excel">自社Excel</span> 「JAN」列の値</td>
+          </tr>
+        </table>
       </div>
 
-      <!-- 表示・説明文 -->
-      <div class="rakuten-tab-panel master-form-card" id="rtab-display" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
-          <label style="font-size:12px; font-weight:600;">PC用商品説明文テンプレ：</label>
-          <textarea id="mall-rakuten-pc-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート（{素材}{採寸サイズ}等で置換）"></textarea>
-          <label style="font-size:12px; font-weight:600;">SP用商品説明文テンプレ：</label>
-          <textarea id="mall-rakuten-sp-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート"></textarea>
-          <label style="font-size:12px; font-weight:600;">PC用販売説明文テンプレ：</label>
-          <textarea id="mall-rakuten-sale-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート"></textarea>
-          <label style="font-size:12px; font-weight:600;">商品説明文（置換タグ）：</label>
-          <div style="font-size:11px; color:var(--text-light); line-height:1.8;">
-            使用可能: <code>{商品名}</code> <code>{素材}</code> <code>{採寸サイズ}</code> <code>{商品ポイント}</code> <code>{仕様}</code> <code>{洗濯表記}</code> <code>{販売金額}</code> <code>{商品番号}</code>
-          </div>
-        </div>
+      <!-- 説明文 -->
+      <div class="rakuten-tab-panel" id="rtab-display" style="display:none;">
+        <table class="rms-form">
+          <tr>
+            <th>PC用商品説明文</th>
+            <td>
+              <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
+              <textarea id="mall-rakuten-pc-desc-tpl" class="rms-textarea" placeholder="HTMLテンプレート（置換タグで自社Excelの値を埋め込み）"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <th>スマートフォン用商品説明文</th>
+            <td>
+              <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
+              <textarea id="mall-rakuten-sp-desc-tpl" class="rms-textarea" placeholder="HTMLテンプレート"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <th>PC用販売説明文</th>
+            <td>
+              <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
+              <textarea id="mall-rakuten-sale-desc-tpl" class="rms-textarea" placeholder="HTMLテンプレート"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <th>使用できる置換タグ</th>
+            <td style="font-size:11px; line-height:2;">
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{商品名}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{素材}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{採寸サイズ}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{商品ポイント}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{仕様}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{洗濯表記}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{販売金額}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{商品番号}</code>
+              <br><span style="color:var(--text-light);">↑ 自社Excelの対応列の値で自動置換されます</span>
+            </td>
+          </tr>
+        </table>
       </div>
 
       <!-- 画像 -->
-      <div class="rakuten-tab-panel master-form-card" id="rtab-image" style="display:none;">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
-          <label style="font-size:12px; font-weight:600;">画像キャビネットパス：</label>
-          <input type="text" id="mall-rakuten-img-cabinet" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: /01/">
-          <label style="font-size:12px; font-weight:600;">画像タイプ（デフォルト）：</label>
-          <select id="mall-rakuten-img-type" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
-            <option value="0">0: 商品画像</option>
-            <option value="1">1: 商品説明画像</option>
-          </select>
-        </div>
+      <div class="rakuten-tab-panel" id="rtab-image" style="display:none;">
+        <table class="rms-form">
+          <tr>
+            <th>商品画像</th>
+            <td><span class="src-excel">自社Excel</span> 「画像」列（現在1枚のみ対応）</td>
+          </tr>
+          <tr>
+            <th>画像キャビネットパス</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-img-cabinet" class="rms-input" style="width:200px;" placeholder="例: /01/">
+            </td>
+          </tr>
+          <tr>
+            <th>SKU画像タイプ</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-img-type" class="rms-input">
+                <option value="0">0: 商品画像</option>
+                <option value="1">1: 商品説明画像</option>
+              </select>
+            </td>
+          </tr>
+        </table>
       </div>
 
       <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
@@ -757,7 +924,7 @@ function switchMasterTab(id, el) {
 }
 
 function switchRakutenTab(id, el) {
-  document.querySelectorAll('#master-tabs-rakuten .sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#master-tabs-rakuten .rms-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.rakuten-tab-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   const panel = document.getElementById('rtab-' + id);
