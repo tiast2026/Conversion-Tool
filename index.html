@@ -542,11 +542,11 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
           <tr class="rms-section"><td colspan="2">SKU行（カラー×サイズの組み合わせごとに1行）</td></tr>
           <tr>
             <th>SKU管理番号<span class="badge-req">必須</span></th>
-            <td><span class="src-excel">自社Excel</span> 「JAN」列を使用</td>
+            <td><span class="src-auto">自動</span> 商品番号から親番号を除いた残り（例: -EC-M）</td>
           </tr>
           <tr>
             <th>システム連携用SKU番号</th>
-            <td><span class="src-excel">自社Excel</span> 「JAN」列を使用</td>
+            <td><span class="src-excel">自社Excel</span> 「商品番号」列そのまま（例: nlpt495-2602-EC-M）</td>
           </tr>
           <tr>
             <th>バリエーション項目キー1<span class="badge-req">必須</span></th>
@@ -760,7 +760,7 @@ let MASTER = {
       controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0',
       namePrefix: '', nameSuffix: '',
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
-      shippingFee: '0', indivShipping: 0, shippingSet: '', shippingName: '', asuraku: '', deliveryInfo: '', noshi: '0',
+      shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', asuraku: '', deliveryInfo: '', noshi: '0',
       pcDescTpl: '', spDescTpl: '', saleDescTpl: '',
       imgCabinet: '', imgType: '0'
     },
@@ -1791,8 +1791,13 @@ function convertToRakuten() {
         const sRow = new Array(rH.length).fill('');
         sRow[RI['コントロールカラム']] = rm.controlCol || 'n';
         sRow[RI['商品管理番号（商品URL）']] = prod.number;
-        sRow[RI['SKU管理番号']] = sku.skuMgmtNo || sku.jan;
-        sRow[RI['システム連携用SKU番号']] = sku.jan || sku.skuMgmtNo;
+        // SKU管理番号: 商品番号から親番号を引いた残り（例: nlpt495-2602-EC-M → -EC-M）
+        const skuSuffix = (sku.skuMgmtNo && prod.number && sku.skuMgmtNo.startsWith(prod.number))
+          ? sku.skuMgmtNo.substring(prod.number.length)
+          : (sku.skuMgmtNo || sku.jan);
+        sRow[RI['SKU管理番号']] = skuSuffix;
+        // システム連携用SKU番号: 親番号 + サフィックス（例: nlpt495-2602-EC-M）
+        sRow[RI['システム連携用SKU番号']] = sku.skuMgmtNo || (prod.number + skuSuffix);
         if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'horizontal-key'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
         if (hasSize) { sRow[RI['バリエーション項目キー2']] = 'vertical-key'; sRow[RI['バリエーション項目選択肢2']] = sku.size; }
         sRow[RI['通常購入販売価格']] = sku.price || prod.sellPrice;
