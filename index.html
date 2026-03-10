@@ -99,6 +99,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .tab:hover { color: var(--primary-dark); }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
+.master-mall-panel { display: none; }
+.master-mall-panel.active { display: block; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
 .master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
@@ -224,52 +226,155 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
 <!-- MASTER MODAL -->
 <div id="master-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100;">
-  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; width:90%; max-width:900px; max-height:85vh; overflow:auto; padding:24px;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; width:90%; max-width:960px; max-height:85vh; overflow:auto; padding:24px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h2 style="font-size:17px; color:var(--primary-dark);">マスタ設定</h2>
+      <h2 style="font-size:17px; color:var(--primary-dark);">マスタ設定（モール別）</h2>
       <button class="btn btn-sm btn-outline" onclick="closeMaster()">✕ 閉じる</button>
     </div>
-    <div class="tabs" id="master-tabs">
-      <div class="tab active" onclick="switchMasterTab('color-order', this)">カラー表示順</div>
-      <div class="tab" onclick="switchMasterTab('name-clean', this)">商品名クリーニング</div>
-      <div class="tab" onclick="switchMasterTab('price-rule', this)">価格設定</div>
-      <div class="tab" onclick="switchMasterTab('delete-tpl', this)">削除テンプレート</div>
+    <!-- モール選択タブ -->
+    <div class="tabs" id="master-mall-tabs" style="margin-bottom:0; border-bottom:2px solid var(--primary);">
+      <div class="tab active" onclick="switchMasterMall('common', this)" style="font-weight:700;">共通</div>
+      <div class="tab" onclick="switchMasterMall('rakuten', this)">楽天</div>
+      <div class="tab" onclick="switchMasterMall('shopline', this)">SHOPLINE</div>
+      <div class="tab" onclick="switchMasterMall('yahoo', this)">Yahoo!</div>
+      <div class="tab" onclick="switchMasterMall('amazon', this)">Amazon</div>
+      <div class="tab" onclick="switchMasterMall('qoo10', this)">Qoo10</div>
     </div>
-    <div class="tab-panel active" id="tab-color-order">
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
-      <textarea id="master-color-order" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999"></textarea>
-      <div style="margin-top:8px; display:flex; gap:8px;">
-        <button class="btn btn-sm btn-primary" onclick="saveMaster('colorOrder')">保存</button>
-        <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
+
+    <!-- 共通設定 -->
+    <div class="master-mall-panel active" id="mall-common" style="padding-top:16px;">
+      <div class="tabs" id="master-tabs-common">
+        <div class="tab active" onclick="switchMasterTab('color-order', this)">カラー表示順</div>
+        <div class="tab" onclick="switchMasterTab('name-clean', this)">商品名クリーニング</div>
+        <div class="tab" onclick="switchMasterTab('delete-tpl', this)">削除テンプレート</div>
+      </div>
+      <div class="tab-panel active" id="tab-color-order">
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
+        <textarea id="master-color-order" style="width:100%; height:260px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999"></textarea>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button class="btn btn-sm btn-primary" onclick="saveMaster('colorOrder')">保存</button>
+          <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-name-clean">
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
+        <textarea id="master-name-clean" style="width:100%; height:260px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="《[^》]*》&#10;【メール便】"></textarea>
+        <div style="margin-top:8px;">
+          <button class="btn btn-sm btn-primary" onclick="saveMaster('nameClean')">保存</button>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-delete-tpl">
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">PC用販売説明文から削除するHTMLブロック（コメントタグ基準）を1行ずつ記入してください。</p>
+        <textarea id="master-delete-tpl" style="width:100%; height:260px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="&lt;!--配送について--&gt;&#10;&lt;!--ご注意--&gt;&#10;&lt;!--レビューを書いて--&gt;"></textarea>
+        <div style="margin-top:8px;">
+          <button class="btn btn-sm btn-primary" onclick="saveMaster('deleteTpl')">保存</button>
+        </div>
       </div>
     </div>
-    <div class="tab-panel" id="tab-name-clean">
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
-      <textarea id="master-name-clean" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="《[^》]*》&#10;【メール便】"></textarea>
-      <div style="margin-top:8px;">
-        <button class="btn btn-sm btn-primary" onclick="saveMaster('nameClean')">保存</button>
-      </div>
-    </div>
-    <div class="tab-panel" id="tab-price-rule">
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">デフォルト掛率（定価計算用）とモール別の価格調整を設定します。</p>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:400px;">
+
+    <!-- モール別設定（テンプレート：各モール共通構造） -->
+    <div class="master-mall-panel" id="mall-rakuten" style="display:none; padding-top:16px;">
+      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">楽天 固有設定</h3>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
         <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
-        <input type="number" id="master-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
-        <label style="font-size:12px; font-weight:600;">楽天税込：</label>
-        <select id="master-tax" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+        <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:12px; font-weight:600;">税込設定：</label>
+        <select id="mall-rakuten-tax" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
           <option value="1">税込み</option>
           <option value="0">税抜き</option>
         </select>
+        <label style="font-size:12px; font-weight:600;">カタログIDなしの理由：</label>
+        <select id="mall-rakuten-catalog-reason" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+          <option value="3">該当なし</option>
+          <option value="1">JANなし</option>
+          <option value="2">セット商品</option>
+        </select>
       </div>
-      <div style="margin-top:10px;">
-        <button class="btn btn-sm btn-primary" onclick="saveMaster('priceRule')">保存</button>
+      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名に追加するプレフィックス・サフィックス</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <input type="text" id="mall-rakuten-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 【送料無料】">
+        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <input type="text" id="mall-rakuten-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: ◆レディース">
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('rakuten')">保存</button>
       </div>
     </div>
-    <div class="tab-panel" id="tab-delete-tpl">
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">PC用販売説明文から削除するHTMLブロック（コメントタグ基準）を1行ずつ記入してください。</p>
-      <textarea id="master-delete-tpl" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="&lt;!--配送について--&gt;&#10;&lt;!--ご注意--&gt;&#10;&lt;!--レビューを書いて--&gt;"></textarea>
-      <div style="margin-top:8px;">
-        <button class="btn btn-sm btn-primary" onclick="saveMaster('deleteTpl')">保存</button>
+
+    <div class="master-mall-panel" id="mall-shopline" style="display:none; padding-top:16px;">
+      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">SHOPLINE 固有設定</h3>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
+        <input type="number" id="mall-shopline-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:12px; font-weight:600;">デフォルト在庫数：</label>
+        <input type="number" id="mall-shopline-default-stock" value="0" min="0" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+      </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <input type="text" id="mall-shopline-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <input type="text" id="mall-shopline-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('shopline')">保存</button>
+      </div>
+    </div>
+
+    <div class="master-mall-panel" id="mall-yahoo" style="display:none; padding-top:16px;">
+      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">Yahoo! 固有設定</h3>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
+        <input type="number" id="mall-yahoo-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+      </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <input type="text" id="mall-yahoo-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <input type="text" id="mall-yahoo-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('yahoo')">保存</button>
+      </div>
+    </div>
+
+    <div class="master-mall-panel" id="mall-amazon" style="display:none; padding-top:16px;">
+      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">Amazon 固有設定</h3>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
+        <input type="number" id="mall-amazon-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:12px; font-weight:600;">ブランド名：</label>
+        <input type="text" id="mall-amazon-brand" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+      </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <input type="text" id="mall-amazon-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <input type="text" id="mall-amazon-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('amazon')">保存</button>
+      </div>
+    </div>
+
+    <div class="master-mall-panel" id="mall-qoo10" style="display:none; padding-top:16px;">
+      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">Qoo10 固有設定</h3>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
+        <input type="number" id="mall-qoo10-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+      </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
+        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <input type="text" id="mall-qoo10-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <input type="text" id="mall-qoo10-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('qoo10')">保存</button>
       </div>
     </div>
   </div>
@@ -286,8 +391,14 @@ let products = [];
 let editedFields = {};
 let CI = {};
 let MASTER = {
-  colorOrder: {}, nameCleanPatterns: [],
-  priceRate: 40, taxType: 1, deleteTemplates: []
+  colorOrder: {}, nameCleanPatterns: [], deleteTemplates: [],
+  malls: {
+    rakuten:  { priceRate: 40, taxType: 1, catalogReason: '3', namePrefix: '', nameSuffix: '' },
+    shopline: { priceRate: 100, defaultStock: 0, namePrefix: '', nameSuffix: '' },
+    yahoo:    { priceRate: 40, namePrefix: '', nameSuffix: '' },
+    amazon:   { priceRate: 100, brand: '', namePrefix: '', nameSuffix: '' },
+    qoo10:    { priceRate: 100, namePrefix: '', nameSuffix: '' }
+  }
 };
 
 // ============================================================
@@ -338,9 +449,16 @@ const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レ
       const d = JSON.parse(saved);
       if (d.colorOrder) MASTER.colorOrder = d.colorOrder;
       if (d.nameCleanPatterns) MASTER.nameCleanPatterns = d.nameCleanPatterns;
-      if (d.priceRate) MASTER.priceRate = d.priceRate;
-      if (d.taxType !== undefined) MASTER.taxType = d.taxType;
       if (d.deleteTemplates) MASTER.deleteTemplates = d.deleteTemplates;
+      // モール別設定の復元
+      if (d.malls) {
+        Object.keys(d.malls).forEach(mall => {
+          if (MASTER.malls[mall]) Object.assign(MASTER.malls[mall], d.malls[mall]);
+        });
+      }
+      // 旧形式からの移行
+      if (d.priceRate && !d.malls) MASTER.malls.rakuten.priceRate = d.priceRate;
+      if (d.taxType !== undefined && !d.malls) MASTER.malls.rakuten.taxType = d.taxType;
     }
   } catch(e) {}
   if (Object.keys(MASTER.colorOrder).length === 0) {
@@ -370,22 +488,48 @@ function parseColorOrderText(text) {
 // ============================================================
 function openMaster() {
   document.getElementById('master-modal').style.display = 'block';
+  // 共通設定を読み込み
   const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
   document.getElementById('master-color-order').value = co;
   document.getElementById('master-name-clean').value = MASTER.nameCleanPatterns.join('\n');
-  document.getElementById('master-price-rate').value = MASTER.priceRate;
-  document.getElementById('master-tax').value = String(MASTER.taxType);
   document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
+  // モール別設定を読み込み
+  loadMallMasterUI('rakuten');
+  loadMallMasterUI('shopline');
+  loadMallMasterUI('yahoo');
+  loadMallMasterUI('amazon');
+  loadMallMasterUI('qoo10');
+}
+
+function loadMallMasterUI(mall) {
+  const m = MASTER.malls[mall] || {};
+  const el = (id) => document.getElementById(id);
+  if (el(`mall-${mall}-price-rate`)) el(`mall-${mall}-price-rate`).value = m.priceRate || 100;
+  if (el(`mall-${mall}-tax`)) el(`mall-${mall}-tax`).value = String(m.taxType || 0);
+  if (el(`mall-${mall}-catalog-reason`)) el(`mall-${mall}-catalog-reason`).value = m.catalogReason || '3';
+  if (el(`mall-${mall}-default-stock`)) el(`mall-${mall}-default-stock`).value = m.defaultStock || 0;
+  if (el(`mall-${mall}-brand`)) el(`mall-${mall}-brand`).value = m.brand || '';
+  if (el(`mall-${mall}-name-prefix`)) el(`mall-${mall}-name-prefix`).value = m.namePrefix || '';
+  if (el(`mall-${mall}-name-suffix`)) el(`mall-${mall}-name-suffix`).value = m.nameSuffix || '';
 }
 
 function closeMaster() {
   document.getElementById('master-modal').style.display = 'none';
 }
 
-function switchMasterTab(id, el) {
-  document.querySelectorAll('#master-tabs .tab').forEach(t => t.classList.remove('active'));
+function switchMasterMall(mallId, el) {
+  document.querySelectorAll('#master-mall-tabs .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.master-mall-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
+  const panel = document.getElementById('mall-' + mallId);
+  if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
+}
+
+function switchMasterTab(id, el) {
+  const container = el.closest('.master-mall-panel') || document;
+  container.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
 }
 
@@ -394,19 +538,47 @@ function saveMaster(which) {
     MASTER.colorOrder = parseColorOrderText(document.getElementById('master-color-order').value);
   } else if (which === 'nameClean') {
     MASTER.nameCleanPatterns = document.getElementById('master-name-clean').value.split('\n').filter(l => l.trim());
-  } else if (which === 'priceRule') {
-    MASTER.priceRate = parseInt(document.getElementById('master-price-rate').value) || 40;
-    MASTER.taxType = parseInt(document.getElementById('master-tax').value);
   } else if (which === 'deleteTpl') {
     MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  notify(`マスタ「${which}」を保存しました`, 'success');
+  notify(`共通マスタ「${which}」を保存しました`, 'success');
+}
+
+function saveMallMaster(mall) {
+  const m = MASTER.malls[mall];
+  const el = (id) => document.getElementById(id);
+  if (el(`mall-${mall}-price-rate`)) m.priceRate = parseInt(el(`mall-${mall}-price-rate`).value) || 100;
+  if (el(`mall-${mall}-tax`)) m.taxType = parseInt(el(`mall-${mall}-tax`).value);
+  if (el(`mall-${mall}-catalog-reason`)) m.catalogReason = el(`mall-${mall}-catalog-reason`).value;
+  if (el(`mall-${mall}-default-stock`)) m.defaultStock = parseInt(el(`mall-${mall}-default-stock`).value) || 0;
+  if (el(`mall-${mall}-brand`)) m.brand = el(`mall-${mall}-brand`).value.trim();
+  if (el(`mall-${mall}-name-prefix`)) m.namePrefix = el(`mall-${mall}-name-prefix`).value;
+  if (el(`mall-${mall}-name-suffix`)) m.nameSuffix = el(`mall-${mall}-name-suffix`).value;
+  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
+  const mallNames = { rakuten:'楽天', shopline:'SHOPLINE', yahoo:'Yahoo!', amazon:'Amazon', qoo10:'Qoo10' };
+  notify(`${mallNames[mall] || mall}のマスタを保存しました`, 'success');
 }
 
 function loadDefaultColorOrder() {
   document.getElementById('master-color-order').value = DEFAULT_COLOR_ORDER;
   notify('デフォルトのカラー表示順を読み込みました', 'info');
+}
+
+// モール別の商品名加工
+function applyMallName(name, mallKey) {
+  const m = MASTER.malls[mallKey];
+  if (!m) return name;
+  return (m.namePrefix || '') + name + (m.nameSuffix || '');
+}
+
+// モール別の価格計算
+function calcMallPrice(basePrice, mallKey) {
+  const m = MASTER.malls[mallKey];
+  if (!m || !m.priceRate || m.priceRate === 100) return basePrice;
+  const p = parseInt(basePrice);
+  if (!p || isNaN(p)) return basePrice;
+  return String(Math.round(p * m.priceRate / 100));
 }
 
 // ============================================================
@@ -427,10 +599,11 @@ function cleanProductName(name) {
 // ============================================================
 // PRICE CALCULATION
 // ============================================================
-function calcListPrice(sellPrice) {
+function calcListPrice(sellPrice, mallKey) {
   const p = parseInt(sellPrice);
   if (!p || isNaN(p)) return '';
-  return Math.round(p / (MASTER.priceRate / 100));
+  const rate = (mallKey && MASTER.malls[mallKey]) ? MASTER.malls[mallKey].priceRate : 40;
+  return Math.round(p / (rate / 100));
 }
 
 // ============================================================
@@ -723,7 +896,7 @@ function structureJisha() {
     const productNo = col(row, '商品番号');
     const colorVal = col(row, 'カラー');
     const swatchVal = col(row, 'スウォッチ');
-    const sizeVal = col(row, '自社限定サイズ');
+    const sizeVal = col(row, 'スウォッチ'); // L列＝スウォッチ列がサイズ
     if (productName && productName.trim()) {
       currentProduct = {
         rowIndex: r,
@@ -758,12 +931,18 @@ function structureJisha() {
     } else if (currentProduct && (colorVal || swatchVal || sizeVal)) {
       const skuProductNo = col(row, '商品番号');
       const janCode = col(row, 'JAN');
-      let skuSize = sizeVal;
-      if (!skuSize) {
-        // Check if size info is in スウォッチ column (based on template pattern)
-        const swVal = col(row, 'スウォッチ');
-        if (swVal && (swVal === 'M' || swVal === 'L' || swVal === 'S' || swVal === 'F' || swVal === 'XL' || swVal === 'XXL' || swVal.match(/^(F\(M\)|フリー|FREE)/i))) {
-          skuSize = swVal;
+      // 商品番号をSKU商品番号から導出: nlpt495-2602-EC-M → nlpt495-2602
+      if (skuProductNo && !currentProduct.number) {
+        const parts = skuProductNo.split('-');
+        if (parts.length >= 2) currentProduct.number = parts.slice(0, 2).join('-');
+        currentProduct.id = currentProduct.number;
+      }
+      if (skuProductNo && currentProduct.number === col(currentProduct.raw, '商品番号')) {
+        // 親行の商品番号がまだ元のままなら、SKUから導出した番号で上書き
+        const parts = skuProductNo.split('-');
+        if (parts.length >= 2) {
+          currentProduct.number = parts.slice(0, 2).join('-');
+          currentProduct.id = currentProduct.number;
         }
       }
       const sku = {
@@ -774,8 +953,8 @@ function structureJisha() {
         jan: janCode || '',
         color: colorVal || '',
         swatch: swatchVal || '',
-        size: skuSize || '',
-        price: col(row, '販売金額') || currentProduct.sellPrice || '',
+        size: sizeVal || '',  // L列（スウォッチ）＝サイズ
+        price: currentProduct.sellPrice || '',  // 販売金額は親行のR列をそのまま使用
         variants: [],
         customFields: [],
         raw: row
@@ -839,7 +1018,6 @@ function renderCardView() {
         ['素材', 'material', prod.material],
         ['仕入金額', 'costPrice', prod.costPrice],
         ['販売金額', 'sellPrice', prod.sellPrice],
-        ['定価(掛率' + MASTER.priceRate + '%)', '_listPrice', calcListPrice(prod.sellPrice)],
         ['販売期間', '_period', (prod.saleStartDate || '') + ' ～ ' + (prod.saleEndDate || '')],
         ['配送方法', 'shippingMethod', prod.shippingMethod],
         ['担当者', '_assignee', prod.assignee],
@@ -862,7 +1040,7 @@ function renderCardView() {
         ['キャッチコピー', 'catchCopy', prod.catchCopy],
         ['バリエーション定義', '_varDef', prod.varDef.names + ' → ' + prod.varDef.options.join(' | ')],
         ['販売価格', '_price', prod.skus.length > 0 ? prod.skus[0].price : ''],
-        ['定価(掛率' + MASTER.priceRate + '%)', '_listPrice', prod.skus.length > 0 ? calcListPrice(prod.skus[0].price) : ''],
+        ['定価(掛率' + MASTER.malls.rakuten.priceRate + '%)', '_listPrice', prod.skus.length > 0 ? calcListPrice(prod.skus[0].price, 'rakuten') : ''],
       ];
       fields.forEach(([label, key, value]) => {
         const editable = !key.startsWith('_');
@@ -1114,7 +1292,7 @@ function convertToRakuten() {
       const pRow = new Array(rH.length).fill('');
       pRow[0] = prod.number;  // 商品管理番号
       pRow[1] = prod.number;  // 商品番号
-      pRow[2] = prod.cleanName || prod.name;  // 商品名
+      pRow[2] = applyMallName(prod.cleanName || prod.name, 'rakuten');  // 商品名
       pRow[4] = '';  // キャッチコピー
       // バリエーション定義
       const keyParts = [];
@@ -1148,7 +1326,7 @@ function convertToRakuten() {
         if (hasColor) { sRow[14] = 'horizontal-key'; sRow[15] = sku.color; }
         if (hasSize) { sRow[16] = 'vertical-key'; sRow[17] = sku.size; }
         sRow[18] = sku.price || prod.sellPrice;  // 通常購入販売価格
-        sRow[19] = '3';  // カタログIDなしの理由
+        sRow[19] = MASTER.malls.rakuten.catalogReason || '3';  // カタログIDなしの理由
         sRow[20] = '型番';
         sRow[21] = sku.jan || sku.skuMgmtNo;
         rows.push(sRow);
@@ -1167,7 +1345,7 @@ function convertToRakuten() {
       const pRow = new Array(rH.length).fill('');
       pRow[0] = prod.id.replace(/-/g, '');
       pRow[1] = prod.spu || pRow[0];
-      pRow[2] = prod.name;
+      pRow[2] = applyMallName(prod.name, 'rakuten');
       pRow[4] = prod.subtitle || '';
       pRow[5] = prod.description || '';
       pRow[8] = optKeys.map((_, i) => `key${i+1}`).join('|');
@@ -1211,7 +1389,7 @@ function convertToShopline() {
       const r = new Array(slH.length).fill('');
       r[SL['Handle']] = handle;
       if (si === 0) {
-        r[SL['Title*']] = pName;
+        r[SL['Title*']] = applyMallName(pName, 'shopline');
         r[SL['Subtitle']] = isRakuten ? (prod.catchCopy || '') : '';
         r[SL['Product description html']] = isRakuten ? (prod.pcDesc || '') : '';
         r[SL['SPU']] = prod.number || '';
@@ -1290,8 +1468,8 @@ function convertToYahoo() {
     }
     const basePrice = (sourceType === 'jisha') ? prod.sellPrice : (prod.skus.length > 0 ? prod.skus[0].price : '');
     const r = new Array(yH.length).fill('');
-    r[1] = name; r[2] = code;
-    r[4] = calcListPrice(basePrice) || basePrice;
+    r[1] = applyMallName(name, 'yahoo'); r[2] = code;
+    r[4] = calcListPrice(basePrice, 'yahoo') || basePrice;
     r[5] = basePrice;
     r[7] = optStr;
     r[8] = (sourceType === 'rakuten') ? prod.catchCopy : '';
@@ -1316,7 +1494,9 @@ function convertToAmazon() {
     if (sourceType === 'rakuten' && prod.images.length > 0) mainImg = buildRakutenImgUrl(prod.images[0].path);
     else if (prod.images.length > 0) mainImg = prod.images[0].url || '';
     const pR = new Array(aH.length).fill('');
-    pR[0] = parentSku; pR[1] = name; pR[4] = ''; pR[5] = '';
+    const amazonName = applyMallName(name, 'amazon');
+    const amazonBrand = MASTER.malls.amazon.brand || '';
+    pR[0] = parentSku; pR[1] = amazonName; pR[4] = amazonBrand; pR[5] = amazonBrand;
     pR[7] = mainImg; pR[11] = 'parent'; pR[14] = 'ColorSize'; pR[19] = desc;
     rows.push(pR);
     prod.skus.forEach(sku => {
@@ -1328,7 +1508,7 @@ function convertToAmazon() {
       } else {
         cR[0] = sku.skuId;
       }
-      cR[1] = name; cR[4] = ''; cR[5] = '';
+      cR[1] = amazonName; cR[4] = amazonBrand; cR[5] = amazonBrand;
       cR[11] = 'child'; cR[12] = parentSku; cR[13] = 'Variation'; cR[14] = 'ColorSize';
       if (sourceType === 'jisha') {
         cR[15] = sku.color || ''; cR[16] = sku.size || '';
@@ -1371,7 +1551,7 @@ function convertToQoo10() {
     if (sourceType === 'rakuten' && prod.images.length > 0) imgUrl = buildRakutenImgUrl(prod.images[0].path);
     else if (prod.images.length > 0) imgUrl = prod.images[0].url || '';
     const r = new Array(qH.length).fill('');
-    r[0] = 'I'; r[1] = code; r[2] = name; r[3] = price; r[4] = '0';
+    r[0] = 'I'; r[1] = code; r[2] = applyMallName(name, 'qoo10'); r[3] = price; r[4] = '0';
     r[7] = (sourceType === 'rakuten') ? prod.catchCopy : '';
     r[8] = desc || ''; r[9] = imgUrl;
     r[10] = prod.skus.length > 1 ? 'Y' : 'N';
