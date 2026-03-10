@@ -1366,8 +1366,8 @@ function structureJisha() {
         customFields: [],
         raw: row
       };
-      if (sku.color) sku.variants.push({ key: 'horizontal-key', value: sku.color });
-      if (sku.size) sku.variants.push({ key: 'vertical-key', value: sku.size });
+      if (sku.color) sku.variants.push({ key: 'カラー', value: sku.color });
+      if (sku.size) sku.variants.push({ key: 'サイズ', value: sku.size });
       if (janCode) sku.customFields.push({ label: '型番', value: janCode });
       currentProduct.skus.push(sku);
     }
@@ -1767,8 +1767,8 @@ function convertToRakuten() {
       // バリエーション定義
       const keyParts = [];
       const nameParts = [];
-      if (hasColor) { keyParts.push('horizontal-key'); nameParts.push('カラー'); }
-      if (hasSize) { keyParts.push('vertical-key'); nameParts.push('サイズ'); }
+      if (hasColor) { keyParts.push('カラー'); nameParts.push('カラー'); }
+      if (hasSize) { keyParts.push('サイズ'); nameParts.push('サイズ'); }
       pRow[RI['バリエーション項目キー定義']] = keyParts.join('|');
       pRow[RI['バリエーション項目名定義']] = nameParts.join('|');
       if (hasColor) {
@@ -1795,8 +1795,8 @@ function convertToRakuten() {
         sRow[RI['SKU管理番号']] = skuSuffix;
         // システム連携用SKU番号: 親番号 + サフィックス（例: nlpt495-2602-EC-M）
         sRow[RI['システム連携用SKU番号']] = sku.skuMgmtNo || (prod.number + skuSuffix);
-        if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'horizontal-key'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
-        if (hasSize) { sRow[RI['バリエーション項目キー2']] = 'vertical-key'; sRow[RI['バリエーション項目選択肢2']] = sku.size; }
+        if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'カラー'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
+        if (hasSize) { sRow[RI['バリエーション項目キー2']] = 'サイズ'; sRow[RI['バリエーション項目選択肢2']] = sku.size; }
         sRow[RI['通常購入販売価格']] = sku.price || prod.sellPrice;
         sRow[RI['SKU在庫数']] = '0';
         sRow[RI['カタログIDなしの理由']] = rm.catalogReason || '3';
@@ -1986,8 +1986,8 @@ function convertToAmazon() {
       if (sourceType === 'jisha') {
         cR[15] = sku.color || ''; cR[16] = sku.size || '';
       } else if (sourceType === 'rakuten') {
-        const hVar = sku.variants.find(v => v.key === 'horizontal-key');
-        const vVar = sku.variants.find(v => v.key === 'vertical-key');
+        const hVar = sku.variants.find(v => v.key === 'カラー');
+        const vVar = sku.variants.find(v => v.key === 'サイズ');
         cR[15] = hVar ? hVar.value : ''; cR[16] = vVar ? vVar.value : '';
       } else {
         cR[15] = sku.options[0]?.value || ''; cR[16] = sku.options[1]?.value || '';
