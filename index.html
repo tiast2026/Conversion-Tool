@@ -178,7 +178,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       <span class="step-number">2</span><span class="step-label">確認・編集</span>
     </div>
     <div class="step" data-step="3" onclick="goToStep(3)">
-      <span class="step-number">3</span><span class="step-label">ダウンロード</span>
+      <span class="step-number">3</span><span class="step-label">アップロード確認</span>
+    </div>
+    <div class="step" data-step="4" onclick="goToStep(4)">
+      <span class="step-number">4</span><span class="step-label">ダウンロード</span>
     </div>
   </div>
 
@@ -231,33 +234,35 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       <div style="display:flex; gap:6px;">
         <button class="btn btn-outline btn-sm" onclick="expandAll()">すべて展開</button>
         <button class="btn btn-outline btn-sm" onclick="collapseAll()">すべて閉じる</button>
-        <button class="btn btn-primary btn-sm" id="btn-convert-preview" style="display:none;" onclick="showConvertPreview()">楽天に変換して確認</button>
       </div>
     </div>
     <div id="card-view" class="product-cards"></div>
     <div id="table-view" class="table-wrapper" style="display:none; max-height:600px; overflow:auto;"></div>
-    <!-- 変換プレビュー -->
-    <div id="convert-preview" style="display:none; margin-top:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="font-size:16px; color:var(--primary-dark); margin:0;">楽天CSV 変換プレビュー</h3>
-        <button class="btn btn-outline btn-sm" onclick="hideConvertPreview()">プレビューを閉じる</button>
-      </div>
-      <div id="convert-preview-content"></div>
-    </div>
     <div class="actions">
       <button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>
-      <button class="btn btn-primary" onclick="goToStep(3)">ダウンロードへ →</button>
+      <button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>
     </div>
   </div>
 
-  <!-- STEP 3 -->
+  <!-- STEP 3: アップロード確認 (楽天RMS風プレビュー) -->
   <div class="panel" id="panel-3">
+    <h2>アップロード確認</h2>
+    <p class="desc">楽天RMS形式に変換した結果を確認できます。問題なければダウンロードへ進んでください。</p>
+    <div id="rms-preview-container"></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="goToStep(2)">← 編集に戻る</button>
+      <button class="btn btn-primary" onclick="goToStep(4)">ダウンロードへ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="panel" id="panel-4">
     <h2>モール別CSVをダウンロード</h2>
     <p class="desc">変換先のモールを選んでCSVをダウンロードしてください。マスタ設定とインライン編集が反映されます。</p>
     <div id="summary-cards-dl" class="summary-cards"></div>
     <div class="download-grid" id="download-grid"></div>
     <div class="actions">
-      <button class="btn btn-outline" onclick="goToStep(2)">← 編集に戻る</button>
+      <button class="btn btn-outline" onclick="goToStep(3)">← 確認に戻る</button>
     </div>
   </div>
 </div>
@@ -1393,59 +1398,160 @@ function buildRakutenImgUrl(imgPath) {
 }
 
 // ============================================================
-// CONVERT PREVIEW (楽天変換プレビュー)
+// STEP 3: RMS風アップロード確認プレビュー
 // ============================================================
-function showConvertPreview() {
+function renderRmsPreview() {
+  const container = document.getElementById('rms-preview-container');
+  if (!container) return;
   const result = convertToRakuten();
-  if (!result || !result.headers || !result.rows || result.rows.length === 0) {
-    alert('変換データがありません。');
+  if (!result || !result.rows || result.rows.length === 0) {
+    container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">変換データがありません。</p>';
     return;
   }
   const rH = result.headers;
   const rows = result.rows;
-  // 主要な列だけをプレビュー表示（全列は多すぎるため）
-  const keyColumns = [
-    'コントロールカラム','商品管理番号（商品URL）','商品番号','商品名','販売価格',
-    'キャッチコピー','在庫タイプ','SKU管理番号',
-    'バリエーション項目キー1','バリエーション項目選択肢1',
-    'バリエーション項目キー2','バリエーション項目選択肢2',
-    '通常購入販売価格','SKU在庫数','カタログIDなしの理由'
-  ];
-  const colIndices = [];
-  const displayHeaders = [];
-  keyColumns.forEach(col => {
-    const idx = rH.indexOf(col);
-    if (idx !== -1) { colIndices.push(idx); displayHeaders.push(col); }
+  const RI = {};
+  rH.forEach((h, i) => RI[h] = i);
+
+  // 商品行とSKU行をグルーピング
+  const grouped = [];
+  let current = null;
+  rows.forEach(row => {
+    const prodName = row[RI['商品名']];
+    const skuMgmt = row[RI['SKU管理番号']];
+    const prodUrl = row[RI['商品管理番号（商品URL）']];
+    // 商品名がある行 = 商品行
+    if (prodName && prodName.trim()) {
+      current = { row, skuRows: [], prodUrl };
+      grouped.push(current);
+    } else if (current && skuMgmt) {
+      current.skuRows.push(row);
+    }
   });
 
-  let html = '<div style="font-size:12px; color:#888; margin-bottom:8px;">主要列のみ表示（全' + rH.length + '列中' + displayHeaders.length + '列）。ダウンロード時は全列が出力されます。</div>';
-  html += '<div class="table-wrapper" style="max-height:500px; overflow:auto;">';
-  html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
-  html += '<thead><tr>';
-  displayHeaders.forEach(h => {
-    html += '<th style="background:var(--primary-dark); color:white; padding:6px 10px; position:sticky; top:0; white-space:nowrap; font-weight:600; font-size:11px;">' + esc(h) + '</th>';
-  });
-  html += '</tr></thead><tbody>';
-  rows.forEach((row, ri) => {
-    const bg = ri % 2 === 0 ? '#fff' : '#faf8f5';
-    html += '<tr style="background:' + bg + ';">';
-    colIndices.forEach(ci => {
-      let val = (row[ci] != null) ? String(row[ci]) : '';
-      // 長すぎるセルは省略
-      const displayVal = val.length > 80 ? val.substring(0, 80) + '…' : val;
-      html += '<td style="padding:5px 8px; border-bottom:1px solid #eee; white-space:nowrap; max-width:250px; overflow:hidden; text-overflow:ellipsis;" title="' + esc(val) + '">' + esc(displayVal) + '</td>';
+  let html = '';
+  html += '<div style="font-size:12px; color:#888; margin-bottom:12px;">楽天RMS「商品一括編集」風に変換結果を表示しています（' + grouped.length + '商品）</div>';
+
+  grouped.forEach((g, gi) => {
+    const r = g.row;
+    const prodName = r[RI['商品名']] || '';
+    const prodNo = r[RI['商品番号']] || '';
+    const prodUrl = r[RI['商品管理番号（商品URL）']] || '';
+    const price = r[RI['販売価格']] || '';
+    const displayPrice = r[RI['表示価格']] || '';
+    const genreId = r[RI['ジャンルID']] || '';
+    const catchCopy = r[RI['キャッチコピー']] || '';
+    const stockType = r[RI['在庫タイプ']] || '';
+    const controlCol = r[RI['コントロールカラム']] || '';
+    const pcDesc = r[RI['PC用商品説明文']] || '';
+    const spDesc = r[RI['スマートフォン用商品説明文']] || '';
+    const saleDesc = r[RI['PC用販売説明文']] || '';
+    const varKeyDef = r[RI['バリエーション項目キー定義']] || '';
+    const varNameDef = r[RI['バリエーション項目名定義']] || '';
+    const var1Def = r[RI['バリエーション1選択肢定義']] || '';
+    const var2Def = r[RI['バリエーション2選択肢定義']] || '';
+    const pointRate = r[RI['ポイント変倍率']] || '';
+    const shippingSet = r[RI['配送方法セット管理番号']] || '';
+    const catalogReason = r[RI['カタログIDなしの理由']] || '';
+
+    // RMS風カード
+    html += '<div style="border:1px solid #d4c5b0; border-radius:8px; margin-bottom:20px; overflow:hidden; background:#fff;">';
+
+    // ヘッダー（RMS赤バー風）
+    html += '<div style="background:#bf0000; color:white; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">';
+    html += '<div style="font-weight:700; font-size:14px;">' + esc(prodName) + '</div>';
+    html += '<div style="display:flex; gap:10px; font-size:11px;">';
+    html += '<span style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">商品番号: ' + esc(prodNo) + '</span>';
+    html += '<span style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">SKU: ' + g.skuRows.length + '</span>';
+    html += '<span style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">制御: ' + esc(controlCol) + '</span>';
+    html += '</div></div>';
+
+    // 基本情報テーブル
+    html += '<div style="padding:12px 16px;">';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    const infoRows = [
+      ['商品管理番号（URL）', prodUrl],
+      ['販売価格', price ? '¥' + Number(price).toLocaleString() : ''],
+      ['表示価格', displayPrice ? '¥' + Number(displayPrice).toLocaleString() : ''],
+      ['ジャンルID', genreId],
+      ['キャッチコピー', catchCopy],
+      ['在庫タイプ', stockType === '1' ? '1（通常在庫）' : stockType],
+      ['配送方法セット管理番号', shippingSet],
+      ['ポイント変倍率', pointRate],
+      ['カタログIDなしの理由', catalogReason === '3' ? '3（JANコードなし）' : catalogReason],
+    ];
+    infoRows.forEach(([label, val]) => {
+      if (!val) return;
+      html += '<tr><td style="padding:5px 10px; background:#faf5ef; border:1px solid #ede5d8; font-weight:600; color:#5a4a3a; width:220px; white-space:nowrap;">' + esc(label) + '</td>';
+      html += '<td style="padding:5px 10px; border:1px solid #ede5d8;">' + esc(val) + '</td></tr>';
     });
-    html += '</tr>';
+    html += '</table>';
+
+    // バリエーション定義
+    if (varKeyDef) {
+      html += '<div style="margin-top:12px; padding:8px 12px; background:#f0f7ff; border:1px solid #c8ddf0; border-radius:6px;">';
+      html += '<div style="font-weight:700; font-size:12px; color:#2a5a8a; margin-bottom:4px;">バリエーション定義</div>';
+      html += '<div style="font-size:12px; color:#444;">';
+      html += '<span style="margin-right:16px;">キー: <b>' + esc(varKeyDef) + '</b></span>';
+      html += '<span>名前: <b>' + esc(varNameDef) + '</b></span>';
+      html += '</div>';
+      if (var1Def) html += '<div style="font-size:11px; color:#666; margin-top:2px;">選択肢1: ' + esc(var1Def) + '</div>';
+      if (var2Def) html += '<div style="font-size:11px; color:#666; margin-top:2px;">選択肢2: ' + esc(var2Def) + '</div>';
+      html += '</div>';
+    }
+
+    // 説明文プレビュー
+    if (pcDesc || spDesc || saleDesc) {
+      html += '<div style="margin-top:12px;">';
+      html += '<div style="font-weight:700; font-size:12px; color:#5a4a3a; margin-bottom:6px;">説明文</div>';
+      if (pcDesc) {
+        html += '<details style="margin-bottom:4px;"><summary style="font-size:11px; color:#888; cursor:pointer;">PC用商品説明文</summary>';
+        html += '<div style="font-size:11px; padding:6px; background:#fafafa; border:1px solid #eee; border-radius:4px; max-height:120px; overflow:auto; word-break:break-all;">' + esc(pcDesc.substring(0, 500)) + (pcDesc.length > 500 ? '…' : '') + '</div></details>';
+      }
+      if (spDesc) {
+        html += '<details style="margin-bottom:4px;"><summary style="font-size:11px; color:#888; cursor:pointer;">スマートフォン用商品説明文</summary>';
+        html += '<div style="font-size:11px; padding:6px; background:#fafafa; border:1px solid #eee; border-radius:4px; max-height:120px; overflow:auto; word-break:break-all;">' + esc(spDesc.substring(0, 500)) + (spDesc.length > 500 ? '…' : '') + '</div></details>';
+      }
+      if (saleDesc) {
+        html += '<details style="margin-bottom:4px;"><summary style="font-size:11px; color:#888; cursor:pointer;">PC用販売説明文</summary>';
+        html += '<div style="font-size:11px; padding:6px; background:#fafafa; border:1px solid #eee; border-radius:4px; max-height:120px; overflow:auto; word-break:break-all;">' + esc(saleDesc.substring(0, 500)) + (saleDesc.length > 500 ? '…' : '') + '</div></details>';
+      }
+      html += '</div>';
+    }
+
+    // SKUテーブル
+    if (g.skuRows.length > 0) {
+      html += '<div style="margin-top:12px;">';
+      html += '<div style="font-weight:700; font-size:12px; color:#5a4a3a; margin-bottom:6px;">SKU一覧</div>';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+      html += '<thead><tr>';
+      const skuHeaders = ['SKU管理番号','システム連携用SKU番号','カラー','サイズ','販売価格','在庫数','型番'];
+      skuHeaders.forEach(h => {
+        html += '<th style="background:#bf0000; color:white; padding:5px 8px; font-size:11px; font-weight:600; white-space:nowrap;">' + esc(h) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      g.skuRows.forEach((sRow, si) => {
+        const bg = si % 2 === 0 ? '#fff' : '#fef9f4';
+        html += '<tr style="background:' + bg + ';">';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8;">' + esc(sRow[RI['SKU管理番号']] || '') + '</td>';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8;">' + esc(sRow[RI['システム連携用SKU番号']] || '') + '</td>';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8;">' + esc(sRow[RI['バリエーション項目選択肢1']] || '') + '</td>';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8;">' + esc(sRow[RI['バリエーション項目選択肢2']] || '') + '</td>';
+        const skuPrice = sRow[RI['通常購入販売価格']] || '';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8; text-align:right;">' + (skuPrice ? '¥' + Number(skuPrice).toLocaleString() : '') + '</td>';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8; text-align:center;">' + esc(sRow[RI['SKU在庫数']] || '0') + '</td>';
+        html += '<td style="padding:4px 8px; border:1px solid #ede5d8;">' + esc(sRow[RI['自由入力行（値）1']] || '') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      html += '</div>';
+    }
+
+    html += '</div>'; // padding div
+    html += '</div>'; // card
   });
-  html += '</tbody></table></div>';
 
-  document.getElementById('convert-preview-content').innerHTML = html;
-  document.getElementById('convert-preview').style.display = 'block';
-  document.getElementById('convert-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function hideConvertPreview() {
-  document.getElementById('convert-preview').style.display = 'none';
+  container.innerHTML = html;
 }
 
 // ============================================================
@@ -1464,14 +1570,6 @@ function renderStep2() {
   `;
   renderCardView();
   renderTableView();
-  // 自社Excel時のみ変換プレビューボタンを表示
-  const btnPreview = document.getElementById('btn-convert-preview');
-  if (btnPreview) {
-    btnPreview.style.display = (sourceType === 'jisha') ? '' : 'none';
-  }
-  // プレビューを非表示にリセット
-  const cp = document.getElementById('convert-preview');
-  if (cp) cp.style.display = 'none';
 }
 
 function renderCardView() {
@@ -1701,11 +1799,12 @@ function goToStep(n) {
     if (sn === n) s.classList.add('active');
     else if (sn < n) s.classList.add('done');
   });
-  if (n === 3) renderStep3();
+  if (n === 3) renderRmsPreview();
+  if (n === 4) renderStep4Download();
 }
 
 // ============================================================
-// STEP 3: DOWNLOAD
+// STEP 4: DOWNLOAD
 // ============================================================
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
@@ -1715,7 +1814,7 @@ const MALLS = {
   qoo10: { name: 'Qoo10', desc: 'Qoo10 商品一括登録CSV' },
 };
 
-function renderStep3() {
+function renderStep4Download() {
   const totalProducts = products.length;
   const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
   document.getElementById('summary-cards-dl').innerHTML = `
