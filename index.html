@@ -402,11 +402,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
           <tr>
             <th>表示価格</th>
             <td>
-              <span class="src-auto">自動</span> 販売金額 ×
-              <span class="src-master">マスタ</span>
-              定価掛率
-              <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" class="rms-input" style="width:70px;">
-              <span style="font-size:14px;">%</span>
+              <span class="src-excel">自社Excel</span> 「販売金額(税込)」列をそのまま使用
             </td>
           </tr>
           <tr>
@@ -1748,7 +1744,7 @@ function convertToRakuten() {
       pRow[RI['商品番号']] = prod.number;
       pRow[RI['商品名']] = applyMallName(prod.cleanName || prod.name, 'rakuten');
       pRow[RI['販売価格']] = prod.sellPrice;
-      pRow[RI['表示価格']] = calcListPrice(prod.sellPrice, 'rakuten') || '';
+      pRow[RI['表示価格']] = prod.sellPrice || '';
       pRow[RI['ジャンルID']] = rm.genreId || '';
       pRow[RI['消費税']] = rm.taxType || '0';
       pRow[RI['送料']] = rm.shippingFee || '0';
