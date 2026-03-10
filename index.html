@@ -1679,7 +1679,8 @@ function downloadMall(mallKey) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${mallKey}_products_${dateStr()}.csv`;
+  const mallFileNames = { rakuten: 'normal-item', shopline: 'shopline', yahoo: 'yahoo', amazon: 'amazon', qoo10: 'qoo10' };
+  a.download = `${mallFileNames[mallKey] || mallKey}_${dateTimeStr()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   notify(`${MALLS[mallKey].name}のCSVをダウンロードしました`, 'success');
@@ -2110,6 +2111,10 @@ function trunc(str, len) {
 function dateStr() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function dateTimeStr() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
 }
 
 function notify(msg, type='info') {
