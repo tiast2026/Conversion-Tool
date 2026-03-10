@@ -231,10 +231,19 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       <div style="display:flex; gap:6px;">
         <button class="btn btn-outline btn-sm" onclick="expandAll()">すべて展開</button>
         <button class="btn btn-outline btn-sm" onclick="collapseAll()">すべて閉じる</button>
+        <button class="btn btn-primary btn-sm" id="btn-convert-preview" style="display:none;" onclick="showConvertPreview()">楽天に変換して確認</button>
       </div>
     </div>
     <div id="card-view" class="product-cards"></div>
     <div id="table-view" class="table-wrapper" style="display:none; max-height:600px; overflow:auto;"></div>
+    <!-- 変換プレビュー -->
+    <div id="convert-preview" style="display:none; margin-top:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="font-size:16px; color:var(--primary-dark); margin:0;">楽天CSV 変換プレビュー</h3>
+        <button class="btn btn-outline btn-sm" onclick="hideConvertPreview()">プレビューを閉じる</button>
+      </div>
+      <div id="convert-preview-content"></div>
+    </div>
     <div class="actions">
       <button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>
       <button class="btn btn-primary" onclick="goToStep(3)">ダウンロードへ →</button>
@@ -1384,6 +1393,62 @@ function buildRakutenImgUrl(imgPath) {
 }
 
 // ============================================================
+// CONVERT PREVIEW (楽天変換プレビュー)
+// ============================================================
+function showConvertPreview() {
+  const result = convertToRakuten();
+  if (!result || !result.headers || !result.rows || result.rows.length === 0) {
+    alert('変換データがありません。');
+    return;
+  }
+  const rH = result.headers;
+  const rows = result.rows;
+  // 主要な列だけをプレビュー表示（全列は多すぎるため）
+  const keyColumns = [
+    'コントロールカラム','商品管理番号（商品URL）','商品番号','商品名','販売価格',
+    'キャッチコピー','在庫タイプ','SKU管理番号',
+    'バリエーション項目キー1','バリエーション項目選択肢1',
+    'バリエーション項目キー2','バリエーション項目選択肢2',
+    '通常購入販売価格','SKU在庫数','カタログIDなしの理由'
+  ];
+  const colIndices = [];
+  const displayHeaders = [];
+  keyColumns.forEach(col => {
+    const idx = rH.indexOf(col);
+    if (idx !== -1) { colIndices.push(idx); displayHeaders.push(col); }
+  });
+
+  let html = '<div style="font-size:12px; color:#888; margin-bottom:8px;">主要列のみ表示（全' + rH.length + '列中' + displayHeaders.length + '列）。ダウンロード時は全列が出力されます。</div>';
+  html += '<div class="table-wrapper" style="max-height:500px; overflow:auto;">';
+  html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  html += '<thead><tr>';
+  displayHeaders.forEach(h => {
+    html += '<th style="background:var(--primary-dark); color:white; padding:6px 10px; position:sticky; top:0; white-space:nowrap; font-weight:600; font-size:11px;">' + esc(h) + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  rows.forEach((row, ri) => {
+    const bg = ri % 2 === 0 ? '#fff' : '#faf8f5';
+    html += '<tr style="background:' + bg + ';">';
+    colIndices.forEach(ci => {
+      let val = (row[ci] != null) ? String(row[ci]) : '';
+      // 長すぎるセルは省略
+      const displayVal = val.length > 80 ? val.substring(0, 80) + '…' : val;
+      html += '<td style="padding:5px 8px; border-bottom:1px solid #eee; white-space:nowrap; max-width:250px; overflow:hidden; text-overflow:ellipsis;" title="' + esc(val) + '">' + esc(displayVal) + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  document.getElementById('convert-preview-content').innerHTML = html;
+  document.getElementById('convert-preview').style.display = 'block';
+  document.getElementById('convert-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hideConvertPreview() {
+  document.getElementById('convert-preview').style.display = 'none';
+}
+
+// ============================================================
 // RENDER STEP 2
 // ============================================================
 function renderStep2() {
@@ -1399,6 +1464,14 @@ function renderStep2() {
   `;
   renderCardView();
   renderTableView();
+  // 自社Excel時のみ変換プレビューボタンを表示
+  const btnPreview = document.getElementById('btn-convert-preview');
+  if (btnPreview) {
+    btnPreview.style.display = (sourceType === 'jisha') ? '' : 'none';
+  }
+  // プレビューを非表示にリセット
+  const cp = document.getElementById('convert-preview');
+  if (cp) cp.style.display = 'none';
 }
 
 function renderCardView() {
