@@ -683,7 +683,7 @@ function parseExcelFile(arrayBuffer, file) {
     rawRows.forEach(row => {
       const name = col(row, '商品名');
       if (name && name.trim()) prodCount++;
-      else if (col(row, 'カラー') || col(row, 'JAN')) skuCount++;
+      else if (col(row, 'カラー') || col(row, 'サイズ') || col(row, 'JAN')) skuCount++;
     });
     logHTML += `<div>→ 商品行: ${prodCount}, SKU行: ${skuCount}, 合計: ${rawRows.length}行</div>`;
     log.innerHTML = logHTML;
@@ -895,8 +895,7 @@ function structureJisha() {
     const productName = col(row, '商品名');
     const productNo = col(row, '商品番号');
     const colorVal = col(row, 'カラー');
-    const swatchVal = col(row, 'スウォッチ');
-    const sizeVal = col(row, 'スウォッチ'); // L列＝スウォッチ列がサイズ
+    const sizeVal = col(row, 'サイズ');
     if (productName && productName.trim()) {
       currentProduct = {
         rowIndex: r,
@@ -913,9 +912,12 @@ function structureJisha() {
         material: col(row, '素材'),
         costPrice: col(row, '仕入金額'),
         sellPrice: col(row, '販売金額(税込)') || col(row, '販売金額'),
-        sizeSpec: col(row, '群サイズ') || col(row, 'サイズ') || '',
-        productSpec: col(row, '商品ポイ仕様') || col(row, '商品ポイント仕様') || '',
-        modelInfo: col(row, 'モデル撮制作担洗濯表記★') || col(row, 'モデル撮影') || '',
+        measureSize: col(row, '採寸サイズ') || '',
+        productPoint: col(row, '商品ポイント') || '',
+        spec: col(row, '仕様') || '',
+        modelShootDate: col(row, 'モデル撮影予定日') || '',
+        productionStaff: col(row, '制作担当者') || '',
+        laundryLabel: col(row, '洗濯表記') || '',
         shippingMethod: col(row, '配送方法'),
         referenceUrl: col(row, '参考URL'),
         memo: col(row, 'メモ'),
@@ -928,7 +930,7 @@ function structureJisha() {
         currentProduct.images.push({ url: imgUrl.trim() });
       }
       prods.push(currentProduct);
-    } else if (currentProduct && (colorVal || swatchVal || sizeVal)) {
+    } else if (currentProduct && (colorVal || sizeVal)) {
       const skuProductNo = col(row, '商品番号');
       const janCode = col(row, 'JAN');
       // 商品番号をSKU商品番号から導出: nlpt495-2602-EC-M → nlpt495-2602
@@ -938,7 +940,6 @@ function structureJisha() {
         currentProduct.id = currentProduct.number;
       }
       if (skuProductNo && currentProduct.number === col(currentProduct.raw, '商品番号')) {
-        // 親行の商品番号がまだ元のままなら、SKUから導出した番号で上書き
         const parts = skuProductNo.split('-');
         if (parts.length >= 2) {
           currentProduct.number = parts.slice(0, 2).join('-');
@@ -952,8 +953,7 @@ function structureJisha() {
         systemSku: janCode || '',
         jan: janCode || '',
         color: colorVal || '',
-        swatch: swatchVal || '',
-        size: sizeVal || '',  // L列（スウォッチ）＝サイズ
+        size: sizeVal || '',  // L列＝サイズ
         price: currentProduct.sellPrice || '',  // 販売金額は親行のR列をそのまま使用
         variants: [],
         customFields: [],
@@ -1018,6 +1018,12 @@ function renderCardView() {
         ['素材', 'material', prod.material],
         ['仕入金額', 'costPrice', prod.costPrice],
         ['販売金額(税込)', 'sellPrice', prod.sellPrice],
+        ['採寸サイズ', 'measureSize', prod.measureSize],
+        ['商品ポイント', 'productPoint', prod.productPoint],
+        ['仕様', 'spec', prod.spec],
+        ['洗濯表記', 'laundryLabel', prod.laundryLabel],
+        ['モデル撮影予定日', '_modelShootDate', prod.modelShootDate],
+        ['制作担当者', '_productionStaff', prod.productionStaff],
         ['販売期間', '_period', (prod.saleStartDate || '') + ' ～ ' + (prod.saleEndDate || '')],
         ['配送方法', 'shippingMethod', prod.shippingMethod],
         ['担当者', '_assignee', prod.assignee],
@@ -1085,7 +1091,7 @@ function renderCardView() {
       if (sourceType === 'rakuten') {
         html += `<th>SKU管理番号</th><th>システム連携SKU</th><th>バリエーション</th><th>価格</th><th>カタログID</th><th>型番</th><th>SKU画像</th>`;
       } else if (sourceType === 'jisha') {
-        html += `<th>SKU番号</th><th>カラー</th><th>スウォッチ</th><th>サイズ</th><th>JAN</th><th>価格</th>`;
+        html += `<th>SKU番号</th><th>カラー</th><th>サイズ</th><th>JAN</th><th>価格</th>`;
       } else {
         html += `<th>SKU</th><th>オプション</th><th>価格</th><th>在庫</th><th>画像</th>`;
       }
@@ -1106,7 +1112,6 @@ function renderCardView() {
         } else if (sourceType === 'jisha') {
           html += `<td>${esc(sku.skuMgmtNo)}</td>`;
           html += `<td>${esc(sku.color)}</td>`;
-          html += `<td>${esc(sku.swatch)}</td>`;
           html += `<td>${esc(sku.size)}</td>`;
           html += `<td>${esc(sku.jan)}</td>`;
           html += `<td contenteditable="true" onblur="onSkuEdit(this,${pi},${si},'price')">${esc(sku.price)}</td>`;
@@ -1133,7 +1138,7 @@ function renderTableView() {
   if (sourceType === 'rakuten') {
     keyCols = ['商品管理番号（商品URL）','商品名','商品番号','キャッチコピー','バリエーション項目名定義','SKU管理番号','システム連携用SKU番号','バリエーション項目選択肢1','バリエーション項目選択肢2','通常購入販売価格','カタログID'];
   } else if (sourceType === 'jisha') {
-    keyCols = ['タスクID','商品番号','商品名','カテゴリ','素材','自社限定サイズ','スウォッチ','カラー','JAN','仕入金額','販売金額(税込)','配送方法'];
+    keyCols = ['タスクID','商品番号','商品名','カテゴリ','素材','サイズ','カラー','JAN','仕入金額','販売金額(税込)','採寸サイズ','商品ポイント','仕様','洗濯表記','配送方法'];
   } else {
     keyCols = ['Handle','Title*','SKU','Option1 name','Option1 value','Option2 name','Option2 value','SKU price','SKU Inventory Quantity'];
   }
