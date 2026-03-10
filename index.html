@@ -116,6 +116,18 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .master-label { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
 .master-csv-col { display: block; font-size: 10px; font-weight: 400; color: var(--primary); opacity: 0.7; }
 .master-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; }
+/* マッピングテーブル */
+.mapping-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mapping-table th { background: #f8f8f8; padding: 8px 10px; text-align: left; font-weight: 700; border-bottom: 2px solid var(--border); font-size: 11px; color: var(--text-light); }
+.mapping-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.mapping-table tr:hover td { background: #fafafa; }
+.mapping-section td { background: var(--primary-dark) !important; color: white; font-weight: 700; font-size: 11px; padding: 6px 10px; }
+.badge-req { background: #fee; color: #c33; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+.src-excel { background: #e8f5e9; color: #2e7d32; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.src-master { background: #e3f2fd; color: #1565c0; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.src-auto { background: #fff3e0; color: #e65100; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.src-fixed { background: #f3e5f5; color: #7b1fa2; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.src-none { background: #fafafa; color: #999; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; border: 1px solid #ddd; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
 .master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
@@ -294,15 +306,69 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">楽天CSVに出力する固定値・テンプレートを設定</span>
       </div>
       <div id="master-tabs-rakuten" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
-        <div class="sub-tab active" onclick="switchRakutenTab('basic', this)">基本設定</div>
+        <div class="sub-tab active" onclick="switchRakutenTab('mapping', this)">列マッピング一覧</div>
+        <div class="sub-tab" onclick="switchRakutenTab('basic', this)">基本設定</div>
         <div class="sub-tab" onclick="switchRakutenTab('price', this)">価格・税</div>
         <div class="sub-tab" onclick="switchRakutenTab('shipping', this)">配送</div>
         <div class="sub-tab" onclick="switchRakutenTab('display', this)">表示・説明文</div>
         <div class="sub-tab" onclick="switchRakutenTab('image', this)">画像</div>
       </div>
 
+      <!-- 列マッピング一覧 -->
+      <div class="rakuten-tab-panel active master-form-card" id="rtab-mapping">
+        <p style="font-size:12px; color:var(--text-light); margin:0 0 12px 0;">自社Excelの各列が楽天CSVのどこに変換されるかの一覧です。<span style="background:#fee; color:#c33; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:700;">必須</span> = 楽天新規登録に必須の項目</p>
+        <table class="mapping-table">
+          <thead>
+            <tr><th style="width:220px;">楽天CSV列名</th><th style="width:50px;">必須</th><th>データ元</th><th>説明</th></tr>
+          </thead>
+          <tbody>
+            <tr class="mapping-section"><td colspan="4">商品基本情報（商品行）</td></tr>
+            <tr><td>コントロールカラム</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → コントロールカラム</td></tr>
+            <tr><td>商品管理番号（商品URL）</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「商品番号」列をそのまま使用</td></tr>
+            <tr><td>商品番号</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「商品番号」列をそのまま使用</td></tr>
+            <tr><td>商品名</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span> + <span class="src-master">マスタ</span></td><td>「商品名」列 + 前後の文字付与 + クリーニング</td></tr>
+            <tr><td>販売価格</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「販売金額(税込)」列をそのまま使用</td></tr>
+            <tr><td>表示価格</td><td></td><td><span class="src-auto">自動計算</span></td><td>販売金額 × 定価掛率（価格・税タブで設定）</td></tr>
+            <tr><td>ジャンルID</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → 全商品共通ジャンルID</td></tr>
+            <tr><td>消費税</td><td></td><td><span class="src-master">マスタ</span></td><td>価格・税 → 消費税</td></tr>
+            <tr><td>送料</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → 送料</td></tr>
+            <tr><td>個別送料（税込）</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → 個別送料</td></tr>
+            <tr><td>配送方法セット管理番号</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → 配送方法セット管理番号</td></tr>
+            <tr><td>あす楽配送管理番号</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → あす楽配送管理番号</td></tr>
+            <tr><td>のし対応</td><td></td><td><span class="src-master">マスタ</span></td><td>配送 → のし対応</td></tr>
+            <tr><td>在庫タイプ</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → 在庫タイプ</td></tr>
+            <tr><td>再入荷お知らせボタン</td><td></td><td><span class="src-master">マスタ</span></td><td>基本設定 → 再入荷お知らせボタン</td></tr>
+            <tr><td>キャッチコピー</td><td></td><td><span class="src-none">未設定</span></td><td>現在空欄で出力</td></tr>
+            <tr><td>PC用商品説明文</td><td></td><td><span class="src-master">マスタ</span></td><td>表示・説明文 → テンプレートで生成</td></tr>
+            <tr><td>スマートフォン用商品説明文</td><td></td><td><span class="src-master">マスタ</span></td><td>表示・説明文 → テンプレートで生成</td></tr>
+            <tr><td>PC用販売説明文</td><td></td><td><span class="src-master">マスタ</span></td><td>表示・説明文 → テンプレートで生成</td></tr>
+            <tr><td>ポイント変倍率</td><td></td><td><span class="src-master">マスタ</span></td><td>価格・税 → ポイント変倍率</td></tr>
+            <tr><td>ポイント変倍率適用期間</td><td></td><td><span class="src-master">マスタ</span></td><td>価格・税 → 開始/終了</td></tr>
+
+            <tr class="mapping-section"><td colspan="4">バリエーション定義（商品行）</td></tr>
+            <tr><td>バリエーション項目キー定義</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>カラー/サイズの有無から自動設定</td></tr>
+            <tr><td>バリエーション項目名定義</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>「カラー」「サイズ」を自動設定</td></tr>
+            <tr><td>バリエーション1選択肢定義</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「カラー」列の全選択肢（表示順でソート）</td></tr>
+            <tr><td>バリエーション2選択肢定義</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「サイズ」列の全選択肢（サイズ順でソート）</td></tr>
+
+            <tr class="mapping-section"><td colspan="4">SKU情報（SKU行 = カラー×サイズごとに1行）</td></tr>
+            <tr><td>SKU管理番号</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「JAN」列を使用</td></tr>
+            <tr><td>システム連携用SKU番号</td><td></td><td><span class="src-excel">自社Excel</span></td><td>「JAN」列を使用</td></tr>
+            <tr><td>バリエーション項目キー1</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>horizontal-key（カラー用）</td></tr>
+            <tr><td>バリエーション項目選択肢1</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「カラー」列の値</td></tr>
+            <tr><td>バリエーション項目キー2</td><td><span class="badge-req">必須</span></td><td><span class="src-auto">自動生成</span></td><td>vertical-key（サイズ用）</td></tr>
+            <tr><td>バリエーション項目選択肢2</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「サイズ」列の値</td></tr>
+            <tr><td>通常購入販売価格</td><td><span class="badge-req">必須</span></td><td><span class="src-excel">自社Excel</span></td><td>「販売金額(税込)」列</td></tr>
+            <tr><td>SKU在庫数</td><td></td><td><span class="src-fixed">固定値</span></td><td>0（初期値）</td></tr>
+            <tr><td>カタログIDなしの理由</td><td><span class="badge-req">必須</span></td><td><span class="src-master">マスタ</span></td><td>基本設定 → カタログIDなしの理由</td></tr>
+            <tr><td>自由入力行（項目）1</td><td></td><td><span class="src-fixed">固定値</span></td><td>「型番」固定</td></tr>
+            <tr><td>自由入力行（値）1</td><td></td><td><span class="src-excel">自社Excel</span></td><td>「JAN」列の値</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- 基本設定 -->
-      <div class="rakuten-tab-panel active master-form-card" id="rtab-basic">
+      <div class="rakuten-tab-panel master-form-card" id="rtab-basic" style="display:none;">
         <p style="font-size:11px; color:var(--text-light); margin:0 0 12px 0;">自社Excelにない項目を、楽天CSVに出力する固定値として設定します。</p>
         <div style="display:grid; grid-template-columns:200px 1fr; gap:10px 16px; align-items:center; max-width:650px;">
           <label class="master-label">コントロールカラム<span class="master-csv-col">→ コントロールカラム</span></label>
