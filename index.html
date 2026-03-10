@@ -113,6 +113,9 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .sub-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
 /* マスタフォームカード */
 .master-form-card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 16px 20px; margin-top: 0; }
+.master-label { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.master-csv-col { display: block; font-size: 10px; font-weight: 400; color: var(--primary); opacity: 0.7; }
+.master-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
 .master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
@@ -286,6 +289,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
     <!-- 楽天 固有設定 -->
     <div class="master-mall-panel" id="mall-rakuten" style="display:none;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → 楽天CSV</span>
+        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">楽天CSVに出力する固定値・テンプレートを設定</span>
+      </div>
       <div id="master-tabs-rakuten" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
         <div class="sub-tab active" onclick="switchRakutenTab('basic', this)">基本設定</div>
         <div class="sub-tab" onclick="switchRakutenTab('price', this)">価格・税</div>
@@ -296,35 +303,36 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
       <!-- 基本設定 -->
       <div class="rakuten-tab-panel active master-form-card" id="rtab-basic">
-        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px;">
-          <label style="font-size:12px; font-weight:600;">コントロールカラム：</label>
-          <select id="mall-rakuten-control-col" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+        <p style="font-size:11px; color:var(--text-light); margin:0 0 12px 0;">自社Excelにない項目を、楽天CSVに出力する固定値として設定します。</p>
+        <div style="display:grid; grid-template-columns:200px 1fr; gap:10px 16px; align-items:center; max-width:650px;">
+          <label class="master-label">コントロールカラム<span class="master-csv-col">→ コントロールカラム</span></label>
+          <select id="mall-rakuten-control-col" class="master-input" style="width:200px;">
             <option value="n">n（新規登録）</option>
             <option value="u">u（更新）</option>
             <option value="d">d（削除）</option>
           </select>
-          <label style="font-size:12px; font-weight:600;">ジャンルID：</label>
-          <input type="text" id="mall-rakuten-genre-id" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 565004">
-          <label style="font-size:12px; font-weight:600;">カタログIDなしの理由：</label>
-          <select id="mall-rakuten-catalog-reason" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+          <label class="master-label">全商品共通ジャンルID<span class="master-csv-col">→ ジャンルID</span></label>
+          <input type="text" id="mall-rakuten-genre-id" class="master-input" style="width:200px;" placeholder="例: 565004">
+          <label class="master-label">カタログIDなしの理由<span class="master-csv-col">→ カタログIDなしの理由</span></label>
+          <select id="mall-rakuten-catalog-reason" class="master-input" style="width:200px;">
             <option value="3">3: 該当なし</option>
             <option value="1">1: JANなし</option>
             <option value="2">2: セット商品</option>
           </select>
-          <label style="font-size:12px; font-weight:600;">在庫タイプ：</label>
-          <select id="mall-rakuten-stock-type" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+          <label class="master-label">在庫タイプ<span class="master-csv-col">→ 在庫タイプ</span></label>
+          <select id="mall-rakuten-stock-type" class="master-input" style="width:200px;">
             <option value="1">1: 通常在庫</option>
             <option value="2">2: 項目選択肢別在庫</option>
           </select>
-          <label style="font-size:12px; font-weight:600;">再入荷お知らせボタン：</label>
-          <select id="mall-rakuten-restock-btn" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+          <label class="master-label">再入荷お知らせボタン<span class="master-csv-col">→ 再入荷お知らせボタン</span></label>
+          <select id="mall-rakuten-restock-btn" class="master-input" style="width:200px;">
             <option value="0">0: 非表示</option>
             <option value="1">1: 表示</option>
           </select>
-          <label style="font-size:12px; font-weight:600;">商品名プレフィックス：</label>
-          <input type="text" id="mall-rakuten-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 【送料無料】">
-          <label style="font-size:12px; font-weight:600;">商品名サフィックス：</label>
-          <input type="text" id="mall-rakuten-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: ◆レディース">
+          <label class="master-label">商品名の前に付ける文字<span class="master-csv-col">→ 商品名の先頭に追加</span></label>
+          <input type="text" id="mall-rakuten-name-prefix" class="master-input" placeholder="例: 【送料無料】">
+          <label class="master-label">商品名の後に付ける文字<span class="master-csv-col">→ 商品名の末尾に追加</span></label>
+          <input type="text" id="mall-rakuten-name-suffix" class="master-input" placeholder="例: ◆レディース">
         </div>
       </div>
 
@@ -409,7 +417,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     </div>
 
     <div class="master-mall-panel" id="mall-shopline" style="display:none; padding-top:16px;">
-      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">SHOPLINE 固有設定</h3>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → SHOPLINE CSV</span>
+        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">SHOPLINE CSVに出力する固定値を設定</span>
+      </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
         <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
         <input type="number" id="mall-shopline-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
@@ -418,9 +429,9 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-shopline-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-shopline-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
@@ -429,16 +440,19 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     </div>
 
     <div class="master-mall-panel" id="mall-yahoo" style="display:none; padding-top:16px;">
-      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">Yahoo! 固有設定</h3>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → Yahoo! CSV</span>
+        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Yahoo! CSVに出力する固定値を設定</span>
+      </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
         <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
         <input type="number" id="mall-yahoo-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-yahoo-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-yahoo-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
@@ -447,7 +461,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     </div>
 
     <div class="master-mall-panel" id="mall-amazon" style="display:none; padding-top:16px;">
-      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">Amazon 固有設定</h3>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → Amazon CSV</span>
+        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Amazon CSVに出力する固定値を設定</span>
+      </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
         <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
         <input type="number" id="mall-amazon-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
@@ -456,9 +473,9 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-amazon-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-amazon-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
@@ -467,16 +484,19 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     </div>
 
     <div class="master-mall-panel" id="mall-qoo10" style="display:none; padding-top:16px;">
-      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">Qoo10 固有設定</h3>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → Qoo10 CSV</span>
+        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Qoo10 CSVに出力する固定値を設定</span>
+      </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
         <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
         <input type="number" id="mall-qoo10-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-qoo10-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
+        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-qoo10-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
