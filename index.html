@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOAHL モール変換ツール</title>
+<title>モール変換ツール</title>
 <style>
 :root {
   --primary: #97887d; --primary-dark: #7a6d63; --accent: #ddd6cd;
@@ -127,7 +127,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 <body>
 <header>
   <div>
-    <h1>NOAHL モール変換ツール</h1>
+    <h1>モール変換ツール</h1>
     <div class="subtitle">楽天CSV / 自社CSV → 各モール別CSVに変換 (v2.1)</div>
   </div>
   <div class="header-right">
@@ -244,7 +244,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     </div>
     <div class="tab-panel" id="tab-name-clean">
       <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
-      <textarea id="master-name-clean" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="NOAHL｜&#10;《[^》]*》&#10;【メール便】"></textarea>
+      <textarea id="master-name-clean" style="width:100%; height:300px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="《[^》]*》&#10;【メール便】"></textarea>
       <div style="margin-top:8px;">
         <button class="btn btn-sm btn-primary" onclick="saveMaster('nameClean')">保存</button>
       </div>
@@ -323,7 +323,7 @@ Lサイズ,3
 クリームイエロー,6
 ダークブラウン,21`;
 
-const DEFAULT_NAME_CLEAN = `NOAHL｜\nNOAHL\\|\n《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
+const DEFAULT_NAME_CLEAN = `《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
 const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レビューを書いて-->\n<!--コンセプト-->\n<!--よくある質問-->`;
 
 // ============================================================
@@ -990,7 +990,7 @@ function convertToShopline() {
         r[SL['Subtitle']] = prod.catchCopy || '';
         r[SL['Product description html']] = prod.pcDesc || '';
         r[SL['SPU']] = prod.number || '';
-        r[SL['Vendor']] = 'NOAHL';
+        r[SL['Vendor']] = '';
         if (prod.images.length > 0) r[SL['Master image']] = buildRakutenImgUrl(prod.images[0].path);
         r[SL['Image Alt Text']] = prod.cleanName;
         r[SL['SEO title']] = prod.cleanName;
@@ -1078,13 +1078,13 @@ function convertToAmazon() {
     if (sourceType === 'rakuten' && prod.images.length > 0) mainImg = buildRakutenImgUrl(prod.images[0].path);
     else if (prod.images.length > 0) mainImg = prod.images[0].url;
     const pR = new Array(aH.length).fill('');
-    pR[0] = parentSku; pR[1] = name; pR[4] = 'NOAHL'; pR[5] = 'NOAHL';
+    pR[0] = parentSku; pR[1] = name; pR[4] = ''; pR[5] = '';
     pR[7] = mainImg; pR[11] = 'parent'; pR[14] = 'ColorSize'; pR[19] = desc;
     rows.push(pR);
     prod.skus.forEach(sku => {
       const cR = new Array(aH.length).fill('');
       cR[0] = sourceType === 'rakuten' ? (sku.customFields.find(f=>f.label==='型番')?.value || sku.systemSku) : sku.skuId;
-      cR[1] = name; cR[4] = 'NOAHL'; cR[5] = 'NOAHL';
+      cR[1] = name; cR[4] = ''; cR[5] = '';
       cR[11] = 'child'; cR[12] = parentSku; cR[13] = 'Variation'; cR[14] = 'ColorSize';
       if (sourceType === 'rakuten') {
         const hVar = sku.variants.find(v => v.key === 'horizontal-key');
@@ -1128,7 +1128,7 @@ function convertToQoo10() {
     r[7] = sourceType === 'rakuten' ? prod.catchCopy : (prod.subtitle || '');
     r[8] = desc || ''; r[9] = imgUrl;
     r[10] = prod.skus.length > 1 ? 'Y' : 'N';
-    r[11] = optInfo; r[13] = 'NEW'; r[17] = 'NOAHL'; r[18] = 'NOAHL'; r[20] = 'N';
+    r[11] = optInfo; r[13] = 'NEW'; r[17] = ''; r[18] = ''; r[20] = 'N';
     rows.push(r);
   });
   return { headers: qH, rows };
