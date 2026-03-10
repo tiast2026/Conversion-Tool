@@ -101,6 +101,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .tab-panel.active { display: block; }
 .master-mall-panel { display: none; }
 .master-mall-panel.active { display: block; }
+.rakuten-tab-panel { display: none; }
+.rakuten-tab-panel.active { display: block; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
 .master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
@@ -272,33 +274,129 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       </div>
     </div>
 
-    <!-- モール別設定（テンプレート：各モール共通構造） -->
+    <!-- 楽天 固有設定 -->
     <div class="master-mall-panel" id="mall-rakuten" style="display:none; padding-top:16px;">
-      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">楽天 固有設定</h3>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
-        <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
-        <label style="font-size:12px; font-weight:600;">税込設定：</label>
-        <select id="mall-rakuten-tax" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
-          <option value="1">税込み</option>
-          <option value="0">税抜き</option>
-        </select>
-        <label style="font-size:12px; font-weight:600;">カタログIDなしの理由：</label>
-        <select id="mall-rakuten-catalog-reason" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
-          <option value="3">該当なし</option>
-          <option value="1">JANなし</option>
-          <option value="2">セット商品</option>
-        </select>
+      <h3 style="font-size:14px; color:var(--primary-dark); margin-bottom:12px;">楽天 固有設定（自社Excel → 楽天 新規登録用）</h3>
+
+      <div class="tabs" id="master-tabs-rakuten">
+        <div class="tab active" onclick="switchRakutenTab('basic', this)">基本設定</div>
+        <div class="tab" onclick="switchRakutenTab('price', this)">価格・税</div>
+        <div class="tab" onclick="switchRakutenTab('shipping', this)">配送</div>
+        <div class="tab" onclick="switchRakutenTab('display', this)">表示・説明文</div>
+        <div class="tab" onclick="switchRakutenTab('image', this)">画像</div>
       </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名に追加するプレフィックス・サフィックス</p>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">プレフィックス：</label>
-        <input type="text" id="mall-rakuten-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 【送料無料】">
-        <label style="font-size:12px; font-weight:600;">サフィックス：</label>
-        <input type="text" id="mall-rakuten-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: ◆レディース">
+
+      <!-- 基本設定 -->
+      <div class="rakuten-tab-panel active" id="rtab-basic">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+          <label style="font-size:12px; font-weight:600;">コントロールカラム：</label>
+          <select id="mall-rakuten-control-col" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="n">n（新規登録）</option>
+            <option value="u">u（更新）</option>
+            <option value="d">d（削除）</option>
+          </select>
+          <label style="font-size:12px; font-weight:600;">ジャンルID：</label>
+          <input type="text" id="mall-rakuten-genre-id" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 565004">
+          <label style="font-size:12px; font-weight:600;">カタログIDなしの理由：</label>
+          <select id="mall-rakuten-catalog-reason" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="3">3: 該当なし</option>
+            <option value="1">1: JANなし</option>
+            <option value="2">2: セット商品</option>
+          </select>
+          <label style="font-size:12px; font-weight:600;">在庫タイプ：</label>
+          <select id="mall-rakuten-stock-type" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="1">1: 通常在庫</option>
+            <option value="2">2: 項目選択肢別在庫</option>
+          </select>
+          <label style="font-size:12px; font-weight:600;">再入荷お知らせボタン：</label>
+          <select id="mall-rakuten-restock-btn" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="0">0: 非表示</option>
+            <option value="1">1: 表示</option>
+          </select>
+          <label style="font-size:12px; font-weight:600;">商品名プレフィックス：</label>
+          <input type="text" id="mall-rakuten-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 【送料無料】">
+          <label style="font-size:12px; font-weight:600;">商品名サフィックス：</label>
+          <input type="text" id="mall-rakuten-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: ◆レディース">
+        </div>
       </div>
-      <div style="margin-top:12px;">
-        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('rakuten')">保存</button>
+
+      <!-- 価格・税 -->
+      <div class="rakuten-tab-panel" id="rtab-price" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+          <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
+          <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
+          <label style="font-size:12px; font-weight:600;">消費税：</label>
+          <select id="mall-rakuten-tax" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="0">0: 税込み</option>
+            <option value="1">1: 税別</option>
+          </select>
+          <label style="font-size:12px; font-weight:600;">ポイント変倍率：</label>
+          <input type="number" id="mall-rakuten-point-rate" value="1" min="1" max="20" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
+          <label style="font-size:12px; font-weight:600;">ポイント変倍期間開始：</label>
+          <input type="text" id="mall-rakuten-point-start" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 2026-04-01">
+          <label style="font-size:12px; font-weight:600;">ポイント変倍期間終了：</label>
+          <input type="text" id="mall-rakuten-point-end" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 2026-04-30">
+        </div>
+      </div>
+
+      <!-- 配送 -->
+      <div class="rakuten-tab-panel" id="rtab-shipping" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+          <label style="font-size:12px; font-weight:600;">送料：</label>
+          <select id="mall-rakuten-shipping-fee" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="0">0: 送料込み（税込価格に含む）</option>
+            <option value="1">1: 送料別</option>
+            <option value="2">2: 送料無料</option>
+          </select>
+          <label style="font-size:12px; font-weight:600;">個別送料（円）：</label>
+          <input type="number" id="mall-rakuten-indiv-shipping" value="0" min="0" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:120px;">
+          <label style="font-size:12px; font-weight:600;">配送方法セット管理番号：</label>
+          <input type="text" id="mall-rakuten-shipping-set" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: shipping-001">
+          <label style="font-size:12px; font-weight:600;">配送方法セット名：</label>
+          <input type="text" id="mall-rakuten-shipping-name" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="">
+          <label style="font-size:12px; font-weight:600;">あす楽配送管理番号：</label>
+          <input type="text" id="mall-rakuten-asuraku" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="">
+          <label style="font-size:12px; font-weight:600;">納期情報：</label>
+          <input type="text" id="mall-rakuten-delivery-info" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:200px;" placeholder="例: 1-3営業日以内に発送">
+          <label style="font-size:12px; font-weight:600;">のし対応：</label>
+          <select id="mall-rakuten-noshi" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="0">0: 非対応</option>
+            <option value="1">1: 対応</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 表示・説明文 -->
+      <div class="rakuten-tab-panel" id="rtab-display" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+          <label style="font-size:12px; font-weight:600;">PC用商品説明文テンプレ：</label>
+          <textarea id="mall-rakuten-pc-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート（{素材}{採寸サイズ}等で置換）"></textarea>
+          <label style="font-size:12px; font-weight:600;">SP用商品説明文テンプレ：</label>
+          <textarea id="mall-rakuten-sp-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート"></textarea>
+          <label style="font-size:12px; font-weight:600;">PC用販売説明文テンプレ：</label>
+          <textarea id="mall-rakuten-sale-desc-tpl" style="width:100%; height:100px; border:1px solid var(--border); border-radius:4px; padding:8px; font-size:11px; font-family:monospace;" placeholder="HTMLテンプレート"></textarea>
+          <label style="font-size:12px; font-weight:600;">商品説明文（置換タグ）：</label>
+          <div style="font-size:11px; color:var(--text-light); line-height:1.8;">
+            使用可能: <code>{商品名}</code> <code>{素材}</code> <code>{採寸サイズ}</code> <code>{商品ポイント}</code> <code>{仕様}</code> <code>{洗濯表記}</code> <code>{販売金額}</code> <code>{商品番号}</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- 画像 -->
+      <div class="rakuten-tab-panel" id="rtab-image" style="display:none;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:10px; align-items:center; max-width:600px; margin-top:12px;">
+          <label style="font-size:12px; font-weight:600;">画像キャビネットパス：</label>
+          <input type="text" id="mall-rakuten-img-cabinet" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: /01/">
+          <label style="font-size:12px; font-weight:600;">画像タイプ（デフォルト）：</label>
+          <select id="mall-rakuten-img-type" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:200px;">
+            <option value="0">0: 商品画像</option>
+            <option value="1">1: 商品説明画像</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
+        <button class="btn btn-sm btn-primary" onclick="saveMallMaster('rakuten')">楽天設定を保存</button>
       </div>
     </div>
 
@@ -393,7 +491,14 @@ let CI = {};
 let MASTER = {
   colorOrder: {}, nameCleanPatterns: [], deleteTemplates: [],
   malls: {
-    rakuten:  { priceRate: 40, taxType: 1, catalogReason: '3', namePrefix: '', nameSuffix: '' },
+    rakuten:  {
+      controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0',
+      namePrefix: '', nameSuffix: '',
+      priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
+      shippingFee: '0', indivShipping: 0, shippingSet: '', shippingName: '', asuraku: '', deliveryInfo: '', noshi: '0',
+      pcDescTpl: '', spDescTpl: '', saleDescTpl: '',
+      imgCabinet: '', imgType: '0'
+    },
     shopline: { priceRate: 100, defaultStock: 0, namePrefix: '', nameSuffix: '' },
     yahoo:    { priceRate: 40, namePrefix: '', nameSuffix: '' },
     amazon:   { priceRate: 100, brand: '', namePrefix: '', nameSuffix: '' },
@@ -504,13 +609,36 @@ function openMaster() {
 function loadMallMasterUI(mall) {
   const m = MASTER.malls[mall] || {};
   const el = (id) => document.getElementById(id);
+  // 共通フィールド
   if (el(`mall-${mall}-price-rate`)) el(`mall-${mall}-price-rate`).value = m.priceRate || 100;
   if (el(`mall-${mall}-tax`)) el(`mall-${mall}-tax`).value = String(m.taxType || 0);
-  if (el(`mall-${mall}-catalog-reason`)) el(`mall-${mall}-catalog-reason`).value = m.catalogReason || '3';
-  if (el(`mall-${mall}-default-stock`)) el(`mall-${mall}-default-stock`).value = m.defaultStock || 0;
-  if (el(`mall-${mall}-brand`)) el(`mall-${mall}-brand`).value = m.brand || '';
   if (el(`mall-${mall}-name-prefix`)) el(`mall-${mall}-name-prefix`).value = m.namePrefix || '';
   if (el(`mall-${mall}-name-suffix`)) el(`mall-${mall}-name-suffix`).value = m.nameSuffix || '';
+  if (el(`mall-${mall}-default-stock`)) el(`mall-${mall}-default-stock`).value = m.defaultStock || 0;
+  if (el(`mall-${mall}-brand`)) el(`mall-${mall}-brand`).value = m.brand || '';
+  // 楽天固有
+  if (mall === 'rakuten') {
+    if (el('mall-rakuten-control-col')) el('mall-rakuten-control-col').value = m.controlCol || 'n';
+    if (el('mall-rakuten-genre-id')) el('mall-rakuten-genre-id').value = m.genreId || '';
+    if (el('mall-rakuten-catalog-reason')) el('mall-rakuten-catalog-reason').value = m.catalogReason || '3';
+    if (el('mall-rakuten-stock-type')) el('mall-rakuten-stock-type').value = m.stockType || '1';
+    if (el('mall-rakuten-restock-btn')) el('mall-rakuten-restock-btn').value = m.restockBtn || '0';
+    if (el('mall-rakuten-point-rate')) el('mall-rakuten-point-rate').value = m.pointRate || 1;
+    if (el('mall-rakuten-point-start')) el('mall-rakuten-point-start').value = m.pointStart || '';
+    if (el('mall-rakuten-point-end')) el('mall-rakuten-point-end').value = m.pointEnd || '';
+    if (el('mall-rakuten-shipping-fee')) el('mall-rakuten-shipping-fee').value = m.shippingFee || '0';
+    if (el('mall-rakuten-indiv-shipping')) el('mall-rakuten-indiv-shipping').value = m.indivShipping || 0;
+    if (el('mall-rakuten-shipping-set')) el('mall-rakuten-shipping-set').value = m.shippingSet || '';
+    if (el('mall-rakuten-shipping-name')) el('mall-rakuten-shipping-name').value = m.shippingName || '';
+    if (el('mall-rakuten-asuraku')) el('mall-rakuten-asuraku').value = m.asuraku || '';
+    if (el('mall-rakuten-delivery-info')) el('mall-rakuten-delivery-info').value = m.deliveryInfo || '';
+    if (el('mall-rakuten-noshi')) el('mall-rakuten-noshi').value = m.noshi || '0';
+    if (el('mall-rakuten-pc-desc-tpl')) el('mall-rakuten-pc-desc-tpl').value = m.pcDescTpl || '';
+    if (el('mall-rakuten-sp-desc-tpl')) el('mall-rakuten-sp-desc-tpl').value = m.spDescTpl || '';
+    if (el('mall-rakuten-sale-desc-tpl')) el('mall-rakuten-sale-desc-tpl').value = m.saleDescTpl || '';
+    if (el('mall-rakuten-img-cabinet')) el('mall-rakuten-img-cabinet').value = m.imgCabinet || '';
+    if (el('mall-rakuten-img-type')) el('mall-rakuten-img-type').value = m.imgType || '0';
+  }
 }
 
 function closeMaster() {
@@ -533,6 +661,14 @@ function switchMasterTab(id, el) {
   document.getElementById('tab-' + id).classList.add('active');
 }
 
+function switchRakutenTab(id, el) {
+  document.querySelectorAll('#master-tabs-rakuten .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.rakuten-tab-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
+  const panel = document.getElementById('rtab-' + id);
+  if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
+}
+
 function saveMaster(which) {
   if (which === 'colorOrder') {
     MASTER.colorOrder = parseColorOrderText(document.getElementById('master-color-order').value);
@@ -548,13 +684,36 @@ function saveMaster(which) {
 function saveMallMaster(mall) {
   const m = MASTER.malls[mall];
   const el = (id) => document.getElementById(id);
+  // 共通
   if (el(`mall-${mall}-price-rate`)) m.priceRate = parseInt(el(`mall-${mall}-price-rate`).value) || 100;
-  if (el(`mall-${mall}-tax`)) m.taxType = parseInt(el(`mall-${mall}-tax`).value);
-  if (el(`mall-${mall}-catalog-reason`)) m.catalogReason = el(`mall-${mall}-catalog-reason`).value;
-  if (el(`mall-${mall}-default-stock`)) m.defaultStock = parseInt(el(`mall-${mall}-default-stock`).value) || 0;
-  if (el(`mall-${mall}-brand`)) m.brand = el(`mall-${mall}-brand`).value.trim();
+  if (el(`mall-${mall}-tax`)) m.taxType = el(`mall-${mall}-tax`).value;
   if (el(`mall-${mall}-name-prefix`)) m.namePrefix = el(`mall-${mall}-name-prefix`).value;
   if (el(`mall-${mall}-name-suffix`)) m.nameSuffix = el(`mall-${mall}-name-suffix`).value;
+  if (el(`mall-${mall}-default-stock`)) m.defaultStock = parseInt(el(`mall-${mall}-default-stock`).value) || 0;
+  if (el(`mall-${mall}-brand`)) m.brand = el(`mall-${mall}-brand`).value.trim();
+  // 楽天固有
+  if (mall === 'rakuten') {
+    m.controlCol = el('mall-rakuten-control-col')?.value || 'n';
+    m.genreId = el('mall-rakuten-genre-id')?.value?.trim() || '';
+    m.catalogReason = el('mall-rakuten-catalog-reason')?.value || '3';
+    m.stockType = el('mall-rakuten-stock-type')?.value || '1';
+    m.restockBtn = el('mall-rakuten-restock-btn')?.value || '0';
+    m.pointRate = parseInt(el('mall-rakuten-point-rate')?.value) || 1;
+    m.pointStart = el('mall-rakuten-point-start')?.value?.trim() || '';
+    m.pointEnd = el('mall-rakuten-point-end')?.value?.trim() || '';
+    m.shippingFee = el('mall-rakuten-shipping-fee')?.value || '0';
+    m.indivShipping = parseInt(el('mall-rakuten-indiv-shipping')?.value) || 0;
+    m.shippingSet = el('mall-rakuten-shipping-set')?.value?.trim() || '';
+    m.shippingName = el('mall-rakuten-shipping-name')?.value?.trim() || '';
+    m.asuraku = el('mall-rakuten-asuraku')?.value?.trim() || '';
+    m.deliveryInfo = el('mall-rakuten-delivery-info')?.value?.trim() || '';
+    m.noshi = el('mall-rakuten-noshi')?.value || '0';
+    m.pcDescTpl = el('mall-rakuten-pc-desc-tpl')?.value || '';
+    m.spDescTpl = el('mall-rakuten-sp-desc-tpl')?.value || '';
+    m.saleDescTpl = el('mall-rakuten-sale-desc-tpl')?.value || '';
+    m.imgCabinet = el('mall-rakuten-img-cabinet')?.value?.trim() || '';
+    m.imgType = el('mall-rakuten-img-type')?.value || '0';
+  }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
   const mallNames = { rakuten:'楽天', shopline:'SHOPLINE', yahoo:'Yahoo!', amazon:'Amazon', qoo10:'Qoo10' };
   notify(`${mallNames[mall] || mall}のマスタを保存しました`, 'success');
@@ -1281,9 +1440,44 @@ function downloadMall(mallKey) {
 // ============================================================
 // CONVERSION: Rakuten
 // ============================================================
+// テンプレート置換: {商品名} {素材} 等を実データに置換
+function applyDescTemplate(tpl, prod) {
+  if (!tpl) return '';
+  return tpl
+    .replace(/\{商品名\}/g, prod.cleanName || prod.name || '')
+    .replace(/\{素材\}/g, prod.material || '')
+    .replace(/\{採寸サイズ\}/g, prod.measureSize || '')
+    .replace(/\{商品ポイント\}/g, prod.productPoint || '')
+    .replace(/\{仕様\}/g, prod.spec || '')
+    .replace(/\{洗濯表記\}/g, prod.laundryLabel || '')
+    .replace(/\{販売金額\}/g, prod.sellPrice || '')
+    .replace(/\{商品番号\}/g, prod.number || '');
+}
+
 function convertToRakuten() {
   if (sourceType === 'rakuten') return { headers, rows: rawRows };
-  const rH = ['商品管理番号（商品URL）','商品番号','商品名','ジャンルID','キャッチコピー','PC用商品説明文','スマートフォン用商品説明文','PC用販売説明文','バリエーション項目キー定義','バリエーション項目名定義','バリエーション1選択肢定義','バリエーション2選択肢定義','SKU管理番号','システム連携用SKU番号','バリエーション項目キー1','バリエーション項目選択肢1','バリエーション項目キー2','バリエーション項目選択肢2','通常購入販売価格','カタログIDなしの理由','自由入力行（項目）1','自由入力行（値）1'];
+  const rm = MASTER.malls.rakuten;
+  // 自社Excel→楽天: 新規登録に必要な全列
+  const rH = [
+    'コントロールカラム','商品管理番号（商品URL）','商品番号','商品名','販売価格','表示価格',
+    'ジャンルID','消費税','送料','個別送料（税込）','送料区分1','送料区分2',
+    '配送方法セット管理番号','配送方法セット名（配送方法セット管理番号が未指定の場合のみ有効）',
+    'あす楽配送管理番号','のし対応','在庫タイプ','在庫数','再入荷お知らせボタン',
+    'キャッチコピー','PC用商品説明文','スマートフォン用商品説明文','PC用販売説明文',
+    'ポイント変倍率','ポイント変倍率適用期間開始','ポイント変倍率適用期間終了',
+    '販売期間指定','注文受付数',
+    'バリエーション項目キー定義','バリエーション項目名定義',
+    'バリエーション1選択肢定義','バリエーション2選択肢定義',
+    'SKU管理番号','システム連携用SKU番号',
+    'バリエーション項目キー1','バリエーション項目選択肢1',
+    'バリエーション項目キー2','バリエーション項目選択肢2',
+    '通常購入販売価格','SKU在庫数',
+    'カタログID','カタログIDなしの理由',
+    'SKU画像タイプ','SKU画像パス',
+    '自由入力行（項目）1','自由入力行（値）1'
+  ];
+  const RI = {};
+  rH.forEach((h, i) => RI[h] = i);
   const rows = [];
   if (sourceType === 'jisha') {
     products.forEach(prod => {
@@ -1295,46 +1489,65 @@ function convertToRakuten() {
       });
       const hasColor = colorSet.size > 0;
       const hasSize = sizeSet.size > 0;
+      // 商品行
       const pRow = new Array(rH.length).fill('');
-      pRow[0] = prod.number;  // 商品管理番号
-      pRow[1] = prod.number;  // 商品番号
-      pRow[2] = applyMallName(prod.cleanName || prod.name, 'rakuten');  // 商品名
-      pRow[4] = '';  // キャッチコピー
+      pRow[RI['コントロールカラム']] = rm.controlCol || 'n';
+      pRow[RI['商品管理番号（商品URL）']] = prod.number;
+      pRow[RI['商品番号']] = prod.number;
+      pRow[RI['商品名']] = applyMallName(prod.cleanName || prod.name, 'rakuten');
+      pRow[RI['販売価格']] = prod.sellPrice;
+      pRow[RI['表示価格']] = calcListPrice(prod.sellPrice, 'rakuten') || '';
+      pRow[RI['ジャンルID']] = rm.genreId || '';
+      pRow[RI['消費税']] = rm.taxType || '0';
+      pRow[RI['送料']] = rm.shippingFee || '0';
+      pRow[RI['個別送料（税込）']] = String(rm.indivShipping || 0);
+      pRow[RI['配送方法セット管理番号']] = rm.shippingSet || '';
+      pRow[RI['配送方法セット名（配送方法セット管理番号が未指定の場合のみ有効）']] = rm.shippingName || '';
+      pRow[RI['あす楽配送管理番号']] = rm.asuraku || '';
+      pRow[RI['のし対応']] = rm.noshi || '0';
+      pRow[RI['在庫タイプ']] = rm.stockType || '1';
+      pRow[RI['再入荷お知らせボタン']] = rm.restockBtn || '0';
+      pRow[RI['キャッチコピー']] = '';
+      pRow[RI['PC用商品説明文']] = applyDescTemplate(rm.pcDescTpl, prod);
+      pRow[RI['スマートフォン用商品説明文']] = applyDescTemplate(rm.spDescTpl, prod);
+      pRow[RI['PC用販売説明文']] = applyDescTemplate(rm.saleDescTpl, prod);
+      pRow[RI['ポイント変倍率']] = String(rm.pointRate || 1);
+      pRow[RI['ポイント変倍率適用期間開始']] = rm.pointStart || '';
+      pRow[RI['ポイント変倍率適用期間終了']] = rm.pointEnd || '';
+      pRow[RI['販売期間指定']] = (prod.saleStartDate && prod.saleEndDate) ? `${prod.saleStartDate}/${prod.saleEndDate}` : '';
       // バリエーション定義
       const keyParts = [];
       const nameParts = [];
       if (hasColor) { keyParts.push('horizontal-key'); nameParts.push('カラー'); }
       if (hasSize) { keyParts.push('vertical-key'); nameParts.push('サイズ'); }
-      pRow[8] = keyParts.join('|');  // バリエーション項目キー定義
-      pRow[9] = nameParts.join('|');  // バリエーション項目名定義
-      // カラー選択肢（表示順でソート）
+      pRow[RI['バリエーション項目キー定義']] = keyParts.join('|');
+      pRow[RI['バリエーション項目名定義']] = nameParts.join('|');
       if (hasColor) {
         const sortedColors = [...colorSet].sort((a, b) => {
           return (MASTER.colorOrder[a] || 9999) - (MASTER.colorOrder[b] || 9999);
         });
-        pRow[10] = sortedColors.join('|');
+        pRow[RI['バリエーション1選択肢定義']] = sortedColors.join('|');
       }
-      // サイズ選択肢
       if (hasSize) {
         const sizeOrder = {'S':1, 'M':2, 'L':3, 'XL':4, 'XXL':5, 'F':0, 'F(M)':0, 'フリー':0, 'FREE':0};
-        const sortedSizes = [...sizeSet].sort((a, b) => {
-          return (sizeOrder[a] || 99) - (sizeOrder[b] || 99);
-        });
-        pRow[11] = sortedSizes.join('|');
+        const sortedSizes = [...sizeSet].sort((a, b) => (sizeOrder[a] || 99) - (sizeOrder[b] || 99));
+        pRow[RI['バリエーション2選択肢定義']] = sortedSizes.join('|');
       }
       rows.push(pRow);
       // SKU行
       prod.skus.forEach(sku => {
         const sRow = new Array(rH.length).fill('');
-        sRow[0] = prod.number;  // 商品管理番号
-        sRow[12] = sku.skuMgmtNo || sku.jan;  // SKU管理番号
-        sRow[13] = sku.jan || sku.skuMgmtNo;  // システム連携用SKU番号
-        if (hasColor) { sRow[14] = 'horizontal-key'; sRow[15] = sku.color; }
-        if (hasSize) { sRow[16] = 'vertical-key'; sRow[17] = sku.size; }
-        sRow[18] = sku.price || prod.sellPrice;  // 通常購入販売価格
-        sRow[19] = MASTER.malls.rakuten.catalogReason || '3';  // カタログIDなしの理由
-        sRow[20] = '型番';
-        sRow[21] = sku.jan || sku.skuMgmtNo;
+        sRow[RI['コントロールカラム']] = rm.controlCol || 'n';
+        sRow[RI['商品管理番号（商品URL）']] = prod.number;
+        sRow[RI['SKU管理番号']] = sku.skuMgmtNo || sku.jan;
+        sRow[RI['システム連携用SKU番号']] = sku.jan || sku.skuMgmtNo;
+        if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'horizontal-key'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
+        if (hasSize) { sRow[RI['バリエーション項目キー2']] = 'vertical-key'; sRow[RI['バリエーション項目選択肢2']] = sku.size; }
+        sRow[RI['通常購入販売価格']] = sku.price || prod.sellPrice;
+        sRow[RI['SKU在庫数']] = '0';
+        sRow[RI['カタログIDなしの理由']] = rm.catalogReason || '3';
+        sRow[RI['自由入力行（項目）1']] = '型番';
+        sRow[RI['自由入力行（値）1']] = sku.jan || sku.skuMgmtNo;
         rows.push(sRow);
       });
     });
