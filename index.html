@@ -12,63 +12,63 @@
   --danger: #c45c5c; --info: #5b8dbe;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
 header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
-header h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
-header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+header h1 { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+header .subtitle { font-size: 14px; opacity: 0.85; margin-top: 2px; }
 .header-right { display: flex; gap: 8px; }
-.header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s; }
+.header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s; }
 .header-right button:hover { background: rgba(255,255,255,0.25); }
 .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
 .steps { display: flex; margin-bottom: 24px; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 .step { flex: 1; padding: 14px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
 .step.active { background: var(--accent); border-bottom-color: var(--primary); }
 .step.done { background: #f0ede9; border-bottom-color: var(--success); }
-.step-number { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--border); color: var(--text-light); font-size: 12px; font-weight: 700; margin-right: 6px; vertical-align: middle; }
+.step-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-light); font-size: 14px; font-weight: 700; margin-right: 6px; vertical-align: middle; }
 .step.active .step-number { background: var(--primary); color: white; }
 .step.done .step-number { background: var(--success); color: white; }
-.step-label { font-size: 13px; font-weight: 600; }
+.step-label { font-size: 15px; font-weight: 600; }
 .panel { display: none; background: var(--card); border-radius: 12px; padding: 28px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
 .panel.active { display: block; animation: fadeIn 0.3s ease; }
-.panel h2 { font-size: 17px; margin-bottom: 4px; color: var(--primary-dark); }
-.panel .desc { font-size: 12px; color: var(--text-light); margin-bottom: 20px; }
+.panel h2 { font-size: 19px; margin-bottom: 4px; color: var(--primary-dark); }
+.panel .desc { font-size: 14px; color: var(--text-light); margin-bottom: 20px; }
 .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 44px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fdfcfb; margin-bottom: 12px; }
 .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: var(--accent); }
 .upload-area .icon { font-size: 42px; margin-bottom: 10px; }
-.upload-area p { font-size: 14px; color: var(--text-light); }
-.upload-area .formats { font-size: 11px; color: #999; margin-top: 6px; }
+.upload-area p { font-size: 15px; color: var(--text-light); }
+.upload-area .formats { font-size: 13px; color: #999; margin-top: 6px; }
 .source-select { display: flex; gap: 10px; margin-bottom: 16px; }
-.source-btn { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 13px; font-weight: 600; }
+.source-btn { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 15px; font-weight: 600; }
 .source-btn.selected { border-color: var(--primary); background: var(--accent); color: var(--primary-dark); }
 .source-btn:hover { border-color: var(--primary); }
 .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0; }
 .summary-card { background: #fdfcfb; border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
-.summary-card .num { font-size: 26px; font-weight: 700; color: var(--primary-dark); }
-.summary-card .label { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.summary-card .num { font-size: 28px; font-weight: 700; color: var(--primary-dark); }
+.summary-card .label { font-size: 13px; color: var(--text-light); margin-top: 2px; }
 .table-wrapper { overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-thead th { background: var(--accent); padding: 8px 10px; text-align: left; font-weight: 600; font-size: 11px; color: var(--primary-dark); white-space: nowrap; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid var(--primary); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th { background: var(--accent); padding: 8px 10px; text-align: left; font-weight: 600; font-size: 13px; color: var(--primary-dark); white-space: nowrap; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid var(--primary); }
 tbody td { padding: 6px 10px; border-bottom: 1px solid #f0ede9; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top; }
 tbody tr:hover { background: #faf8f6; }
 td[contenteditable="true"] { cursor: text; outline: none; min-width: 60px; }
 td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 2px var(--warning); white-space: normal; overflow: visible; }
 .row-product { background: #faf8f5; font-weight: 600; }
 .row-sku { background: #ffffff; }
-.col-idx { width: 36px; text-align: center; color: #bbb; font-size: 10px; }
+.col-idx { width: 36px; text-align: center; color: #bbb; font-size: 12px; }
 .product-cards { display: grid; gap: 14px; margin: 16px 0; }
 .product-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .product-card-header { background: var(--accent); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-.product-card-header h3 { font-size: 13px; color: var(--primary-dark); flex: 1; }
+.product-card-header h3 { font-size: 15px; color: var(--primary-dark); flex: 1; }
 .product-card-body { padding: 14px 16px; display: none; }
 .product-card.open .product-card-body { display: block; }
-.product-card-header .arrow { transition: transform 0.2s; font-size: 12px; color: var(--text-light); }
+.product-card-header .arrow { transition: transform 0.2s; font-size: 14px; color: var(--text-light); }
 .product-card.open .product-card-header .arrow { transform: rotate(180deg); }
 .field-row { display: grid; grid-template-columns: 130px 1fr; gap: 6px; margin-bottom: 6px; align-items: start; }
-.field-label { font-size: 11px; font-weight: 600; color: var(--primary-dark); padding-top: 5px; }
-.field-value { font-size: 12px; padding: 3px 6px; border: 1px solid transparent; border-radius: 4px; min-height: 26px; line-height: 1.5; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--primary-dark); padding-top: 5px; }
+.field-value { font-size: 14px; padding: 3px 6px; border: 1px solid transparent; border-radius: 4px; min-height: 26px; line-height: 1.5; }
 .field-value[contenteditable="true"]:hover { border-color: var(--border); }
 .field-value[contenteditable="true"]:focus { border-color: var(--primary); background: #fff8e8; outline: none; }
-.btn { display: inline-flex; align-items: center; gap: 5px; padding: 9px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 9px 18px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-dark); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -76,25 +76,25 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .btn-success:hover { background: #4e8c60; }
 .btn-outline { background: white; color: var(--primary-dark); border: 2px solid var(--border); }
 .btn-outline:hover { border-color: var(--primary); }
-.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 5px; }
+.btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 5px; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 .download-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 16px 0; }
 .download-card { border: 2px solid var(--border); border-radius: 12px; padding: 22px; text-align: center; transition: all 0.2s; }
 .download-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
-.download-card .mall-name { font-size: 16px; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
-.download-card .mall-desc { font-size: 11px; color: var(--text-light); margin-bottom: 14px; }
+.download-card .mall-name { font-size: 18px; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+.download-card .mall-desc { font-size: 13px; color: var(--text-light); margin-bottom: 14px; }
 .view-toggle { display: flex; gap: 3px; background: #f0ede9; border-radius: 6px; padding: 2px; }
-.view-toggle button { padding: 5px 12px; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-light); }
+.view-toggle button { padding: 5px 12px; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-light); }
 .view-toggle button.active { background: white; color: var(--primary-dark); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-.search-box { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; width: 220px; }
+.search-box { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; width: 220px; }
 .search-box:focus { outline: none; border-color: var(--primary); }
-.badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 12px; font-weight: 600; }
 .badge-sku { background: #e8f4ea; color: var(--success); }
 .badge-product { background: #f0e8d8; color: #b08a3e; }
 .badge-img { background: #e8ecf4; color: var(--info); }
 .tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
-.tab { padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-light); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab { padding: 10px 20px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text-light); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
 .tab.active { color: var(--primary-dark); border-bottom-color: var(--primary); }
 .tab:hover { color: var(--primary-dark); }
 .tab-panel { display: none; }
@@ -104,40 +104,40 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .rakuten-tab-panel { display: none; }
 .rakuten-tab-panel.active { display: block; }
 /* モール選択タブ（上位） */
-.mall-tab { padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); border-bottom: 3px solid transparent; transition: all 0.2s; }
+.mall-tab { padding: 10px 20px; cursor: pointer; font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.65); border-bottom: 3px solid transparent; transition: all 0.2s; }
 .mall-tab:hover { color: rgba(255,255,255,0.9); }
 .mall-tab.active { color: white; border-bottom-color: white; background: rgba(255,255,255,0.1); }
 /* サブタブ（カテゴリ切替） */
-.sub-tab { padding: 7px 16px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-light); background: white; border: 1px solid var(--border); border-radius: 20px; transition: all 0.2s; }
+.sub-tab { padding: 7px 16px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-light); background: white; border: 1px solid var(--border); border-radius: 20px; transition: all 0.2s; }
 .sub-tab:hover { border-color: var(--primary); color: var(--primary); }
 .sub-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
 /* マスタフォームカード */
 .master-form-card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 16px 20px; margin-top: 0; }
 /* データ元バッジ */
-.badge-req { background: #c33; color: white; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; margin-left: 4px; }
-.src-excel { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
-.src-master { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
-.src-auto { background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
-.src-fixed { background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
-.src-none { background: #fafafa; color: #999; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; border: 1px solid #ddd; margin-right: 4px; }
+.badge-req { background: #c33; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; margin-left: 4px; }
+.src-excel { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-right: 4px; }
+.src-master { background: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-right: 4px; }
+.src-auto { background: #fff3e0; color: #e65100; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-right: 4px; }
+.src-fixed { background: #f3e5f5; color: #7b1fa2; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-right: 4px; }
+.src-none { background: #fafafa; color: #999; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid #ddd; margin-right: 4px; }
 /* RMS風タブ */
-.rms-tab { padding: 10px 18px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-light); background: #f0f0f0; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; margin-right: 2px; transition: all 0.2s; }
+.rms-tab { padding: 10px 18px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-light); background: #f0f0f0; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; margin-right: 2px; transition: all 0.2s; }
 .rms-tab:hover { background: #e8e8e8; }
 .rms-tab.active { background: white; color: var(--primary-dark); border-color: var(--primary); border-bottom: 2px solid white; margin-bottom: -3px; position: relative; z-index: 1; }
 /* RMS風フォーム */
-.rms-form { width: 100%; border-collapse: collapse; background: white; border: 1px solid var(--border); border-top: none; font-size: 12px; }
-.rms-form th { background: #f8f6f2; padding: 10px 14px; text-align: left; font-weight: 600; color: #333; border: 1px solid #e0dcd6; width: 220px; vertical-align: top; line-height: 1.6; }
-.rms-form td { padding: 10px 14px; border: 1px solid #e0dcd6; vertical-align: middle; line-height: 1.8; color: #444; }
-.rms-form .rms-section td { background: var(--primary-dark); color: white; font-weight: 700; font-size: 12px; padding: 8px 14px; }
-.rms-input { padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; }
-.rms-textarea { width: 100%; height: 90px; border: 1px solid #ccc; border-radius: 3px; padding: 8px; font-size: 11px; font-family: monospace; margin-top: 6px; }
+.rms-form { width: 100%; border-collapse: collapse; background: white; border: 1px solid var(--border); border-top: none; font-size: 14px; }
+.rms-form th { background: #f8f6f2; padding: 12px 16px; text-align: left; font-weight: 600; color: #333; border: 1px solid #e0dcd6; width: 240px; vertical-align: top; line-height: 1.6; }
+.rms-form td { padding: 12px 16px; border: 1px solid #e0dcd6; vertical-align: middle; line-height: 1.8; color: #444; }
+.rms-form .rms-section td { background: var(--primary-dark); color: white; font-weight: 700; font-size: 14px; padding: 10px 16px; }
+.rms-input { padding: 6px 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+.rms-textarea { width: 100%; height: 90px; border: 1px solid #ccc; border-radius: 3px; padding: 8px; font-size: 13px; font-family: monospace; margin-top: 6px; }
 .master-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .master-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: #fdfcfb; }
-.master-card h3 { font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
-.master-card textarea { width: 100%; height: 120px; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 12px; font-family: monospace; resize: vertical; }
+.master-card h3 { font-size: 15px; color: var(--primary-dark); margin-bottom: 8px; }
+.master-card textarea { width: 100%; height: 120px; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 14px; font-family: monospace; resize: vertical; }
 .master-card textarea:focus { outline: none; border-color: var(--primary); }
-.master-card .hint { font-size: 10px; color: #999; margin-top: 4px; }
-.notification { position: fixed; top: 20px; right: 20px; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: white; z-index: 1000; animation: fadeIn 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+.master-card .hint { font-size: 12px; color: #999; margin-top: 4px; }
+.notification { position: fixed; top: 20px; right: 20px; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; color: white; z-index: 1000; animation: fadeIn 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
 .notification.success { background: var(--success); }
 .notification.info { background: var(--primary); }
 .notification.warning { background: var(--warning); }
@@ -205,7 +205,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         <span style="font-size:22px;">✅</span>
         <div>
           <div style="font-weight:600; font-size:14px;" id="file-name"></div>
-          <div style="font-size:11px; color:#666;" id="file-info"></div>
+          <div style="font-size:13px; color:#666;" id="file-info"></div>
         </div>
       </div>
     </div>
@@ -305,9 +305,9 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     <!-- 楽天 固有設定（RMS風レイアウト） -->
     <div class="master-mall-panel" id="mall-rakuten" style="display:none;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-        <span style="font-size:15px; font-weight:700; color:var(--primary-dark);">自社Excel → 楽天CSV 新規登録</span>
+        <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">自社Excel → 楽天CSV 新規登録</span>
       </div>
-      <p style="font-size:11px; color:var(--text-light); margin:0 0 12px 0;">
+      <p style="font-size:13px; color:var(--text-light); margin:0 0 12px 0;">
         <span class="src-excel">自社Excel</span> Excelから自動取得
         <span class="src-master">マスタ</span> この画面で設定する値
         <span class="src-auto">自動</span> 自動生成
@@ -352,9 +352,9 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
               <span class="src-excel">自社Excel</span> 「商品名」列 + クリーニング<br>
               <div style="margin-top:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <span class="src-master">マスタ</span>
-                <span style="font-size:11px;">前に付ける文字</span>
+                <span style="font-size:13px;">前に付ける文字</span>
                 <input type="text" id="mall-rakuten-name-prefix" class="rms-input" style="width:160px;" placeholder="例: 【送料無料】">
-                <span style="font-size:11px;">後に付ける文字</span>
+                <span style="font-size:13px;">後に付ける文字</span>
                 <input type="text" id="mall-rakuten-name-suffix" class="rms-input" style="width:160px;" placeholder="例: ◆レディース">
               </div>
             </td>
@@ -368,7 +368,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
             <td>
               <span class="src-master">マスタ</span>
               <input type="text" id="mall-rakuten-genre-id" class="rms-input" style="width:160px;" placeholder="例: 565004">
-              <span style="font-size:10px; color:var(--text-light);">全商品共通</span>
+              <span style="font-size:12px; color:var(--text-light);">全商品共通</span>
             </td>
           </tr>
           <tr>
@@ -393,7 +393,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       <div class="rakuten-tab-panel" id="rtab-price" style="display:none;">
         <table class="rms-form">
           <tr>
-            <th>通常購入販売価格<span class="badge-req">必須</span><br><span style="font-size:10px; color:#888;">SKU毎に入力</span></th>
+            <th>通常購入販売価格<span class="badge-req">必須</span><br><span style="font-size:12px; color:#888;">SKU毎に入力</span></th>
             <td><span class="src-excel">自社Excel</span> 「販売金額(税込)」列をそのまま使用</td>
           </tr>
           <tr>
@@ -403,7 +403,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
               <span class="src-master">マスタ</span>
               定価掛率
               <input type="number" id="mall-rakuten-price-rate" value="40" min="1" max="200" class="rms-input" style="width:70px;">
-              <span style="font-size:12px;">%</span>
+              <span style="font-size:14px;">%</span>
             </td>
           </tr>
           <tr>
@@ -421,8 +421,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
             <td>
               <span class="src-master">マスタ</span>
               <input type="number" id="mall-rakuten-point-rate" value="1" min="1" max="20" class="rms-input" style="width:60px;">
-              <span style="font-size:12px;">倍</span>
-              <span style="font-size:11px; margin-left:12px;">期間</span>
+              <span style="font-size:14px;">倍</span>
+              <span style="font-size:13px; margin-left:12px;">期間</span>
               <input type="text" id="mall-rakuten-point-start" class="rms-input" style="width:120px;" placeholder="開始日">
               〜
               <input type="text" id="mall-rakuten-point-end" class="rms-input" style="width:120px;" placeholder="終了日">
@@ -602,7 +602,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
           </tr>
           <tr>
             <th>使用できる置換タグ</th>
-            <td style="font-size:11px; line-height:2;">
+            <td style="font-size:13px; line-height:2;">
               <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{商品名}</code>
               <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{素材}</code>
               <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{採寸サイズ}</code>
@@ -651,20 +651,20 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
     <div class="master-mall-panel" id="mall-shopline" style="display:none; padding-top:16px;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → SHOPLINE CSV</span>
-        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">SHOPLINE CSVに出力する固定値を設定</span>
+        <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">自社Excel → SHOPLINE CSV</span>
+        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">SHOPLINE CSVに出力する固定値を設定</span>
       </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
-        <input type="number" id="mall-shopline-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
-        <label style="font-size:12px; font-weight:600;">デフォルト在庫数：</label>
-        <input type="number" id="mall-shopline-default-stock" value="0" min="0" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:14px; font-weight:600;">価格掛率（%）：</label>
+        <input type="number" id="mall-shopline-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:80px;">
+        <label style="font-size:14px; font-weight:600;">デフォルト在庫数：</label>
+        <input type="number" id="mall-shopline-default-stock" value="0" min="0" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:80px;">
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-shopline-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-shopline-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
@@ -674,18 +674,18 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
     <div class="master-mall-panel" id="mall-yahoo" style="display:none; padding-top:16px;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → Yahoo! CSV</span>
-        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Yahoo! CSVに出力する固定値を設定</span>
+        <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">自社Excel → Yahoo! CSV</span>
+        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Yahoo! CSVに出力する固定値を設定</span>
       </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">定価掛率（%）：</label>
-        <input type="number" id="mall-yahoo-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:14px; font-weight:600;">定価掛率（%）：</label>
+        <input type="number" id="mall-yahoo-price-rate" value="40" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:80px;">
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-yahoo-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-yahoo-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
@@ -695,20 +695,20 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
     <div class="master-mall-panel" id="mall-amazon" style="display:none; padding-top:16px;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → Amazon CSV</span>
-        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Amazon CSVに出力する固定値を設定</span>
+        <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">自社Excel → Amazon CSV</span>
+        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Amazon CSVに出力する固定値を設定</span>
       </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
-        <input type="number" id="mall-amazon-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
-        <label style="font-size:12px; font-weight:600;">ブランド名：</label>
+        <label style="font-size:14px; font-weight:600;">価格掛率（%）：</label>
+        <input type="number" id="mall-amazon-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:80px;">
+        <label style="font-size:14px; font-weight:600;">ブランド名：</label>
         <input type="text" id="mall-amazon-brand" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-amazon-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-amazon-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
@@ -718,18 +718,18 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
     <div class="master-mall-panel" id="mall-qoo10" style="display:none; padding-top:16px;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-        <span style="font-size:14px; font-weight:700; color:var(--primary-dark);">自社Excel → Qoo10 CSV</span>
-        <span style="font-size:11px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Qoo10 CSVに出力する固定値を設定</span>
+        <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">自社Excel → Qoo10 CSV</span>
+        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">Qoo10 CSVに出力する固定値を設定</span>
       </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">価格掛率（%）：</label>
-        <input type="number" id="mall-qoo10-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; width:80px;">
+        <label style="font-size:14px; font-weight:600;">価格掛率（%）：</label>
+        <input type="number" id="mall-qoo10-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:80px;">
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:12px; font-weight:600;">商品名の前に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の前に付ける文字：</label>
         <input type="text" id="mall-qoo10-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:12px; font-weight:600;">商品名の後に付ける文字：</label>
+        <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-qoo10-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
       <div style="margin-top:12px;">
