@@ -910,7 +910,7 @@ function structureJisha() {
         saleStartDate: col(row, '販売日'),
         saleEndDate: col(row, '終了日'),
         material: col(row, '素材'),
-        costPrice: col(row, '仕入金額'),
+        costPrice: col(row, '仕入金額(円)') || col(row, '仕入金額'),
         sellPrice: col(row, '販売金額(税込)') || col(row, '販売金額'),
         measureSize: col(row, '採寸サイズ') || '',
         productPoint: col(row, '商品ポイント') || '',
@@ -1016,7 +1016,7 @@ function renderCardView() {
         ['商品名（クリーン）', 'cleanName', prod.cleanName],
         ['カテゴリ', 'category', prod.category],
         ['素材', 'material', prod.material],
-        ['仕入金額', 'costPrice', prod.costPrice],
+        ['仕入金額(円)', 'costPrice', prod.costPrice],
         ['販売金額(税込)', 'sellPrice', prod.sellPrice],
         ['採寸サイズ', 'measureSize', prod.measureSize],
         ['商品ポイント', 'productPoint', prod.productPoint],
@@ -1138,7 +1138,7 @@ function renderTableView() {
   if (sourceType === 'rakuten') {
     keyCols = ['商品管理番号（商品URL）','商品名','商品番号','キャッチコピー','バリエーション項目名定義','SKU管理番号','システム連携用SKU番号','バリエーション項目選択肢1','バリエーション項目選択肢2','通常購入販売価格','カタログID'];
   } else if (sourceType === 'jisha') {
-    keyCols = ['タスクID','商品番号','商品名','カテゴリ','素材','サイズ','カラー','JAN','仕入金額','販売金額(税込)','採寸サイズ','商品ポイント','仕様','洗濯表記','配送方法'];
+    keyCols = ['タスクID','商品番号','商品名','カテゴリ','素材','サイズ','カラー','JAN','仕入金額(円)','販売金額(税込)','採寸サイズ','商品ポイント','仕様','洗濯表記','配送方法'];
   } else {
     keyCols = ['Handle','Title*','SKU','Option1 name','Option1 value','Option2 name','Option2 value','SKU price','SKU Inventory Quantity'];
   }
