@@ -157,10 +157,9 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
   <!-- STEP 1 -->
   <div class="panel active" id="panel-1">
     <h2>CSVファイルをアップロード</h2>
-    <p class="desc">楽天RMSからダウンロードしたCSV、自社SHOPLINE CSV、または自社システムのExcelをアップロードしてください。</p>
+    <p class="desc">楽天RMSからダウンロードしたCSV、または自社システムのExcelをアップロードしてください。</p>
     <div class="source-select">
       <div class="source-btn selected" data-source="rakuten" onclick="selectSource('rakuten')">🏪 楽天CSV（RMS）</div>
-      <div class="source-btn" data-source="shopline" onclick="selectSource('shopline')">🏠 自社（SHOPLINE）CSV</div>
       <div class="source-btn" data-source="jisha" onclick="selectSource('jisha')">📊 自社システム（Excel）</div>
     </div>
     <div class="upload-area" id="upload-area"
@@ -815,8 +814,6 @@ function handleFile(file) {
     const firstLine = text.split(/[\r\n]/)[0] || '';
     if (firstLine.includes('商品管理番号（商品URL）') || firstLine.includes('バリエーション項目キー定義')) {
       selectSource('rakuten');
-    } else if (firstLine.includes('Handle') && firstLine.includes('SKU')) {
-      selectSource('shopline');
     }
     parseCSVText(text, file);
   };
@@ -882,10 +879,6 @@ function parseCSVText(text, file) {
     if (missing.length > 0) {
       logHTML += `<div style="color:var(--danger);">✗ 未検出列: ${missing.join(', ')}</div>`;
     }
-  } else {
-    const requiredCols = ['Handle', 'SKU'];
-    const found = requiredCols.filter(c => CI[c] !== undefined);
-    logHTML += `<div style="color:var(--success);">✓ SHOPLINE形式 検出: ${found.join(', ')}</div>`;
   }
 
   let prodCount = 0, skuCount = 0;
@@ -900,7 +893,7 @@ function parseCSVText(text, file) {
   log.innerHTML = logHTML;
   log.style.display = 'block';
   document.getElementById('file-name').textContent = file.name;
-  document.getElementById('file-info').textContent = `${headers.length}列 × ${rawRows.length}行 ｜ ソース: ${sourceType === 'rakuten' ? '楽天' : sourceType === 'jisha' ? '自社システム' : '自社(SHOPLINE)'}`;
+  document.getElementById('file-info').textContent = `${headers.length}列 × ${rawRows.length}行 ｜ ソース: ${sourceType === 'rakuten' ? '楽天' : '自社システム'}`;
   document.getElementById('upload-status').style.display = 'block';
   document.getElementById('btn-next-1').disabled = false;
   notify('CSVを読み込みました', 'success');
@@ -947,8 +940,7 @@ function parseCSV(text) {
 // ============================================================
 function processAndGoStep2() {
   if (sourceType === 'rakuten') { products = structureRakuten(); }
-  else if (sourceType === 'jisha') { products = structureJisha(); }
-  else { products = structureShopline(); }
+  else { products = structureJisha(); }
   editedFields = {};
   renderStep2();
   goToStep(2);
@@ -1002,47 +994,6 @@ function structureRakuten() {
         if (label || val) sku.customFields.push({ label, value: val });
       }
       currentProduct.skus.push(sku);
-    }
-  }
-  return prods;
-}
-
-function structureShopline() {
-  const prods = [];
-  const grouped = {};
-  for (let r = 0; r < rawRows.length; r++) {
-    const row = rawRows[r];
-    while (row.length < headers.length) row.push('');
-    const handle = col(row, 'Handle');
-    if (!handle) continue;
-    if (!grouped[handle]) {
-      grouped[handle] = {
-        rowIndex: r, id: handle,
-        name: col(row, 'Title*') || col(row, 'Title') || '',
-        subtitle: col(row, 'Subtitle'), description: col(row, 'Product description html'),
-        spu: col(row, 'SPU'), vendor: col(row, 'Vendor'), tags: col(row, 'Tags'),
-        collections: col(row, 'Collections'), images: [], skus: [], raw: row
-      };
-      prods.push(grouped[handle]);
-    }
-    const prod = grouped[handle];
-    const masterImg = col(row, 'Master image');
-    if (masterImg && !prod.images.find(i => i.url === masterImg)) {
-      prod.images.push({ url: masterImg, alt: col(row, 'Image Alt Text') });
-    }
-    const skuVal = col(row, 'SKU');
-    if (skuVal) {
-      const skuObj = {
-        rowIndex: r, skuId: skuVal, price: col(row, 'SKU price'),
-        comparePrice: col(row, 'SKU compare at price'), image: col(row, 'Image'),
-        inventory: col(row, 'SKU Inventory Quantity'), options: [], raw: row
-      };
-      for (let o = 1; o <= 5; o++) {
-        const nm = col(row, `Option${o} name`);
-        const vl = col(row, `Option${o} value`);
-        if (nm || vl) skuObj.options.push({ name: nm, value: vl });
-      }
-      prod.skus.push(skuObj);
     }
   }
   return prods;
