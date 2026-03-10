@@ -671,7 +671,7 @@ function parseExcelFile(arrayBuffer, file) {
     headers.forEach((h, i) => { CI[h] = i; });
 
     const log = document.getElementById('parse-log');
-    const requiredCols = ['タスクID', '商品番号', '商品名', 'カラー', '販売金額'];
+    const requiredCols = ['タスクID', '商品番号', '商品名', 'カラー', '販売金額(税込)'];
     const found = requiredCols.filter(c => CI[c] !== undefined);
     const missing = requiredCols.filter(c => CI[c] === undefined);
     let logHTML = `<div style="color:var(--success);">✓ Excel読込成功: ${headers.length}列</div>`;
@@ -912,7 +912,7 @@ function structureJisha() {
         saleEndDate: col(row, '終了日'),
         material: col(row, '素材'),
         costPrice: col(row, '仕入金額'),
-        sellPrice: col(row, '販売金額'),
+        sellPrice: col(row, '販売金額(税込)') || col(row, '販売金額'),
         sizeSpec: col(row, '群サイズ') || col(row, 'サイズ') || '',
         productSpec: col(row, '商品ポイ仕様') || col(row, '商品ポイント仕様') || '',
         modelInfo: col(row, 'モデル撮制作担洗濯表記★') || col(row, 'モデル撮影') || '',
@@ -1017,7 +1017,7 @@ function renderCardView() {
         ['カテゴリ', 'category', prod.category],
         ['素材', 'material', prod.material],
         ['仕入金額', 'costPrice', prod.costPrice],
-        ['販売金額', 'sellPrice', prod.sellPrice],
+        ['販売金額(税込)', 'sellPrice', prod.sellPrice],
         ['販売期間', '_period', (prod.saleStartDate || '') + ' ～ ' + (prod.saleEndDate || '')],
         ['配送方法', 'shippingMethod', prod.shippingMethod],
         ['担当者', '_assignee', prod.assignee],
@@ -1133,7 +1133,7 @@ function renderTableView() {
   if (sourceType === 'rakuten') {
     keyCols = ['商品管理番号（商品URL）','商品名','商品番号','キャッチコピー','バリエーション項目名定義','SKU管理番号','システム連携用SKU番号','バリエーション項目選択肢1','バリエーション項目選択肢2','通常購入販売価格','カタログID'];
   } else if (sourceType === 'jisha') {
-    keyCols = ['タスクID','商品番号','商品名','カテゴリ','素材','自社限定サイズ','スウォッチ','カラー','JAN','仕入金額','販売金額','配送方法'];
+    keyCols = ['タスクID','商品番号','商品名','カテゴリ','素材','自社限定サイズ','スウォッチ','カラー','JAN','仕入金額','販売金額(税込)','配送方法'];
   } else {
     keyCols = ['Handle','Title*','SKU','Option1 name','Option1 value','Option2 name','Option2 value','SKU price','SKU Inventory Quantity'];
   }
