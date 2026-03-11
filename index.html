@@ -12,15 +12,15 @@
   --danger: #c45c5c; --info: #5b8dbe;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
-header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 10px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); height: 100vh; font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
+header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 10px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 100; }
 header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
 header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
 .header-right { display: flex; gap: 8px; }
 .header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s; }
 .header-right button:hover { background: rgba(255,255,255,0.25); }
-.container { max-width: 1400px; margin: 0 auto; padding: 12px 24px; }
-.steps { display: flex; margin-bottom: 12px; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: sticky; top: 50px; z-index: 99; }
+.container { max-width: 1400px; margin: 0 auto; padding: 12px 24px; flex: 1; overflow-y: auto; min-height: 0; }
+.steps { display: flex; background: var(--card); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex-shrink: 0; z-index: 99; }
 .step { flex: 1; padding: 8px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
 .step.active { background: var(--accent); border-bottom-color: var(--primary); }
 .step.done { background: #f0ede9; border-bottom-color: var(--success); }
@@ -169,21 +169,21 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     <input type="file" id="import-state" accept=".json" style="display:none" onchange="importState(this.files[0])">
   </div>
 </header>
-<div class="container">
-  <div class="steps">
-    <div class="step active" data-step="1" onclick="goToStep(1)">
-      <span class="step-number">1</span><span class="step-label">アップロード</span>
-    </div>
-    <div class="step" data-step="2" onclick="goToStep(2)">
-      <span class="step-number">2</span><span class="step-label">確認・編集</span>
-    </div>
-    <div class="step" data-step="3" onclick="goToStep(3)">
-      <span class="step-number">3</span><span class="step-label">アップロード確認</span>
-    </div>
-    <div class="step" data-step="4" onclick="goToStep(4)">
-      <span class="step-number">4</span><span class="step-label">ダウンロード</span>
-    </div>
+<div class="steps">
+  <div class="step active" data-step="1" onclick="goToStep(1)">
+    <span class="step-number">1</span><span class="step-label">アップロード</span>
   </div>
+  <div class="step" data-step="2" onclick="goToStep(2)">
+    <span class="step-number">2</span><span class="step-label">確認・編集</span>
+  </div>
+  <div class="step" data-step="3" onclick="goToStep(3)">
+    <span class="step-number">3</span><span class="step-label">アップロード確認</span>
+  </div>
+  <div class="step" data-step="4" onclick="goToStep(4)">
+    <span class="step-number">4</span><span class="step-label">ダウンロード</span>
+  </div>
+</div>
+<div class="container">
 
   <!-- STEP 1 -->
   <div class="panel active" id="panel-1">
@@ -1805,8 +1805,6 @@ function renderStep2() {
     // 画面幅いっぱいに広げ、ページスクロールを無効化
     if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.overflow = 'hidden'; }
     if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; panelEl.style.overflow = 'hidden'; }
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
     // RMSビューをステップバーの下に配置（fixedは使わない）
     const rmsView = document.getElementById('step2-rms-view');
     if (rmsView) {
@@ -1821,9 +1819,8 @@ function renderStep2() {
     document.getElementById('step2-rms-view').style.display = 'none';
     if (headerText) headerText.style.display = '';
     // 通常幅に戻す
-    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
-    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; }
-    document.body.style.overflow = '';
+    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; containerEl.style.overflow = ''; }
+    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; panelEl.style.overflow = ''; }
     // (stepsバーは常時表示のまま)
     const rmsView2 = document.getElementById('step2-rms-view');
     if (rmsView2) { rmsView2.style.background = ''; rmsView2.style.overflow = ''; }
@@ -2365,9 +2362,6 @@ function goToStep(n) {
   if (n !== 2 || sourceType !== 'rakuten') {
     if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; containerEl.style.overflow = ''; }
     if (panel2) { panel2.style.padding = ''; panel2.style.overflow = ''; }
-    // 楽天フルスクリーンモードの解除
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
     const rmsViewNav = document.getElementById('step2-rms-view');
     if (rmsViewNav) { rmsViewNav.style.background = ''; rmsViewNav.style.overflow = ''; }
     if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
