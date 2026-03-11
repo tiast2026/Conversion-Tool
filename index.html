@@ -1890,9 +1890,12 @@ function renderStep2Rms() {
     // メインコンテンツ
     html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
 
-    // パンくず + ヘッダーカード
-    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
-    html += '<div style="padding:8px 16px; flex-shrink:0;">';
+    // === スクロール領域（パンくず・ヘッダー・タブバー・タブコンテンツすべて含む） ===
+    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;">';
+
+    // パンくず + ヘッダーカード（スクロールで消える）
+    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
+    html += '<div style="padding:8px 16px;">';
     html += '<div style="display:flex; gap:12px; padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px; background:#fafafa; align-items:center; overflow:hidden;">';
     html += '<div style="width:56px; height:56px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
     if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>No Image</div>\'">';
@@ -1909,7 +1912,7 @@ function renderStep2Rms() {
     html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
     html += '</div></div></div></div>';
 
-    // 横タブ（楽天RMS風）
+    // 横タブ（楽天RMS風）— sticky固定でスクロールしても残る
     const tabItems = [
       {label:'基本情報', tab:'s2basic'},
       {label:'バリエーション', tab:'s2var'},
@@ -1918,7 +1921,7 @@ function renderStep2Rms() {
       {label:'説明文', tab:'s2desc'},
       {label:'オプション', tab:'s2opt'},
     ];
-    html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; flex-shrink:0; background:#fafafa;">';
+    html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2;">';
     tabItems.forEach((item, idx) => {
       const isActive = idx === 0;
       html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">';
@@ -1926,8 +1929,8 @@ function renderStep2Rms() {
     });
     html += '</div>';
 
-    // === タブコンテンツ（スクロール領域） ===
-    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:16px 24px 24px;">';
+    // === タブコンテンツ ===
+    html += '<div style="padding:16px 24px 24px;">';
 
     // 基本情報
     html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
@@ -2083,8 +2086,8 @@ function renderStep2Rms() {
     }
     html += '</div>';
 
+    html += '</div>'; // タブコンテンツ padding div
     html += '</div>'; // s2rms-tab-area (スクロール領域)
-    html += '</div>'; // padding
     html += '</div>'; // main content
     html += '</div>'; // panel
   });
