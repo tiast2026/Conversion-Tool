@@ -1782,12 +1782,23 @@ function renderStep2() {
   const totalImages = products.reduce((s, p) => s + p.images.length, 0);
   const totalOptions = products.reduce((s, p) => s + (p.options ? p.options.length : 0), 0);
   const src = sourceType === 'rakuten' ? '楽天' : sourceType === 'jisha' ? '自社Excel' : '自社';
-  document.getElementById('summary-cards').innerHTML = `
-    <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
-    <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
-    <div class="summary-card"><div class="num">${totalImages}</div><div class="label">画像数</div></div>
-    <div class="summary-card"><div class="num">${src}</div><div class="label">ソース</div></div>
-  `;
+  if (sourceType === 'rakuten') {
+    // 楽天: コンパクトなインラインバッジ表示
+    document.getElementById('summary-cards').innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px; padding:8px 0; font-size:13px; color:var(--text-light);">
+        <span style="font-weight:600; color:var(--primary-dark);">楽天CSV</span>
+        <span style="background:#f0ede9; padding:3px 10px; border-radius:12px;"><strong style="color:var(--primary-dark);">${totalProducts}</strong> 商品</span>
+        <span style="background:#f0ede9; padding:3px 10px; border-radius:12px;"><strong style="color:var(--primary-dark);">${totalSkus}</strong> SKU</span>
+        <span style="background:#f0ede9; padding:3px 10px; border-radius:12px;"><strong style="color:var(--primary-dark);">${totalImages}</strong> 画像</span>
+      </div>`;
+  } else {
+    document.getElementById('summary-cards').innerHTML = `
+      <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
+      <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
+      <div class="summary-card"><div class="num">${totalImages}</div><div class="label">画像数</div></div>
+      <div class="summary-card"><div class="num">${src}</div><div class="label">ソース</div></div>
+    `;
+  }
   if (sourceType === 'rakuten') {
     document.getElementById('step2-jisha-view').style.display = 'none';
     document.getElementById('step2-rms-view').style.display = '';
