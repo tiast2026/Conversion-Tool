@@ -20,7 +20,7 @@ header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
 .header-right { display: flex; gap: 8px; }
 .header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s; }
 .header-right button:hover { background: rgba(255,255,255,0.25); }
-.container { max-width: 1400px; margin: 0 auto; padding: 12px 24px; flex: 1; min-height: 0; }
+.container { max-width: 1400px; margin: 0 auto; padding: 8px 16px; flex: 1; min-height: 0; }
 body.rms-fullscreen .container { overflow: hidden; }
 .steps { display: flex; background: var(--card); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex-shrink: 0; z-index: 99; }
 .step { flex: 1; padding: 8px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
@@ -34,13 +34,19 @@ body.rms-fullscreen .container { overflow: hidden; }
 .panel.active { display: block; animation: fadeIn 0.3s ease; }
 .panel h2 { font-size: 19px; margin-bottom: 4px; color: var(--primary-dark); }
 .panel .desc { font-size: 14px; color: var(--text-light); margin-bottom: 20px; }
-.upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 44px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fdfcfb; margin-bottom: 12px; }
+#panel-1 { padding: 16px 20px; }
+#panel-1 .desc { margin-bottom: 10px; }
+.upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fdfcfb; margin-bottom: 8px; }
+.upload-area.has-file { padding: 12px; }
+.upload-area.has-file .icon { font-size: 20px; margin-bottom: 0; display: inline; }
+.upload-area.has-file p { display: inline; font-size: 13px; }
+.upload-area.has-file .formats { display: none; }
 .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: var(--accent); }
-.upload-area .icon { font-size: 42px; margin-bottom: 10px; }
-.upload-area p { font-size: 15px; color: var(--text-light); }
-.upload-area .formats { font-size: 13px; color: #999; margin-top: 6px; }
-.source-select { display: flex; gap: 10px; margin-bottom: 16px; }
-.source-btn { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 15px; font-weight: 600; }
+.upload-area .icon { font-size: 32px; margin-bottom: 6px; }
+.upload-area p { font-size: 14px; color: var(--text-light); }
+.upload-area .formats { font-size: 12px; color: #999; margin-top: 4px; }
+.source-select { display: flex; gap: 8px; margin-bottom: 10px; }
+.source-btn { flex: 1; padding: 8px; border: 2px solid var(--border); border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 14px; font-weight: 600; }
 .source-btn.selected { border-color: var(--primary); background: var(--accent); color: var(--primary-dark); }
 .source-btn:hover { border-color: var(--primary); }
 .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0; }
@@ -148,8 +154,8 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 .img-more { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #f0ede9; border-radius: 4px; font-size: 11px; color: #999; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 768px) {
-  .container { padding: 12px; }
-  .panel { padding: 16px; }
+  .container { padding: 8px; }
+  .panel { padding: 14px; }
   .upload-area { padding: 28px 12px; }
   .source-select { flex-direction: column; }
   .master-grid { grid-template-columns: 1fr; }
@@ -205,16 +211,16 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       <div class="formats">対応形式：CSV（UTF-8 / Shift-JIS 自動判別）/ Excel（.xlsx）</div>
     </div>
     <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
-    <div id="upload-status" style="display:none; margin-top:12px;">
-      <div style="display:flex; align-items:center; gap:10px; padding:12px; background:#f0f8f0; border-radius:8px; border:1px solid #d4e8d4;">
-        <span style="font-size:22px;">✅</span>
+    <div id="upload-status" style="display:none; margin-top:6px;">
+      <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f0f8f0; border-radius:8px; border:1px solid #d4e8d4;">
+        <span style="font-size:18px;">✅</span>
         <div>
-          <div style="font-weight:600; font-size:14px;" id="file-name"></div>
-          <div style="font-size:13px; color:#666;" id="file-info"></div>
+          <div style="font-weight:600; font-size:13px;" id="file-name"></div>
+          <div style="font-size:12px; color:#666;" id="file-info"></div>
         </div>
       </div>
     </div>
-    <div id="parse-log" style="display:none; margin-top:12px; padding:12px; background:#fdfcfb; border:1px solid var(--border); border-radius:8px; font-size:12px; max-height:200px; overflow:auto;"></div>
+    <div id="parse-log" style="display:none; margin-top:6px; padding:8px 12px; background:#fdfcfb; border:1px solid var(--border); border-radius:8px; font-size:11px; max-height:120px; overflow:auto;"></div>
     <div class="actions">
       <button class="btn btn-primary" onclick="processAndGoStep2()" id="btn-next-1" disabled>確認画面へ →</button>
     </div>
@@ -1167,6 +1173,7 @@ function parseExcelFile(arrayBuffer, file) {
     document.getElementById('file-name').textContent = file.name;
     document.getElementById('file-info').textContent = `${headers.length}列 × ${rawRows.length}行 ｜ ソース: 自社システム（Excel）`;
     document.getElementById('upload-status').style.display = 'block';
+    document.getElementById('upload-area').classList.add('has-file');
     document.getElementById('btn-next-1').disabled = false;
     notify('Excelを読み込みました', 'success');
   } catch(err) {
@@ -1209,6 +1216,7 @@ function parseCSVText(text, file) {
   document.getElementById('file-name').textContent = file.name;
   document.getElementById('file-info').textContent = `${headers.length}列 × ${rawRows.length}行 ｜ ソース: ${sourceType === 'rakuten' ? '楽天' : '自社システム'}`;
   document.getElementById('upload-status').style.display = 'block';
+  document.getElementById('upload-area').classList.add('has-file');
   document.getElementById('btn-next-1').disabled = false;
   notify('CSVを読み込みました', 'success');
 }
