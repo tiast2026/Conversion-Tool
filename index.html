@@ -245,7 +245,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     </div>
     <!-- 楽天CSV用: RMS風表示 -->
     <div id="step2-rms-view" style="display:none;"></div>
-    <div class="actions">
+    <div class="actions" id="step2-actions">
       <button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>
       <button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>
     </div>
@@ -1802,9 +1802,12 @@ function renderStep2() {
     document.getElementById('step2-jisha-view').style.display = 'none';
     document.getElementById('step2-rms-view').style.display = '';
     if (headerText) headerText.style.display = 'none';
-    // 画面幅いっぱいに広げる
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '4px 8px'; }
-    if (panelEl) { panelEl.style.padding = '8px 8px'; }
+    // 画面幅いっぱいに広げ、ページスクロールを無効化
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; }
+    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
+    document.body.style.overflow = 'hidden';
+    const step2Actions = document.getElementById('step2-actions');
+    if (step2Actions) step2Actions.style.display = 'none';
     renderStep2Rms();
   } else {
     document.getElementById('step2-jisha-view').style.display = '';
@@ -1812,7 +1815,10 @@ function renderStep2() {
     if (headerText) headerText.style.display = '';
     // 通常幅に戻す
     if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
-    if (panelEl) { panelEl.style.padding = ''; }
+    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; }
+    document.body.style.overflow = '';
+    const step2Actions2 = document.getElementById('step2-actions');
+    if (step2Actions2) step2Actions2.style.display = '';
     renderCardView();
     renderTableView();
   }
@@ -1823,8 +1829,10 @@ function renderStep2Rms() {
   if (!container || products.length === 0) { if (container) container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">楽天データがありません。</p>'; return; }
 
   let html = '';
-  // === 2カラムレイアウト: 左=品番リスト、右=商品詳細 ===
-  html += '<div style="display:flex; gap:0; height:calc(100vh - 160px); min-height:500px;">';
+  // === 固定フッターボタン付きフルスクリーンレイアウト ===
+  html += '<div style="display:flex; flex-direction:column; height:100vh; overflow:hidden;">';
+  // 2カラムレイアウト: 左=品番リスト、右=商品詳細
+  html += '<div style="display:flex; gap:0; flex:1; min-height:0;">';
 
   // --- 左: 品番リスト（画像+品番、縦スクロール） ---
   html += '<div id="s2rms-product-list" style="width:240px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
@@ -1899,8 +1907,8 @@ function renderStep2Rms() {
     html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
     html += '</div></div></div>';
 
-    // === タブコンテンツ（スクロール領域 - JSで高さ計算） ===
-    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="overflow-y:auto; padding:0 20px 16px;">';
+    // === タブコンテンツ（スクロール領域） ===
+    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:auto; padding:0 20px 16px;">';
 
     // 基本情報
     html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
@@ -2064,21 +2072,14 @@ function renderStep2Rms() {
 
   html += '</div>'; // 右: 商品詳細パネル群
   html += '</div>'; // 2カラムレイアウト
+  // 固定フッターボタン
+  html += '<div style="flex-shrink:0; display:flex; justify-content:flex-end; gap:12px; padding:8px 16px; border-top:1px solid #e0e0e0; background:#fff;">';
+  html += '<button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>';
+  html += '<button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>';
+  html += '</div>';
+  html += '</div>'; // フルスクリーンレイアウト
 
   container.innerHTML = html;
-  // タブエリアの高さを動的に計算
-  requestAnimationFrame(() => { resizeS2RmsTabAreas(); });
-  window.removeEventListener('resize', resizeS2RmsTabAreas);
-  window.addEventListener('resize', resizeS2RmsTabAreas);
-}
-
-function resizeS2RmsTabAreas() {
-  document.querySelectorAll('.s2rms-tab-area').forEach(area => {
-    const rect = area.getBoundingClientRect();
-    const bottomMargin = 16;
-    const available = window.innerHeight - rect.top - bottomMargin;
-    area.style.maxHeight = Math.max(200, available) + 'px';
-  });
 }
 
 function switchStep2RmsProduct(idx) {
@@ -2099,7 +2100,6 @@ function switchStep2RmsProduct(idx) {
   // 選択した項目が見えるようスクロール
   const selectedItem = document.querySelectorAll('.s2rms-prod-item')[idx];
   if (selectedItem) selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  requestAnimationFrame(() => { resizeS2RmsTabAreas(); });
 }
 
 function switchS2RmsTab(tabId, gi) {
