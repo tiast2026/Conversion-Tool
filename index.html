@@ -1877,30 +1877,13 @@ function renderStep2Rms() {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? buildRakutenImgUrl(prod.images[0].path) : '');
     const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="this.style.borderColor=\'#bf0000\'" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
 
-    html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; gap:0; flex:1; min-height:0;">';
-
-    // サイドバー（タブメニュー）
-    const sideItems = [
-      {n:'1', label:'基本情報', tab:'s2basic'},
-      {n:'2', label:'バリエーション', tab:'s2var'},
-      {n:'3', label:'販売・価格', tab:'s2price'},
-      {n:'4', label:'画像', tab:'s2img'},
-      {n:'5', label:'説明文', tab:'s2desc'},
-      {n:'6', label:'オプション', tab:'s2opt'},
-    ];
-    html += '<div style="width:150px; flex-shrink:0; background:#3c3c3c; color:#ccc; font-size:13px; padding-top:8px;">';
-    sideItems.forEach((item, idx) => {
-      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:12px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; border-left:3px solid transparent;' + (idx === 0 ? ' background:#555; color:white; border-left-color:#bf0000;' : '') + '">';
-      html += '<span style="background:#666; color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">' + item.n + '</span>';
-      html += '<span>' + item.label + '</span></div>';
-    });
-    html += '</div>';
+    html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0;">';
 
     // メインコンテンツ
-    html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-left:none; border-radius:0 6px 6px 0; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
-    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
+    html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
 
-    // ヘッダーカード（コンパクト）
+    // パンくず + ヘッダーカード
+    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
     html += '<div style="padding:8px 16px; flex-shrink:0;">';
     html += '<div style="display:flex; gap:12px; padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px; background:#fafafa; align-items:center;">';
     html += '<div style="width:56px; height:56px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
@@ -1916,7 +1899,24 @@ function renderStep2Rms() {
     if (prod.options && prod.options.length > 0) html += '<span>OP:' + prod.options.length + '</span>';
     const warehouse = prod.warehouse || '';
     html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
-    html += '</div></div></div>';
+    html += '</div></div></div></div>';
+
+    // 横タブ（楽天RMS風）
+    const tabItems = [
+      {label:'基本情報', tab:'s2basic'},
+      {label:'バリエーション', tab:'s2var'},
+      {label:'販売・価格', tab:'s2price'},
+      {label:'画像', tab:'s2img'},
+      {label:'説明文', tab:'s2desc'},
+      {label:'オプション', tab:'s2opt'},
+    ];
+    html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; flex-shrink:0; background:#fafafa;">';
+    tabItems.forEach((item, idx) => {
+      const isActive = idx === 0;
+      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">';
+      html += item.label + '</div>';
+    });
+    html += '</div>';
 
     // === タブコンテンツ（スクロール領域） ===
     html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:auto; padding:0 20px 16px;">';
@@ -2134,9 +2134,10 @@ function switchS2RmsTab(tabId, gi) {
   if (tabArea) tabArea.scrollTop = 0;
   document.querySelectorAll('.s2rms-side[data-gi="' + gi + '"]').forEach(el => {
     const active = el.dataset.tab === tabId;
-    el.style.background = active ? '#555' : 'transparent';
-    el.style.color = active ? 'white' : '#ccc';
-    el.style.borderLeftColor = active ? '#bf0000' : 'transparent';
+    el.style.background = active ? '#fff' : 'transparent';
+    el.style.color = active ? '#333' : '#888';
+    el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
+    el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
   });
 }
 
