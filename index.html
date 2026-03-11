@@ -220,8 +220,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
   <!-- STEP 2 -->
   <div class="panel" id="panel-2">
-    <h2>商品データの確認・編集</h2>
-    <p class="desc">データをクリックして直接編集できます。編集はダウンロード時に自動反映されます。</p>
+    <div id="step2-header-text">
+      <h2>商品データの確認・編集</h2>
+      <p class="desc">データをクリックして直接編集できます。編集はダウンロード時に自動反映されます。</p>
+    </div>
     <div class="summary-cards" id="summary-cards"></div>
     <!-- 自社Excel用: カード/テーブル表示 -->
     <div id="step2-jisha-view">
@@ -1785,11 +1787,11 @@ function renderStep2() {
   if (sourceType === 'rakuten') {
     // 楽天: コンパクトなインラインバッジ表示
     document.getElementById('summary-cards').innerHTML = `
-      <div style="display:flex; align-items:center; gap:12px; padding:8px 0; font-size:13px; color:var(--text-light);">
+      <div style="display:flex; align-items:center; gap:10px; padding:2px 0; font-size:13px; color:var(--text-light);">
         <span style="font-weight:600; color:var(--primary-dark);">楽天CSV</span>
-        <span style="background:#f0ede9; padding:3px 10px; border-radius:12px;"><strong style="color:var(--primary-dark);">${totalProducts}</strong> 商品</span>
-        <span style="background:#f0ede9; padding:3px 10px; border-radius:12px;"><strong style="color:var(--primary-dark);">${totalSkus}</strong> SKU</span>
-        <span style="background:#f0ede9; padding:3px 10px; border-radius:12px;"><strong style="color:var(--primary-dark);">${totalImages}</strong> 画像</span>
+        <span style="background:#f0ede9; padding:2px 8px; border-radius:10px;"><strong style="color:var(--primary-dark);">${totalProducts}</strong> 商品</span>
+        <span style="background:#f0ede9; padding:2px 8px; border-radius:10px;"><strong style="color:var(--primary-dark);">${totalSkus}</strong> SKU</span>
+        <span style="background:#f0ede9; padding:2px 8px; border-radius:10px;"><strong style="color:var(--primary-dark);">${totalImages}</strong> 画像</span>
       </div>`;
   } else {
     document.getElementById('summary-cards').innerHTML = `
@@ -1801,16 +1803,19 @@ function renderStep2() {
   }
   const containerEl = document.querySelector('.container');
   const panelEl = document.getElementById('panel-2');
+  const headerText = document.getElementById('step2-header-text');
   if (sourceType === 'rakuten') {
     document.getElementById('step2-jisha-view').style.display = 'none';
     document.getElementById('step2-rms-view').style.display = '';
+    if (headerText) headerText.style.display = 'none';
     // 画面幅いっぱいに広げる
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '8px 8px'; }
-    if (panelEl) { panelEl.style.padding = '12px 8px'; }
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '4px 8px'; }
+    if (panelEl) { panelEl.style.padding = '8px 8px'; }
     renderStep2Rms();
   } else {
     document.getElementById('step2-jisha-view').style.display = '';
     document.getElementById('step2-rms-view').style.display = 'none';
+    if (headerText) headerText.style.display = '';
     // 通常幅に戻す
     if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
     if (panelEl) { panelEl.style.padding = ''; }
@@ -1825,7 +1830,7 @@ function renderStep2Rms() {
 
   let html = '';
   // === 2カラムレイアウト: 左=品番リスト、右=商品詳細 ===
-  html += '<div style="display:flex; gap:0; height:calc(100vh - 260px); min-height:500px;">';
+  html += '<div style="display:flex; gap:0; height:calc(100vh - 190px); min-height:500px;">';
 
   // --- 左: 品番リスト（画像+品番、縦スクロール） ---
   html += '<div id="s2rms-product-list" style="width:240px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
@@ -1898,7 +1903,7 @@ function renderStep2Rms() {
     html += '</div></div></div>';
 
     // === タブコンテンツ（固定高スクロール領域） ===
-    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; overflow-y:auto; padding:0 20px 16px;">';
+    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:auto; padding:0 20px 16px;">';
 
     // 基本情報
     html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
