@@ -1803,13 +1803,15 @@ function renderStep2() {
     document.getElementById('step2-rms-view').style.display = '';
     if (headerText) headerText.style.display = 'none';
     // 画面幅いっぱいに広げ、ページスクロールを無効化
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; }
-    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.overflow = 'hidden'; }
+    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; panelEl.style.overflow = 'hidden'; }
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     // RMSビューをステップバーの下に配置（fixedは使わない）
     const rmsView = document.getElementById('step2-rms-view');
     if (rmsView) {
       rmsView.style.background = '#f5f0eb';
+      rmsView.style.overflow = 'hidden';
     }
     const step2Actions = document.getElementById('step2-actions');
     if (step2Actions) step2Actions.style.display = 'none';
@@ -1824,7 +1826,8 @@ function renderStep2() {
     document.body.style.overflow = '';
     // (stepsバーは常時表示のまま)
     const rmsView2 = document.getElementById('step2-rms-view');
-    if (rmsView2) { rmsView2.style.background = ''; }
+    if (rmsView2) { rmsView2.style.background = ''; rmsView2.style.overflow = ''; }
+    if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
     const step2Actions2 = document.getElementById('step2-actions');
     if (step2Actions2) step2Actions2.style.display = '';
     renderCardView();
@@ -2090,11 +2093,16 @@ function renderStep2Rms() {
   container.innerHTML = html;
 
   // ステップバー下端からビューポート底までの高さを計算してセット
-  const layoutRoot = document.getElementById('rms-layout-root');
-  if (layoutRoot) {
-    const top = layoutRoot.getBoundingClientRect().top;
-    layoutRoot.style.height = (window.innerHeight - top) + 'px';
+  function adjustRmsHeight() {
+    const layoutRoot = document.getElementById('rms-layout-root');
+    if (layoutRoot) {
+      const top = layoutRoot.getBoundingClientRect().top;
+      layoutRoot.style.height = (window.innerHeight - top) + 'px';
+    }
   }
+  adjustRmsHeight();
+  window._rmsResizeHandler = adjustRmsHeight;
+  window.addEventListener('resize', adjustRmsHeight);
 }
 
 function switchStep2RmsProduct(idx) {
@@ -2355,12 +2363,14 @@ function goToStep(n) {
   const containerEl = document.querySelector('.container');
   const panel2 = document.getElementById('panel-2');
   if (n !== 2 || sourceType !== 'rakuten') {
-    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
-    if (panel2) panel2.style.padding = '';
+    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; containerEl.style.overflow = ''; }
+    if (panel2) { panel2.style.padding = ''; panel2.style.overflow = ''; }
     // 楽天フルスクリーンモードの解除
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     const rmsViewNav = document.getElementById('step2-rms-view');
-    if (rmsViewNav) { rmsViewNav.style.background = ''; }
+    if (rmsViewNav) { rmsViewNav.style.background = ''; rmsViewNav.style.overflow = ''; }
+    if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
   }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${n}`).classList.add('active');
