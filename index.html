@@ -1828,21 +1828,21 @@ function renderStep2Rms() {
   html += '<div style="display:flex; gap:0; height:calc(100vh - 260px); min-height:500px;">';
 
   // --- 左: 品番リスト（画像+品番、縦スクロール） ---
-  html += '<div id="s2rms-product-list" style="width:220px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
-  html += '<div style="padding:10px 12px; font-size:12px; font-weight:700; color:var(--primary-dark); border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">商品一覧 (' + products.length + ')</div>';
+  html += '<div id="s2rms-product-list" style="width:240px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
+  html += '<div style="padding:10px 14px; font-size:14px; font-weight:700; color:var(--primary-dark); border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">商品一覧 (' + products.length + ')</div>';
   products.forEach((p, i) => {
     const thumbUrl = p.imageUrl || (p.images.length > 0 ? buildRakutenImgUrl(p.images[0].path) : '');
     const label = p.number || p.id || '';
-    const shortName = (p.cleanName || p.name || '').substring(0, 20);
-    html += '<div class="s2rms-prod-item" data-idx="' + i + '" onclick="switchStep2RmsProduct(' + i + ')" style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #ece8e3; display:flex; align-items:center; gap:10px; transition:background 0.15s;' + (i === 0 ? ' background:#e8e2dc; border-left:3px solid var(--primary);' : ' border-left:3px solid transparent;') + '">';
-    html += '<div style="width:56px; height:56px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center;">';
+    const shortName = (p.cleanName || p.name || '').substring(0, 18);
+    html += '<div class="s2rms-prod-item" data-idx="' + i + '" onclick="switchStep2RmsProduct(' + i + ')" style="padding:10px 12px; cursor:pointer; border-bottom:1px solid #ece8e3; display:flex; align-items:center; gap:10px; transition:background 0.15s;' + (i === 0 ? ' background:#e8e2dc; border-left:3px solid var(--primary);' : ' border-left:3px solid transparent;') + '">';
+    html += '<div style="width:60px; height:60px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center;">';
     if (thumbUrl) html += '<img src="' + esc(thumbUrl) + '" style="max-width:100%; max-height:100%; object-fit:cover;" onerror="this.style.display=\'none\'" loading="lazy">';
-    else html += '<span style="font-size:9px; color:#ccc;">-</span>';
+    else html += '<span style="font-size:10px; color:#ccc;">-</span>';
     html += '</div>';
     html += '<div style="min-width:0; flex:1;">';
-    html += '<div style="font-size:12px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(label) + '</div>';
-    html += '<div style="font-size:10px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">' + esc(shortName) + '</div>';
-    html += '<div style="font-size:10px; color:#aaa; margin-top:1px;">SKU:' + p.skus.length + ' / 画像:' + p.images.length + '</div>';
+    html += '<div style="font-size:13px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(label) + '</div>';
+    html += '<div style="font-size:12px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">' + esc(shortName) + '</div>';
+    html += '<div style="font-size:11px; color:#aaa; margin-top:2px;">SKU:' + p.skus.length + ' / 画像:' + p.images.length + '</div>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -1865,36 +1865,36 @@ function renderStep2Rms() {
       {n:'5', label:'説明文', tab:'s2desc'},
       {n:'6', label:'オプション', tab:'s2opt'},
     ];
-    html += '<div style="width:130px; flex-shrink:0; background:#3c3c3c; color:#ccc; font-size:11px; padding-top:8px;">';
+    html += '<div style="width:150px; flex-shrink:0; background:#3c3c3c; color:#ccc; font-size:13px; padding-top:8px;">';
     sideItems.forEach((item, idx) => {
-      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:9px 10px; cursor:pointer; display:flex; align-items:center; gap:6px; border-left:3px solid transparent;' + (idx === 0 ? ' background:#555; color:white; border-left-color:#bf0000;' : '') + '">';
-      html += '<span style="background:#666; color:#fff; width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-weight:700;">' + item.n + '</span>';
+      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:12px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; border-left:3px solid transparent;' + (idx === 0 ? ' background:#555; color:white; border-left-color:#bf0000;' : '') + '">';
+      html += '<span style="background:#666; color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">' + item.n + '</span>';
       html += '<span>' + item.label + '</span></div>';
     });
     html += '</div>';
 
     // メインコンテンツ
     html += '<div style="flex:1; min-width:0; border:1px solid #ddd; border-left:none; border-radius:0 6px 6px 0; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
-    html += '<div style="padding:8px 16px; font-size:11px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
+    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
 
     // ヘッダーカード
-    html += '<div style="padding:16px 20px; flex-shrink:0;">';
+    html += '<div style="padding:16px 24px; flex-shrink:0;">';
     html += '<div style="display:flex; gap:20px; padding:16px; border:1px solid #ddd; border-radius:6px; background:#fafafa;">';
-    html += '<div style="width:100px; flex-shrink:0; text-align:center;">';
-    html += '<div style="width:100px; height:100px; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
-    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:11px>No Image</div>\'">';
-    else html += '<div style="color:#ccc; font-size:11px;">No Image</div>';
+    html += '<div style="width:110px; flex-shrink:0; text-align:center;">';
+    html += '<div style="width:110px; height:110px; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
+    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:12px>No Image</div>\'">';
+    else html += '<div style="color:#ccc; font-size:12px;">No Image</div>';
     html += '</div></div>';
     html += '<div style="flex:1; min-width:0;">';
-    html += '<div style="font-size:11px; color:#888; margin-bottom:4px;">商品管理番号: <strong style="color:#333;">' + esc(prod.id || '') + '</strong> / 商品番号: <strong style="color:#333;">' + esc(prod.number || '') + '</strong></div>';
-    html += '<div style="font-size:15px; font-weight:700; color:#333; margin-bottom:6px; word-break:break-all;">' + esc(prod.cleanName || prod.name || '') + '</div>';
-    html += '<div style="font-size:12px; color:#666; margin-bottom:4px;">' + esc(prod.catchCopy || '') + '</div>';
-    html += '<div style="display:flex; gap:16px; font-size:12px;">';
+    html += '<div style="font-size:13px; color:#888; margin-bottom:4px;">商品管理番号: <strong style="color:#333;">' + esc(prod.id || '') + '</strong> / 商品番号: <strong style="color:#333;">' + esc(prod.number || '') + '</strong></div>';
+    html += '<div style="font-size:17px; font-weight:700; color:#333; margin-bottom:8px; word-break:break-all;">' + esc(prod.cleanName || prod.name || '') + '</div>';
+    html += '<div style="font-size:14px; color:#666; margin-bottom:6px;">' + esc(prod.catchCopy || '') + '</div>';
+    html += '<div style="display:flex; gap:18px; font-size:14px;">';
     html += '<span>SKU: <strong>' + prod.skus.length + '</strong>件</span>';
     html += '<span>画像: <strong>' + prod.images.length + '</strong>件</span>';
     if (prod.options && prod.options.length > 0) html += '<span>オプション: <strong>' + prod.options.length + '</strong>件</span>';
     const warehouse = prod.warehouse || '';
-    html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:10px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
+    html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
     html += '</div></div></div>';
 
     // === タブコンテンツ（固定高スクロール領域） ===
@@ -1902,54 +1902,58 @@ function renderStep2Rms() {
 
     // 基本情報
     html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">基本情報</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">基本情報</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
     const basicFields = [
-      ['商品管理番号', prod.id], ['商品番号', prod.number],
-      ['商品名', prod.cleanName || prod.name], ['キャッチコピー', prod.catchCopy],
-      ['ジャンルID', prod.genreId],
-      ['倉庫指定', warehouse === '0' ? '販売中' : warehouse],
-      ['サーチ表示', (prod.searchDisplay || '1') === '1' ? '表示' : '非表示'],
+      ['商品管理番号', 'id', prod.id], ['商品番号', 'number', prod.number],
+      ['商品名', 'cleanName', prod.cleanName || prod.name], ['キャッチコピー', 'catchCopy', prod.catchCopy],
+      ['ジャンルID', 'genreId', prod.genreId],
+      ['倉庫指定', '', warehouse === '0' ? '販売中' : warehouse],
+      ['サーチ表示', '', (prod.searchDisplay || '1') === '1' ? '表示' : '非表示'],
     ];
-    basicFields.forEach(([label, val]) => {
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
-      html += '<td style="padding:8px 12px; border:1px solid #ddd;">' + esc(val || '') + '</td></tr>';
+    basicFields.forEach(([label, key, val]) => {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
+      if (key) {
+        html += '<td contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="padding:10px 14px; border:1px solid #ddd; outline:none; cursor:text;" onfocus="this.style.background=\'#fff8e8\'" onblur="this.style.background=\'\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(val || '') + '</td></tr>';
+      } else {
+        html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(val || '') + '</td></tr>';
+      }
     });
     html += '</table></div>';
 
     // バリエーション
     html += '<div class="s2rms-tab" data-tab="s2var" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">バリエーション設定</h4>';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">バリエーション設定</h4>';
     if (prod.varDef && prod.varDef.keys) {
-      html += '<table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:16px;">';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.varDef.keys) + '</td></tr>';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.varDef.names) + '</td></tr>';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:16px;">';
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.varDef.keys) + '</td></tr>';
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.varDef.names) + '</td></tr>';
       prod.varDef.options.forEach((opt, oi) => {
-        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢' + (oi + 1) + '</td><td style="padding:8px 12px; border:1px solid #ddd;">';
-        opt.split('|').forEach(c => { html += '<span style="display:inline-block; background:' + (oi === 0 ? '#fff3e0; border:1px solid #ffcc80' : '#e3f2fd; border:1px solid #90caf9') + '; border-radius:4px; padding:2px 8px; margin:2px; font-size:12px;">' + esc(c) + '</span>'; });
+        html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢' + (oi + 1) + '</td><td style="padding:10px 14px; border:1px solid #ddd;">';
+        opt.split('|').forEach(c => { html += '<span style="display:inline-block; background:' + (oi === 0 ? '#fff3e0; border:1px solid #ffcc80' : '#e3f2fd; border:1px solid #90caf9') + '; border-radius:4px; padding:3px 10px; margin:2px; font-size:13px;">' + esc(c) + '</span>'; });
         html += '</td></tr>';
       });
       html += '</table>';
     }
     // SKU一覧
     if (prod.skus.length > 0) {
-      html += '<h4 style="font-size:14px; color:#333; margin:12px 0 8px; border-bottom:2px solid #333; padding-bottom:6px;">SKU一覧（' + prod.skus.length + '件）</h4>';
-      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12px;">';
+      html += '<h4 style="font-size:16px; color:#333; margin:14px 0 10px; border-bottom:2px solid #333; padding-bottom:8px;">SKU一覧（' + prod.skus.length + '件）</h4>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
       html += '<thead><tr>';
       ['SKU管理番号','システム連携SKU','バリエーション','価格','表示価格','在庫','カタログID'].forEach(h => {
-        html += '<th style="background:#f5f5f5; padding:7px 8px; border:1px solid #ddd; font-weight:600; font-size:11px; white-space:nowrap;">' + esc(h) + '</th>';
+        html += '<th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600; font-size:13px; white-space:nowrap;">' + esc(h) + '</th>';
       });
       html += '</tr></thead><tbody>';
       prod.skus.forEach((sku, si) => {
         const vars = sku.variants ? sku.variants.map(v => v.value).filter(Boolean).join(' / ') : '';
         html += '<tr style="background:' + (si % 2 === 0 ? '#fff' : '#fafafa') + ';">';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd; font-size:11px;">' + esc(sku.skuMgmtNo || '') + '</td>';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd; font-size:11px;">' + esc(sku.systemSku || '') + '</td>';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd; font-size:11px;">' + esc(vars) + '</td>';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd; text-align:right;">' + esc(sku.price || '') + '</td>';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd; text-align:right;">' + esc(sku.displayPrice || '') + '</td>';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd; text-align:center;">' + esc(sku.stock || '') + '</td>';
-        html += '<td style="padding:5px 8px; border:1px solid #ddd;">' + esc(sku.catalogId || sku.catalogNoReason || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(sku.skuMgmtNo || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(sku.systemSku || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(vars) + '</td>';
+        html += '<td contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'price\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:7px 10px; border:1px solid #ddd; text-align:right; outline:none; cursor:text;">' + esc(sku.price || '') + '</td>';
+        html += '<td contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'displayPrice\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:7px 10px; border:1px solid #ddd; text-align:right; outline:none; cursor:text;">' + esc(sku.displayPrice || '') + '</td>';
+        html += '<td contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'stock\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:7px 10px; border:1px solid #ddd; text-align:center; outline:none; cursor:text;">' + esc(sku.stock || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(sku.catalogId || sku.catalogNoReason || '') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -1958,8 +1962,8 @@ function renderStep2Rms() {
 
     // 販売・価格
     html += '<div class="s2rms-tab" data-tab="s2price" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">販売・価格設定</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">販売・価格設定</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
     const priceFields = [
       ['消費税', (prod.taxType === '0' ? '税込み' : prod.taxType || '')],
       ['消費税率', (prod.taxRate || '') + '%'],
@@ -1968,35 +1972,35 @@ function renderStep2Rms() {
       ['のし対応', prod.skus[0] ? (prod.skus[0].noshi === '0' ? '対応しない' : prod.skus[0].noshi || '') : ''],
     ];
     priceFields.forEach(([label, val]) => {
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
-      html += '<td style="padding:8px 12px; border:1px solid #ddd;">' + esc(val) + '</td></tr>';
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
+      html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(val) + '</td></tr>';
     });
     html += '</table>';
     if (prod.pointRate) {
-      html += '<h4 style="font-size:14px; color:#333; margin:16px 0 8px; border-bottom:2px solid #333; padding-bottom:6px;">ポイント変倍</h4>';
-      html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">変倍率</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.pointRate) + '倍</td></tr>';
-      if (prod.pointStart) html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用開始</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.pointStart) + '</td></tr>';
-      if (prod.pointEnd) html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用終了</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.pointEnd) + '</td></tr>';
+      html += '<h4 style="font-size:16px; color:#333; margin:16px 0 10px; border-bottom:2px solid #333; padding-bottom:8px;">ポイント変倍</h4>';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">変倍率</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.pointRate) + '倍</td></tr>';
+      if (prod.pointStart) html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用開始</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.pointStart) + '</td></tr>';
+      if (prod.pointEnd) html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用終了</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.pointEnd) + '</td></tr>';
       html += '</table>';
     }
     html += '</div>';
 
     // 画像
     html += '<div class="s2rms-tab" data-tab="s2img" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品画像（' + prod.images.length + '件）</h4>';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品画像（' + prod.images.length + '件）</h4>';
     if (prod.images.length > 0) {
-      html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+      html += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
       prod.images.forEach((img, ii) => {
         const url = buildRakutenImgUrl(img.path);
-        html += '<div style="width:100px; text-align:center;">';
-        html += '<div style="width:100px; height:100px; border:1px solid #ddd; border-radius:4px; overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;">';
-        html += '<img src="' + esc(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>Error</div>\'" loading="lazy"></div>';
-        html += '<div style="font-size:10px; color:#888; margin-top:2px;">' + (img.type || 'CABINET') + (ii + 1) + '</div></div>';
+        html += '<div style="width:110px; text-align:center;">';
+        html += '<div style="width:110px; height:110px; border:1px solid #ddd; border-radius:4px; overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;">';
+        html += '<img src="' + esc(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:11px>Error</div>\'" loading="lazy"></div>';
+        html += '<div style="font-size:11px; color:#888; margin-top:3px;">' + (img.type || 'CABINET') + (ii + 1) + '</div></div>';
       });
       html += '</div>';
     } else {
-      html += '<p style="color:#999;">画像データなし</p>';
+      html += '<p style="color:#999; font-size:14px;">画像データなし</p>';
     }
     // SKU画像
     const skuImgs = prod.skus.filter(s => s.skuImgPath);
@@ -2017,14 +2021,14 @@ function renderStep2Rms() {
 
     // 説明文
     html += '<div class="s2rms-tab" data-tab="s2desc" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品説明文</h4>';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品説明文</h4>';
     [['PC用商品説明文', prod.pcDesc], ['スマートフォン用商品説明文', prod.spDesc], ['PC用販売説明文', prod.pcSaleDesc]].forEach(([label, val]) => {
-      html += '<div style="margin-bottom:12px;"><div style="font-size:12px; font-weight:600; color:#333; margin-bottom:4px;">' + esc(label) + '</div>';
+      html += '<div style="margin-bottom:14px;"><div style="font-size:14px; font-weight:600; color:#333; margin-bottom:6px;">' + esc(label) + '</div>';
       if (val) {
-        html += '<div style="padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; font-size:11px; max-height:150px; overflow:auto; word-break:break-all; white-space:pre-wrap;">' + esc(val) + '</div>';
-        html += '<div style="font-size:10px; color:#888; margin-top:2px;">' + val.length + '文字</div>';
+        html += '<div style="padding:10px; background:#fff; border:1px solid #ccc; border-radius:4px; font-size:13px; max-height:180px; overflow:auto; word-break:break-all; white-space:pre-wrap;">' + esc(val) + '</div>';
+        html += '<div style="font-size:11px; color:#888; margin-top:3px;">' + val.length + '文字</div>';
       } else {
-        html += '<span style="color:#ccc; font-size:12px;">（未設定）</span>';
+        html += '<span style="color:#ccc; font-size:13px;">（未設定）</span>';
       }
       html += '</div>';
     });
@@ -2032,21 +2036,21 @@ function renderStep2Rms() {
 
     // 商品オプション
     html += '<div class="s2rms-tab" data-tab="s2opt" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品オプション</h4>';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品オプション</h4>';
     if (prod.options && prod.options.length > 0) {
-      html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-      html += '<thead><tr><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">タイプ</th><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">項目名</th><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">必須</th><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">選択肢</th></tr></thead><tbody>';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+      html += '<thead><tr><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">タイプ</th><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">項目名</th><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">必須</th><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">選択肢</th></tr></thead><tbody>';
       prod.options.forEach(opt => {
-        html += '<tr><td style="padding:6px 10px; border:1px solid #ddd;">' + esc(opt.type || '') + '</td>';
-        html += '<td style="padding:6px 10px; border:1px solid #ddd; font-weight:600;">' + esc(opt.name || '') + '</td>';
-        html += '<td style="padding:6px 10px; border:1px solid #ddd; text-align:center;">' + (opt.required === '1' ? '必須' : '任意') + '</td>';
-        html += '<td style="padding:6px 10px; border:1px solid #ddd;">';
-        (opt.choices || []).forEach(c => { html += '<span style="display:inline-block; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:3px; padding:1px 6px; margin:1px 2px; font-size:11px;">' + esc(c) + '</span>'; });
+        html += '<tr><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(opt.type || '') + '</td>';
+        html += '<td style="padding:8px 12px; border:1px solid #ddd; font-weight:600;">' + esc(opt.name || '') + '</td>';
+        html += '<td style="padding:8px 12px; border:1px solid #ddd; text-align:center;">' + (opt.required === '1' ? '必須' : '任意') + '</td>';
+        html += '<td style="padding:8px 12px; border:1px solid #ddd;">';
+        (opt.choices || []).forEach(c => { html += '<span style="display:inline-block; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:3px; padding:2px 8px; margin:2px 3px; font-size:13px;">' + esc(c) + '</span>'; });
         html += '</td></tr>';
       });
       html += '</tbody></table>';
     } else {
-      html += '<p style="color:#999; font-size:13px;">商品オプションなし</p>';
+      html += '<p style="color:#999; font-size:14px;">商品オプションなし</p>';
     }
     html += '</div>';
 
