@@ -2358,6 +2358,12 @@ function filterProducts(q) {
 // NAVIGATION
 // ============================================================
 function goToStep(n) {
+  // Step2へ遷移時、データ未処理なら自動処理
+  if (n === 2 && products.length === 0 && rawRows.length > 0) {
+    if (sourceType === 'rakuten') { products = structureRakuten(); }
+    else { products = structureJisha(); }
+    editedFields = {};
+  }
   if (n > 1 && products.length === 0) return;
   // Step2楽天表示以外では通常幅に復元
   const containerEl = document.querySelector('.container');
