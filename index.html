@@ -1814,7 +1814,7 @@ function renderStep2() {
     if (headerText) headerText.style.display = 'none';
     // RMSフルスクリーンモード
     document.body.classList.add('rms-fullscreen');
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0 12px'; }
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0 16px'; }
     if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
     // RMSビューをステップバーの下に配置（fixedは使わない）
     const rmsView = document.getElementById('step2-rms-view');
@@ -1888,7 +1888,7 @@ function renderStep2Rms() {
     html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0;">';
 
     // メインコンテンツ
-    html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column;">';
+    html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
 
     // パンくず + ヘッダーカード
     html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
@@ -1932,7 +1932,7 @@ function renderStep2Rms() {
     // 基本情報
     html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">基本情報</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+    html += '<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px;">';
     const basicFields = [
       ['商品管理番号', 'id', prod.id], ['商品番号', 'number', prod.number],
       ['商品名', 'cleanName', prod.cleanName || prod.name], ['キャッチコピー', 'catchCopy', prod.catchCopy],
@@ -1941,11 +1941,11 @@ function renderStep2Rms() {
       ['サーチ表示', '', (prod.searchDisplay || '1') === '1' ? '表示' : '非表示'],
     ];
     basicFields.forEach(([label, key, val]) => {
-      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600; white-space:nowrap;">' + esc(label) + '</td>';
       if (key) {
-        html += '<td contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="padding:10px 14px; border:1px solid #ddd; outline:none; cursor:text;" onfocus="this.style.background=\'#fff8e8\'" onblur="this.style.background=\'\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(val || '') + '</td></tr>';
+        html += '<td contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="padding:10px 14px; border:1px solid #ddd; outline:none; cursor:text; word-break:break-all; overflow-wrap:break-word;" onfocus="this.style.background=\'#fff8e8\'" onblur="this.style.background=\'\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(val || '') + '</td></tr>';
       } else {
-        html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(val || '') + '</td></tr>';
+        html += '<td style="padding:10px 14px; border:1px solid #ddd; word-break:break-all; overflow-wrap:break-word;">' + esc(val || '') + '</td></tr>';
       }
     });
     html += '</table></div>';
