@@ -223,21 +223,26 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     <h2>商品データの確認・編集</h2>
     <p class="desc">データをクリックして直接編集できます。編集はダウンロード時に自動反映されます。</p>
     <div class="summary-cards" id="summary-cards"></div>
-    <div class="toolbar">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" class="search-box" placeholder="🔍 商品名・品番で検索..." oninput="filterProducts(this.value)">
-        <div class="view-toggle">
-          <button class="active" onclick="setView('card', this)">カード</button>
-          <button onclick="setView('table', this)">テーブル</button>
+    <!-- 自社Excel用: カード/テーブル表示 -->
+    <div id="step2-jisha-view">
+      <div class="toolbar">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" class="search-box" placeholder="🔍 商品名・品番で検索..." oninput="filterProducts(this.value)">
+          <div class="view-toggle">
+            <button class="active" onclick="setView('card', this)">カード</button>
+            <button onclick="setView('table', this)">テーブル</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="expandAll()">すべて展開</button>
+          <button class="btn btn-outline btn-sm" onclick="collapseAll()">すべて閉じる</button>
         </div>
       </div>
-      <div style="display:flex; gap:6px;">
-        <button class="btn btn-outline btn-sm" onclick="expandAll()">すべて展開</button>
-        <button class="btn btn-outline btn-sm" onclick="collapseAll()">すべて閉じる</button>
-      </div>
+      <div id="card-view" class="product-cards"></div>
+      <div id="table-view" class="table-wrapper" style="display:none; max-height:600px; overflow:auto;"></div>
     </div>
-    <div id="card-view" class="product-cards"></div>
-    <div id="table-view" class="table-wrapper" style="display:none; max-height:600px; overflow:auto;"></div>
+    <!-- 楽天CSV用: RMS風表示 -->
+    <div id="step2-rms-view" style="display:none;"></div>
     <div class="actions">
       <button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>
       <button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>
@@ -1267,8 +1272,13 @@ function structureRakuten() {
         genreId: col(row, 'ジャンルID'), catchCopy: col(row, 'キャッチコピー'),
         pcDesc: col(row, 'PC用商品説明文'), spDesc: col(row, 'スマートフォン用商品説明文'),
         pcSaleDesc: col(row, 'PC用販売説明文'),
+        warehouse: col(row, '倉庫指定'), searchDisplay: col(row, 'サーチ表示'),
+        taxType: col(row, '消費税'), taxRate: col(row, '消費税率'),
+        pointRate: col(row, 'ポイント変倍率'),
+        pointStart: col(row, 'ポイント変倍率適用期間（開始日時）'),
+        pointEnd: col(row, 'ポイント変倍率適用期間（終了日時）'),
         varDef: { keys: col(row, 'バリエーション項目キー定義'), names: col(row, 'バリエーション項目名定義'), options: [] },
-        images: [], skus: [], raw: row
+        images: [], skus: [], options: [], raw: row
       };
       for (let v = 1; v <= 6; v++) {
         const optDef = col(row, `バリエーション${v}選択肢定義`);
@@ -1284,8 +1294,11 @@ function structureRakuten() {
       const sku = {
         rowIndex: r, parentId: productId, skuMgmtNo: skuMgmtNo,
         systemSku: col(row, 'システム連携用SKU番号'), price: col(row, '通常購入販売価格'),
+        displayPrice: col(row, '表示価格'), stock: col(row, '在庫数'),
         catalogId: col(row, 'カタログID'), catalogNoReason: col(row, 'カタログIDなしの理由'),
         skuImgType: col(row, 'SKU画像タイプ'), skuImgPath: col(row, 'SKU画像パス'),
+        shipping: col(row, '送料'), shippingSet: col(row, '配送方法セット管理番号'),
+        noshi: col(row, 'のし対応'), restockBtn: col(row, '再入荷お知らせボタン'),
         variants: [], customFields: [], raw: row
       };
       for (let k = 1; k <= 6; k++) {
@@ -1299,6 +1312,20 @@ function structureRakuten() {
         if (label || val) sku.customFields.push({ label, value: val });
       }
       currentProduct.skus.push(sku);
+    } else if (currentProduct && !skuMgmtNo && !productName) {
+      // 商品オプション行（商品名もSKU管理番号もない行）
+      const optType = col(row, '選択肢タイプ');
+      const optName = col(row, '商品オプション項目名');
+      if (optName) {
+        const choices = [];
+        for (let c = 1; c <= 100; c++) {
+          const cv = col(row, `商品オプション選択肢${c}`);
+          if (cv) choices.push(cv);
+          else break;
+        }
+        const required = col(row, '商品オプション選択必須');
+        currentProduct.options.push({ type: optType, name: optName, choices, required });
+      }
     }
   }
   return prods;
@@ -1753,6 +1780,7 @@ function renderStep2() {
   const totalProducts = products.length;
   const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
   const totalImages = products.reduce((s, p) => s + p.images.length, 0);
+  const totalOptions = products.reduce((s, p) => s + (p.options ? p.options.length : 0), 0);
   const src = sourceType === 'rakuten' ? '楽天' : sourceType === 'jisha' ? '自社Excel' : '自社';
   document.getElementById('summary-cards').innerHTML = `
     <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
@@ -1760,8 +1788,260 @@ function renderStep2() {
     <div class="summary-card"><div class="num">${totalImages}</div><div class="label">画像数</div></div>
     <div class="summary-card"><div class="num">${src}</div><div class="label">ソース</div></div>
   `;
-  renderCardView();
-  renderTableView();
+  if (sourceType === 'rakuten') {
+    document.getElementById('step2-jisha-view').style.display = 'none';
+    document.getElementById('step2-rms-view').style.display = '';
+    renderStep2Rms();
+  } else {
+    document.getElementById('step2-jisha-view').style.display = '';
+    document.getElementById('step2-rms-view').style.display = 'none';
+    renderCardView();
+    renderTableView();
+  }
+}
+
+function renderStep2Rms() {
+  const container = document.getElementById('step2-rms-view');
+  if (!container || products.length === 0) { if (container) container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">楽天データがありません。</p>'; return; }
+
+  let html = '';
+  // 商品切替ボタン
+  if (products.length > 1) {
+    html += '<div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:12px;">';
+    products.forEach((p, i) => {
+      const label = p.number || (p.cleanName || p.name || '').substring(0, 15);
+      html += '<button class="btn btn-sm ' + (i === 0 ? 'btn-primary' : 'btn-outline') + '" onclick="switchStep2RmsProduct(' + i + ', this)" style="font-size:11px; padding:4px 10px;">' + esc(label) + '</button>';
+    });
+    html += '</div>';
+  }
+
+  products.forEach((prod, gi) => {
+    const imgUrl = prod.imageUrl || (prod.images.length > 0 ? buildRakutenImgUrl(prod.images[0].path) : '');
+    const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="this.style.borderColor=\'#bf0000\'" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
+
+    html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; gap:0;">';
+
+    // サイドバー
+    const sideItems = [
+      {n:'1', label:'基本情報', tab:'s2basic'},
+      {n:'2', label:'バリエーション', tab:'s2var'},
+      {n:'3', label:'販売・価格', tab:'s2price'},
+      {n:'4', label:'画像', tab:'s2img'},
+      {n:'5', label:'説明文', tab:'s2desc'},
+      {n:'6', label:'商品オプション', tab:'s2opt'},
+    ];
+    html += '<div style="width:150px; flex-shrink:0; background:#3c3c3c; color:#ccc; font-size:12px; border-radius:6px 0 0 6px; padding-top:8px;">';
+    sideItems.forEach((item, idx) => {
+      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; border-left:3px solid transparent;' + (idx === 0 ? ' background:#555; color:white; border-left-color:#bf0000;' : '') + '">';
+      html += '<span style="background:#666; color:#fff; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">' + item.n + '</span>';
+      html += '<span>' + item.label + '</span></div>';
+    });
+    html += '</div>';
+
+    // メインコンテンツ
+    html += '<div style="flex:1; min-width:0; border:1px solid #ddd; border-left:none; border-radius:0 6px 6px 0; background:#fff;">';
+    html += '<div style="padding:8px 16px; font-size:11px; color:#888; border-bottom:1px solid #eee;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
+
+    // ヘッダーカード
+    html += '<div style="padding:16px 20px;">';
+    html += '<div style="display:flex; gap:20px; padding:16px; border:1px solid #ddd; border-radius:6px; background:#fafafa;">';
+    html += '<div style="width:100px; flex-shrink:0; text-align:center;">';
+    html += '<div style="width:100px; height:100px; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
+    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:11px>No Image</div>\'">';
+    else html += '<div style="color:#ccc; font-size:11px;">No Image</div>';
+    html += '</div></div>';
+    html += '<div style="flex:1; min-width:0;">';
+    html += '<div style="font-size:11px; color:#888; margin-bottom:4px;">商品管理番号: <strong style="color:#333;">' + esc(prod.id || '') + '</strong> / 商品番号: <strong style="color:#333;">' + esc(prod.number || '') + '</strong></div>';
+    html += '<div style="font-size:15px; font-weight:700; color:#333; margin-bottom:6px; word-break:break-all;">' + esc(prod.cleanName || prod.name || '') + '</div>';
+    html += '<div style="font-size:12px; color:#666; margin-bottom:4px;">' + esc(prod.catchCopy || '') + '</div>';
+    html += '<div style="display:flex; gap:16px; font-size:12px;">';
+    html += '<span>SKU: <strong>' + prod.skus.length + '</strong>件</span>';
+    html += '<span>画像: <strong>' + prod.images.length + '</strong>件</span>';
+    if (prod.options && prod.options.length > 0) html += '<span>オプション: <strong>' + prod.options.length + '</strong>件</span>';
+    const warehouse = prod.warehouse || '';
+    html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:10px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
+    html += '</div></div></div>';
+
+    // === タブコンテンツ ===
+
+    // 基本情報
+    html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
+    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">基本情報</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    const basicFields = [
+      ['商品管理番号', prod.id], ['商品番号', prod.number],
+      ['商品名', prod.cleanName || prod.name], ['キャッチコピー', prod.catchCopy],
+      ['ジャンルID', prod.genreId],
+      ['倉庫指定', warehouse === '0' ? '販売中' : warehouse],
+      ['サーチ表示', (prod.searchDisplay || '1') === '1' ? '表示' : '非表示'],
+    ];
+    basicFields.forEach(([label, val]) => {
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
+      html += '<td style="padding:8px 12px; border:1px solid #ddd;">' + esc(val || '') + '</td></tr>';
+    });
+    html += '</table></div>';
+
+    // バリエーション
+    html += '<div class="s2rms-tab" data-tab="s2var" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">バリエーション設定</h4>';
+    if (prod.varDef && prod.varDef.keys) {
+      html += '<table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:16px;">';
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.varDef.keys) + '</td></tr>';
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.varDef.names) + '</td></tr>';
+      prod.varDef.options.forEach((opt, oi) => {
+        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢' + (oi + 1) + '</td><td style="padding:8px 12px; border:1px solid #ddd;">';
+        opt.split('|').forEach(c => { html += '<span style="display:inline-block; background:' + (oi === 0 ? '#fff3e0; border:1px solid #ffcc80' : '#e3f2fd; border:1px solid #90caf9') + '; border-radius:4px; padding:2px 8px; margin:2px; font-size:12px;">' + esc(c) + '</span>'; });
+        html += '</td></tr>';
+      });
+      html += '</table>';
+    }
+    // SKU一覧
+    if (prod.skus.length > 0) {
+      html += '<h4 style="font-size:14px; color:#333; margin:12px 0 8px; border-bottom:2px solid #333; padding-bottom:6px;">SKU一覧（' + prod.skus.length + '件）</h4>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12px;">';
+      html += '<thead><tr>';
+      ['SKU管理番号','システム連携SKU','バリエーション','価格','表示価格','在庫','カタログID'].forEach(h => {
+        html += '<th style="background:#f5f5f5; padding:7px 8px; border:1px solid #ddd; font-weight:600; font-size:11px; white-space:nowrap;">' + esc(h) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      prod.skus.forEach((sku, si) => {
+        const vars = sku.variants ? sku.variants.map(v => v.value).filter(Boolean).join(' / ') : '';
+        html += '<tr style="background:' + (si % 2 === 0 ? '#fff' : '#fafafa') + ';">';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd; font-size:11px;">' + esc(sku.skuMgmtNo || '') + '</td>';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd; font-size:11px;">' + esc(sku.systemSku || '') + '</td>';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd; font-size:11px;">' + esc(vars) + '</td>';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd; text-align:right;">' + esc(sku.price || '') + '</td>';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd; text-align:right;">' + esc(sku.displayPrice || '') + '</td>';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd; text-align:center;">' + esc(sku.stock || '') + '</td>';
+        html += '<td style="padding:5px 8px; border:1px solid #ddd;">' + esc(sku.catalogId || sku.catalogNoReason || '') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+
+    // 販売・価格
+    html += '<div class="s2rms-tab" data-tab="s2price" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">販売・価格設定</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    const priceFields = [
+      ['消費税', (prod.taxType === '0' ? '税込み' : prod.taxType || '')],
+      ['消費税率', (prod.taxRate || '') + '%'],
+      ['送料', prod.skus[0] ? (prod.skus[0].shipping === '0' ? '送料込み' : prod.skus[0].shipping || '') : ''],
+      ['配送方法セット', prod.skus[0] ? (prod.skus[0].shippingSet || '') : ''],
+      ['のし対応', prod.skus[0] ? (prod.skus[0].noshi === '0' ? '対応しない' : prod.skus[0].noshi || '') : ''],
+    ];
+    priceFields.forEach(([label, val]) => {
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">' + esc(label) + '</td>';
+      html += '<td style="padding:8px 12px; border:1px solid #ddd;">' + esc(val) + '</td></tr>';
+    });
+    html += '</table>';
+    if (prod.pointRate) {
+      html += '<h4 style="font-size:14px; color:#333; margin:16px 0 8px; border-bottom:2px solid #333; padding-bottom:6px;">ポイント変倍</h4>';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">変倍率</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.pointRate) + '倍</td></tr>';
+      if (prod.pointStart) html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用開始</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.pointStart) + '</td></tr>';
+      if (prod.pointEnd) html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用終了</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(prod.pointEnd) + '</td></tr>';
+      html += '</table>';
+    }
+    html += '</div>';
+
+    // 画像
+    html += '<div class="s2rms-tab" data-tab="s2img" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品画像（' + prod.images.length + '件）</h4>';
+    if (prod.images.length > 0) {
+      html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+      prod.images.forEach((img, ii) => {
+        const url = buildRakutenImgUrl(img.path);
+        html += '<div style="width:100px; text-align:center;">';
+        html += '<div style="width:100px; height:100px; border:1px solid #ddd; border-radius:4px; overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;">';
+        html += '<img src="' + esc(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>Error</div>\'" loading="lazy"></div>';
+        html += '<div style="font-size:10px; color:#888; margin-top:2px;">' + (img.type || 'CABINET') + (ii + 1) + '</div></div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<p style="color:#999;">画像データなし</p>';
+    }
+    // SKU画像
+    const skuImgs = prod.skus.filter(s => s.skuImgPath);
+    if (skuImgs.length > 0) {
+      html += '<h4 style="font-size:14px; color:#333; margin:16px 0 8px; border-bottom:2px solid #333; padding-bottom:6px;">SKU画像（' + skuImgs.length + '件）</h4>';
+      html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+      skuImgs.forEach(sku => {
+        const url = buildRakutenImgUrl(sku.skuImgPath);
+        const vars = sku.variants ? sku.variants.map(v => v.value).filter(Boolean).join('/') : '';
+        html += '<div style="width:80px; text-align:center;">';
+        html += '<div style="width:80px; height:80px; border:1px solid #ddd; border-radius:4px; overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;">';
+        html += '<img src="' + esc(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:9px>Error</div>\'" loading="lazy"></div>';
+        html += '<div style="font-size:9px; color:#888; margin-top:2px;">' + esc(vars) + '</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // 説明文
+    html += '<div class="s2rms-tab" data-tab="s2desc" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品説明文</h4>';
+    [['PC用商品説明文', prod.pcDesc], ['スマートフォン用商品説明文', prod.spDesc], ['PC用販売説明文', prod.pcSaleDesc]].forEach(([label, val]) => {
+      html += '<div style="margin-bottom:12px;"><div style="font-size:12px; font-weight:600; color:#333; margin-bottom:4px;">' + esc(label) + '</div>';
+      if (val) {
+        html += '<div style="padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; font-size:11px; max-height:150px; overflow:auto; word-break:break-all; white-space:pre-wrap;">' + esc(val) + '</div>';
+        html += '<div style="font-size:10px; color:#888; margin-top:2px;">' + val.length + '文字</div>';
+      } else {
+        html += '<span style="color:#ccc; font-size:12px;">（未設定）</span>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // 商品オプション
+    html += '<div class="s2rms-tab" data-tab="s2opt" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品オプション</h4>';
+    if (prod.options && prod.options.length > 0) {
+      html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+      html += '<thead><tr><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">タイプ</th><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">項目名</th><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">必須</th><th style="background:#f5f5f5; padding:7px 10px; border:1px solid #ddd; font-weight:600;">選択肢</th></tr></thead><tbody>';
+      prod.options.forEach(opt => {
+        html += '<tr><td style="padding:6px 10px; border:1px solid #ddd;">' + esc(opt.type || '') + '</td>';
+        html += '<td style="padding:6px 10px; border:1px solid #ddd; font-weight:600;">' + esc(opt.name || '') + '</td>';
+        html += '<td style="padding:6px 10px; border:1px solid #ddd; text-align:center;">' + (opt.required === '1' ? '必須' : '任意') + '</td>';
+        html += '<td style="padding:6px 10px; border:1px solid #ddd;">';
+        (opt.choices || []).forEach(c => { html += '<span style="display:inline-block; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:3px; padding:1px 6px; margin:1px 2px; font-size:11px;">' + esc(c) + '</span>'; });
+        html += '</td></tr>';
+      });
+      html += '</tbody></table>';
+    } else {
+      html += '<p style="color:#999; font-size:13px;">商品オプションなし</p>';
+    }
+    html += '</div>';
+
+    html += '</div>'; // padding
+    html += '</div>'; // main content
+    html += '</div>'; // panel
+  });
+
+  container.innerHTML = html;
+}
+
+function switchStep2RmsProduct(idx, btn) {
+  document.querySelectorAll('.step2-rms-panel').forEach(p => p.style.display = 'none');
+  const panel = document.querySelectorAll('.step2-rms-panel')[idx];
+  if (panel) panel.style.display = 'flex';
+  if (btn) {
+    btn.closest('div').querySelectorAll('button').forEach(b => { b.classList.remove('btn-primary'); b.classList.add('btn-outline'); });
+    btn.classList.remove('btn-outline'); btn.classList.add('btn-primary');
+  }
+}
+
+function switchS2RmsTab(tabId, gi) {
+  document.querySelectorAll('.s2rms-tab[data-gi="' + gi + '"]').forEach(el => {
+    el.style.display = el.dataset.tab === tabId ? '' : 'none';
+  });
+  document.querySelectorAll('.s2rms-side[data-gi="' + gi + '"]').forEach(el => {
+    const active = el.dataset.tab === tabId;
+    el.style.background = active ? '#555' : 'transparent';
+    el.style.color = active ? 'white' : '#ccc';
+    el.style.borderLeftColor = active ? '#bf0000' : 'transparent';
+  });
 }
 
 function renderCardView() {
