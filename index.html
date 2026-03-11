@@ -12,14 +12,16 @@
   --danger: #c45c5c; --info: #5b8dbe;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); height: 100vh; font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
+body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; display: flex; flex-direction: column; }
+body.rms-fullscreen { height: 100vh; overflow: hidden; }
 header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 10px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 100; }
 header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
 header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
 .header-right { display: flex; gap: 8px; }
 .header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s; }
 .header-right button:hover { background: rgba(255,255,255,0.25); }
-.container { max-width: 1400px; margin: 0 auto; padding: 12px 24px; flex: 1; overflow-y: auto; min-height: 0; }
+.container { max-width: 1400px; margin: 0 auto; padding: 12px 24px; flex: 1; min-height: 0; }
+body.rms-fullscreen .container { overflow: hidden; }
 .steps { display: flex; background: var(--card); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex-shrink: 0; z-index: 99; }
 .step { flex: 1; padding: 8px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
 .step.active { background: var(--accent); border-bottom-color: var(--primary); }
@@ -1802,14 +1804,14 @@ function renderStep2() {
     document.getElementById('step2-jisha-view').style.display = 'none';
     document.getElementById('step2-rms-view').style.display = '';
     if (headerText) headerText.style.display = 'none';
-    // 画面幅いっぱいに広げ、ページスクロールを無効化
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.overflow = 'hidden'; }
-    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; panelEl.style.overflow = 'hidden'; }
+    // RMSフルスクリーンモード
+    document.body.classList.add('rms-fullscreen');
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0 12px'; }
+    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
     // RMSビューをステップバーの下に配置（fixedは使わない）
     const rmsView = document.getElementById('step2-rms-view');
     if (rmsView) {
       rmsView.style.background = '#f5f0eb';
-      rmsView.style.overflow = 'hidden';
     }
     const step2Actions = document.getElementById('step2-actions');
     if (step2Actions) step2Actions.style.display = 'none';
@@ -1819,8 +1821,9 @@ function renderStep2() {
     document.getElementById('step2-rms-view').style.display = 'none';
     if (headerText) headerText.style.display = '';
     // 通常幅に戻す
-    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; containerEl.style.overflow = ''; }
-    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; panelEl.style.overflow = ''; }
+    document.body.classList.remove('rms-fullscreen');
+    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
+    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; }
     // (stepsバーは常時表示のまま)
     const rmsView2 = document.getElementById('step2-rms-view');
     if (rmsView2) { rmsView2.style.background = ''; rmsView2.style.overflow = ''; }
@@ -2360,10 +2363,11 @@ function goToStep(n) {
   const containerEl = document.querySelector('.container');
   const panel2 = document.getElementById('panel-2');
   if (n !== 2 || sourceType !== 'rakuten') {
-    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; containerEl.style.overflow = ''; }
-    if (panel2) { panel2.style.padding = ''; panel2.style.overflow = ''; }
+    document.body.classList.remove('rms-fullscreen');
+    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
+    if (panel2) { panel2.style.padding = ''; }
     const rmsViewNav = document.getElementById('step2-rms-view');
-    if (rmsViewNav) { rmsViewNav.style.background = ''; rmsViewNav.style.overflow = ''; }
+    if (rmsViewNav) { rmsViewNav.style.background = ''; }
     if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
   }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
