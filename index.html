@@ -1862,7 +1862,8 @@ function renderStep2Rms() {
     html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:10px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
     html += '</div></div></div>';
 
-    // === タブコンテンツ ===
+    // === タブコンテンツ（固定高スクロール領域） ===
+    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="min-height:350px; max-height:500px; overflow-y:auto; padding:0 20px 16px;">';
 
     // 基本情報
     html += '<div class="s2rms-tab" data-tab="s2basic" data-gi="' + gi + '" style="padding:16px 0;">';
@@ -2014,6 +2015,7 @@ function renderStep2Rms() {
     }
     html += '</div>';
 
+    html += '</div>'; // s2rms-tab-area (スクロール領域)
     html += '</div>'; // padding
     html += '</div>'; // main content
     html += '</div>'; // panel
@@ -2036,6 +2038,9 @@ function switchS2RmsTab(tabId, gi) {
   document.querySelectorAll('.s2rms-tab[data-gi="' + gi + '"]').forEach(el => {
     el.style.display = el.dataset.tab === tabId ? '' : 'none';
   });
+  // スクロール位置をリセット
+  const tabArea = document.querySelector('.s2rms-tab-area[data-gi="' + gi + '"]');
+  if (tabArea) tabArea.scrollTop = 0;
   document.querySelectorAll('.s2rms-side[data-gi="' + gi + '"]').forEach(el => {
     const active = el.dataset.tab === tabId;
     el.style.background = active ? '#555' : 'transparent';
