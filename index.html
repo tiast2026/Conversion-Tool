@@ -1816,35 +1816,49 @@ function renderStep2Rms() {
   if (!container || products.length === 0) { if (container) container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">楽天データがありません。</p>'; return; }
 
   let html = '';
-  // 商品切替ボタン
-  if (products.length > 1) {
-    html += '<div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:12px;">';
-    products.forEach((p, i) => {
-      const label = p.number || (p.cleanName || p.name || '').substring(0, 15);
-      html += '<button class="btn btn-sm ' + (i === 0 ? 'btn-primary' : 'btn-outline') + '" onclick="switchStep2RmsProduct(' + i + ', this)" style="font-size:11px; padding:4px 10px;">' + esc(label) + '</button>';
-    });
+  // === 2カラムレイアウト: 左=品番リスト、右=商品詳細 ===
+  html += '<div style="display:flex; gap:0; min-height:600px;">';
+
+  // --- 左: 品番リスト（画像+品番、縦スクロール） ---
+  html += '<div id="s2rms-product-list" style="width:140px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; max-height:700px;">';
+  html += '<div style="padding:8px 10px; font-size:11px; font-weight:700; color:var(--primary-dark); border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">商品一覧 (' + products.length + ')</div>';
+  products.forEach((p, i) => {
+    const thumbUrl = p.imageUrl || (p.images.length > 0 ? buildRakutenImgUrl(p.images[0].path) : '');
+    const label = p.number || p.id || '';
+    html += '<div class="s2rms-prod-item" data-idx="' + i + '" onclick="switchStep2RmsProduct(' + i + ')" style="padding:8px 8px; cursor:pointer; border-bottom:1px solid #ece8e3; display:flex; align-items:center; gap:8px; transition:background 0.15s;' + (i === 0 ? ' background:#e8e2dc; border-left:3px solid var(--primary);' : ' border-left:3px solid transparent;') + '">';
+    html += '<div style="width:40px; height:40px; flex-shrink:0; border:1px solid #ddd; border-radius:3px; background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center;">';
+    if (thumbUrl) html += '<img src="' + esc(thumbUrl) + '" style="max-width:100%; max-height:100%; object-fit:cover;" onerror="this.style.display=\'none\'" loading="lazy">';
+    else html += '<span style="font-size:8px; color:#ccc;">-</span>';
     html += '</div>';
-  }
+    html += '<div style="min-width:0; flex:1;">';
+    html += '<div style="font-size:10px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(label) + '</div>';
+    html += '<div style="font-size:9px; color:#999;">SKU:' + p.skus.length + '</div>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  // --- 右: 商品詳細パネル群 ---
+  html += '<div style="flex:1; min-width:0; display:flex; flex-direction:column;">';
 
   products.forEach((prod, gi) => {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? buildRakutenImgUrl(prod.images[0].path) : '');
     const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="this.style.borderColor=\'#bf0000\'" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
 
-    html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; gap:0;">';
+    html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; gap:0; flex:1;">';
 
-    // サイドバー
+    // サイドバー（タブメニュー）
     const sideItems = [
       {n:'1', label:'基本情報', tab:'s2basic'},
       {n:'2', label:'バリエーション', tab:'s2var'},
       {n:'3', label:'販売・価格', tab:'s2price'},
       {n:'4', label:'画像', tab:'s2img'},
       {n:'5', label:'説明文', tab:'s2desc'},
-      {n:'6', label:'商品オプション', tab:'s2opt'},
+      {n:'6', label:'オプション', tab:'s2opt'},
     ];
-    html += '<div style="width:150px; flex-shrink:0; background:#3c3c3c; color:#ccc; font-size:12px; border-radius:6px 0 0 6px; padding-top:8px;">';
+    html += '<div style="width:130px; flex-shrink:0; background:#3c3c3c; color:#ccc; font-size:11px; padding-top:8px;">';
     sideItems.forEach((item, idx) => {
-      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; border-left:3px solid transparent;' + (idx === 0 ? ' background:#555; color:white; border-left-color:#bf0000;' : '') + '">';
-      html += '<span style="background:#666; color:#fff; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">' + item.n + '</span>';
+      html += '<div class="s2rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS2RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:9px 10px; cursor:pointer; display:flex; align-items:center; gap:6px; border-left:3px solid transparent;' + (idx === 0 ? ' background:#555; color:white; border-left-color:#bf0000;' : '') + '">';
+      html += '<span style="background:#666; color:#fff; width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-weight:700;">' + item.n + '</span>';
       html += '<span>' + item.label + '</span></div>';
     });
     html += '</div>';
@@ -2032,17 +2046,30 @@ function renderStep2Rms() {
     html += '</div>'; // panel
   });
 
+  html += '</div>'; // 右: 商品詳細パネル群
+  html += '</div>'; // 2カラムレイアウト
+
   container.innerHTML = html;
 }
 
-function switchStep2RmsProduct(idx, btn) {
+function switchStep2RmsProduct(idx) {
+  // パネル切替
   document.querySelectorAll('.step2-rms-panel').forEach(p => p.style.display = 'none');
   const panel = document.querySelectorAll('.step2-rms-panel')[idx];
   if (panel) panel.style.display = 'flex';
-  if (btn) {
-    btn.closest('div').querySelectorAll('button').forEach(b => { b.classList.remove('btn-primary'); b.classList.add('btn-outline'); });
-    btn.classList.remove('btn-outline'); btn.classList.add('btn-primary');
-  }
+  // 品番リスト選択状態更新
+  document.querySelectorAll('.s2rms-prod-item').forEach((item, i) => {
+    if (i === idx) {
+      item.style.background = '#e8e2dc';
+      item.style.borderLeftColor = 'var(--primary)';
+    } else {
+      item.style.background = '';
+      item.style.borderLeftColor = 'transparent';
+    }
+  });
+  // 選択した項目が見えるようスクロール
+  const selectedItem = document.querySelectorAll('.s2rms-prod-item')[idx];
+  if (selectedItem) selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 function switchS2RmsTab(tabId, gi) {
