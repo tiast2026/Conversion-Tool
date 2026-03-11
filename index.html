@@ -1806,17 +1806,9 @@ function renderStep2() {
     if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; }
     if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
     document.body.style.overflow = 'hidden';
-    // RMSビューをステップバーの下に固定オーバーレイ表示
-    const stepsBar = document.querySelector('.steps');
+    // RMSビューをステップバーの下に配置（fixedは使わない）
     const rmsView = document.getElementById('step2-rms-view');
     if (rmsView) {
-      const topOffset = stepsBar ? (stepsBar.getBoundingClientRect().bottom) : 0;
-      rmsView.style.position = 'fixed';
-      rmsView.style.top = topOffset + 'px';
-      rmsView.style.left = '0';
-      rmsView.style.right = '0';
-      rmsView.style.bottom = '0';
-      rmsView.style.zIndex = '1000';
       rmsView.style.background = '#f5f0eb';
     }
     const step2Actions = document.getElementById('step2-actions');
@@ -1832,7 +1824,7 @@ function renderStep2() {
     document.body.style.overflow = '';
     // (stepsバーは常時表示のまま)
     const rmsView2 = document.getElementById('step2-rms-view');
-    if (rmsView2) { rmsView2.style.position = ''; rmsView2.style.top = ''; rmsView2.style.left = ''; rmsView2.style.right = ''; rmsView2.style.bottom = ''; rmsView2.style.zIndex = ''; rmsView2.style.background = ''; }
+    if (rmsView2) { rmsView2.style.background = ''; }
     const step2Actions2 = document.getElementById('step2-actions');
     if (step2Actions2) step2Actions2.style.display = '';
     renderCardView();
@@ -1845,8 +1837,8 @@ function renderStep2Rms() {
   if (!container || products.length === 0) { if (container) container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">楽天データがありません。</p>'; return; }
 
   let html = '';
-  // === 固定フッターボタン付きフルスクリーンレイアウト ===
-  html += '<div style="display:flex; flex-direction:column; height:100vh; overflow:hidden;">';
+  // === フルスクリーンレイアウト（ステップバーの下に収まる） ===
+  html += '<div id="rms-layout-root" style="display:flex; flex-direction:column; overflow:hidden;">';
   // 2カラムレイアウト: 左=品番リスト、右=商品詳細
   html += '<div style="display:flex; gap:0; flex:1; min-height:0;">';
 
@@ -2096,6 +2088,13 @@ function renderStep2Rms() {
   html += '</div>'; // フルスクリーンレイアウト
 
   container.innerHTML = html;
+
+  // ステップバー下端からビューポート底までの高さを計算してセット
+  const layoutRoot = document.getElementById('rms-layout-root');
+  if (layoutRoot) {
+    const top = layoutRoot.getBoundingClientRect().top;
+    layoutRoot.style.height = (window.innerHeight - top) + 'px';
+  }
 }
 
 function switchStep2RmsProduct(idx) {
@@ -2361,7 +2360,7 @@ function goToStep(n) {
     // 楽天フルスクリーンモードの解除
     document.body.style.overflow = '';
     const rmsViewNav = document.getElementById('step2-rms-view');
-    if (rmsViewNav) { rmsViewNav.style.position = ''; rmsViewNav.style.top = ''; rmsViewNav.style.left = ''; rmsViewNav.style.right = ''; rmsViewNav.style.bottom = ''; rmsViewNav.style.zIndex = ''; rmsViewNav.style.background = ''; }
+    if (rmsViewNav) { rmsViewNav.style.background = ''; }
   }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${n}`).classList.add('active');
