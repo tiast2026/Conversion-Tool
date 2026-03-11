@@ -1785,14 +1785,8 @@ function renderStep2() {
   const totalOptions = products.reduce((s, p) => s + (p.options ? p.options.length : 0), 0);
   const src = sourceType === 'rakuten' ? '楽天' : sourceType === 'jisha' ? '自社Excel' : '自社';
   if (sourceType === 'rakuten') {
-    // 楽天: コンパクトなインラインバッジ表示
-    document.getElementById('summary-cards').innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; padding:2px 0; font-size:13px; color:var(--text-light);">
-        <span style="font-weight:600; color:var(--primary-dark);">楽天CSV</span>
-        <span style="background:#f0ede9; padding:2px 8px; border-radius:10px;"><strong style="color:var(--primary-dark);">${totalProducts}</strong> 商品</span>
-        <span style="background:#f0ede9; padding:2px 8px; border-radius:10px;"><strong style="color:var(--primary-dark);">${totalSkus}</strong> SKU</span>
-        <span style="background:#f0ede9; padding:2px 8px; border-radius:10px;"><strong style="color:var(--primary-dark);">${totalImages}</strong> 画像</span>
-      </div>`;
+    // 楽天: summary-cardsは非表示にし、左サイドバー内に統計を表示
+    document.getElementById('summary-cards').innerHTML = '';
   } else {
     document.getElementById('summary-cards').innerHTML = `
       <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
@@ -1830,11 +1824,16 @@ function renderStep2Rms() {
 
   let html = '';
   // === 2カラムレイアウト: 左=品番リスト、右=商品詳細 ===
-  html += '<div style="display:flex; gap:0; height:calc(100vh - 190px); min-height:500px;">';
+  html += '<div style="display:flex; gap:0; height:calc(100vh - 160px); min-height:500px;">';
 
   // --- 左: 品番リスト（画像+品番、縦スクロール） ---
   html += '<div id="s2rms-product-list" style="width:240px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
-  html += '<div style="padding:10px 14px; font-size:14px; font-weight:700; color:var(--primary-dark); border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">商品一覧 (' + products.length + ')</div>';
+  html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
+  html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">商品一覧 (' + products.length + ')</div>';
+  html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
+  html += '<span style="background:#ece8e3; padding:1px 6px; border-radius:8px;"><strong>' + products.reduce((s,p)=>s+p.skus.length,0) + '</strong> SKU</span>';
+  html += '<span style="background:#ece8e3; padding:1px 6px; border-radius:8px;"><strong>' + products.reduce((s,p)=>s+p.images.length,0) + '</strong> 画像</span>';
+  html += '</div></div>';
   products.forEach((p, i) => {
     const thumbUrl = p.imageUrl || (p.images.length > 0 ? buildRakutenImgUrl(p.images[0].path) : '');
     const label = p.number || p.id || '';
@@ -1882,24 +1881,22 @@ function renderStep2Rms() {
     html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-left:none; border-radius:0 6px 6px 0; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
     html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee; flex-shrink:0;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
 
-    // ヘッダーカード
-    html += '<div style="padding:16px 24px; flex-shrink:0;">';
-    html += '<div style="display:flex; gap:20px; padding:16px; border:1px solid #ddd; border-radius:6px; background:#fafafa;">';
-    html += '<div style="width:110px; flex-shrink:0; text-align:center;">';
-    html += '<div style="width:110px; height:110px; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
-    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:12px>No Image</div>\'">';
-    else html += '<div style="color:#ccc; font-size:12px;">No Image</div>';
-    html += '</div></div>';
+    // ヘッダーカード（コンパクト）
+    html += '<div style="padding:8px 16px; flex-shrink:0;">';
+    html += '<div style="display:flex; gap:12px; padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px; background:#fafafa; align-items:center;">';
+    html += '<div style="width:56px; height:56px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
+    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>No Image</div>\'">';
+    else html += '<div style="color:#ccc; font-size:10px;">No Image</div>';
+    html += '</div>';
     html += '<div style="flex:1; min-width:0;">';
-    html += '<div style="font-size:13px; color:#888; margin-bottom:4px;">商品管理番号: <strong style="color:#333;">' + esc(prod.id || '') + '</strong> / 商品番号: <strong style="color:#333;">' + esc(prod.number || '') + '</strong></div>';
-    html += '<div style="font-size:17px; font-weight:700; color:#333; margin-bottom:8px; word-break:break-all;">' + esc(prod.cleanName || prod.name || '') + '</div>';
-    html += '<div style="font-size:14px; color:#666; margin-bottom:6px;">' + esc(prod.catchCopy || '') + '</div>';
-    html += '<div style="display:flex; gap:18px; font-size:14px;">';
-    html += '<span>SKU: <strong>' + prod.skus.length + '</strong>件</span>';
-    html += '<span>画像: <strong>' + prod.images.length + '</strong>件</span>';
-    if (prod.options && prod.options.length > 0) html += '<span>オプション: <strong>' + prod.options.length + '</strong>件</span>';
+    html += '<div style="font-size:14px; font-weight:700; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(prod.cleanName || prod.name || '') + '</div>';
+    html += '<div style="display:flex; gap:8px; align-items:center; margin-top:4px; font-size:12px; color:#888; flex-wrap:wrap;">';
+    html += '<span>' + esc(prod.id || '') + '</span>';
+    html += '<span>SKU:' + prod.skus.length + '</span>';
+    html += '<span>画像:' + prod.images.length + '</span>';
+    if (prod.options && prod.options.length > 0) html += '<span>OP:' + prod.options.length + '</span>';
     const warehouse = prod.warehouse || '';
-    html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
+    html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span>';
     html += '</div></div></div>';
 
     // === タブコンテンツ（スクロール領域 - JSで高さ計算） ===
@@ -2078,7 +2075,7 @@ function renderStep2Rms() {
 function resizeS2RmsTabAreas() {
   document.querySelectorAll('.s2rms-tab-area').forEach(area => {
     const rect = area.getBoundingClientRect();
-    const bottomMargin = 60;
+    const bottomMargin = 16;
     const available = window.innerHeight - rect.top - bottomMargin;
     area.style.maxHeight = Math.max(200, available) + 'px';
   });
