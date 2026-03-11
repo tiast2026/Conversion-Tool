@@ -1256,7 +1256,6 @@ function processAndGoStep2() {
   if (sourceType === 'rakuten') { products = structureRakuten(); }
   else { products = structureJisha(); }
   editedFields = {};
-  renderStep2();
   goToStep(2);
 }
 
@@ -2379,6 +2378,7 @@ function goToStep(n) {
     if (sn === n) s.classList.add('active');
     else if (sn < n) s.classList.add('done');
   });
+  if (n === 2 && products.length > 0) renderStep2();
   if (n === 3) renderRmsPreview();
   if (n === 4) renderStep4Download();
 }
