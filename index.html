@@ -1698,6 +1698,19 @@ function buildRakutenImgUrl(imgPath) {
 function renderRmsPreview() {
   const container = document.getElementById('rms-preview-container');
   if (!container) return;
+
+  // Step3のh2, desc, actionsを非表示にしてフルスクリーン化
+  const panel3 = document.getElementById('panel-3');
+  if (panel3) {
+    const h2 = panel3.querySelector('h2');
+    const desc = panel3.querySelector('.desc');
+    const actions = panel3.querySelector('.actions');
+    if (h2) h2.style.display = 'none';
+    if (desc) desc.style.display = 'none';
+    if (actions) actions.style.display = 'none';
+    panel3.style.padding = '0';
+  }
+
   const result = convertToRakuten();
   if (!result || !result.rows || result.rows.length === 0) {
     container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">変換データがありません。</p>';
@@ -2103,16 +2116,12 @@ function renderStep2() {
     `;
     document.getElementById('step2-jisha-view').style.display = '';
     document.getElementById('step2-rms-view').style.display = 'none';
-    if (headerText) headerText.style.display = '';
-    // 通常幅に戻す
-    document.body.classList.remove('rms-fullscreen');
-    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
-    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; }
-    const rmsView2 = document.getElementById('step2-rms-view');
-    if (rmsView2) { rmsView2.style.background = ''; rmsView2.style.overflow = ''; }
+    if (headerText) headerText.style.display = 'none';
+    // フルスクリーンモード
+    document.body.classList.add('rms-fullscreen');
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0 16px'; }
+    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
     if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
-    const step2Actions2 = document.getElementById('step2-actions');
-    if (step2Actions2) step2Actions2.style.display = '';
     renderCardView();
     renderTableView();
   }
@@ -2765,7 +2774,7 @@ function goToStep(n) {
   const containerEl = document.querySelector('.container');
   const panel2 = document.getElementById('panel-2');
   const panel3 = document.getElementById('panel-3');
-  const isFullscreen = (n === 2 && sourceType === 'rakuten') || n === 3;
+  const isFullscreen = n === 2 || n === 3;
   if (isFullscreen) {
     document.body.classList.add('rms-fullscreen');
     const targetPanel = n === 2 ? panel2 : panel3;
