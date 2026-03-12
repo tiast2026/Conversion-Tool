@@ -22,7 +22,7 @@ header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
 .header-right button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s; }
 .header-right button:hover { background: rgba(255,255,255,0.25); }
 .container { max-width: 1400px; margin: 0 auto; padding: 8px 16px; flex: 1; min-height: 0; }
-body.rms-fullscreen .container { overflow: hidden; max-width: none; padding: 0; }
+body.rms-fullscreen .container { overflow: hidden; max-width: none; padding: 0; margin: 0; width: 100%; }
 body.rms-fullscreen .panel.active { background: transparent; border-radius: 0; box-shadow: none; padding: 0; margin: 0; }
 .steps { display: flex; background: var(--card); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex-shrink: 0; z-index: 99; }
 .step { flex: 1; padding: 8px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
@@ -2097,7 +2097,7 @@ function renderStep2() {
     if (headerText) headerText.style.display = 'none';
     // RMSフルスクリーンモード
     document.body.classList.add('rms-fullscreen');
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; }
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.margin = '0'; containerEl.style.width = '100%'; }
     if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; panelEl.style.background = 'transparent'; }
     const rmsView = document.getElementById('step2-rms-view');
     if (rmsView) {
@@ -2120,7 +2120,7 @@ function renderStep2() {
     if (headerText) headerText.style.display = 'none';
     // フルスクリーンモード
     document.body.classList.add('rms-fullscreen');
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; }
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.margin = '0'; containerEl.style.width = '100%'; }
     if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; panelEl.style.background = 'transparent'; }
     if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
     renderCardView();
@@ -2779,11 +2779,11 @@ function goToStep(n) {
   if (isFullscreen) {
     document.body.classList.add('rms-fullscreen');
     const targetPanel = n === 2 ? panel2 : panel3;
-    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; }
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.margin = '0'; containerEl.style.width = '100%'; }
     if (targetPanel) { targetPanel.style.padding = '0'; targetPanel.style.margin = '0'; targetPanel.style.borderRadius = '0'; targetPanel.style.boxShadow = 'none'; targetPanel.style.background = 'transparent'; }
   } else {
     document.body.classList.remove('rms-fullscreen');
-    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
+    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; containerEl.style.margin = ''; containerEl.style.width = ''; }
     if (panel2) { panel2.style.padding = ''; panel2.style.margin = ''; panel2.style.borderRadius = ''; panel2.style.boxShadow = ''; }
     if (panel3) { panel3.style.padding = ''; panel3.style.margin = ''; panel3.style.borderRadius = ''; panel3.style.boxShadow = ''; }
     const rmsViewNav = document.getElementById('step2-rms-view');
