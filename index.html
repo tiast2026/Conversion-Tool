@@ -2124,6 +2124,21 @@ function renderStep2() {
     if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.margin = '0'; containerEl.style.width = '100%'; containerEl.style.overflow = 'visible'; }
     if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; panelEl.style.background = 'transparent'; }
     if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
+    // ナビゲーションボタンを画面下部に固定
+    const step2Actions = document.getElementById('step2-actions');
+    if (step2Actions) {
+      step2Actions.style.display = '';
+      step2Actions.style.position = 'fixed';
+      step2Actions.style.bottom = '0';
+      step2Actions.style.left = '0';
+      step2Actions.style.right = '0';
+      step2Actions.style.background = '#fff';
+      step2Actions.style.borderTop = '1px solid #ddd';
+      step2Actions.style.padding = '12px 24px';
+      step2Actions.style.zIndex = '100';
+      step2Actions.style.display = 'flex';
+      step2Actions.style.justifyContent = 'space-between';
+    }
     renderCardView();
     renderTableView();
   }
@@ -2779,6 +2794,9 @@ function goToStep(n) {
   const isFullscreen = n === 2 || n === 3;
   // body.style.overflowをリセット（renderStep2で変更される可能性あり）
   document.body.style.overflow = '';
+  // step2-actionsの固定位置をリセット
+  const step2Actions = document.getElementById('step2-actions');
+  if (step2Actions) { step2Actions.style.position = ''; step2Actions.style.bottom = ''; step2Actions.style.left = ''; step2Actions.style.right = ''; step2Actions.style.borderTop = ''; step2Actions.style.zIndex = ''; step2Actions.style.justifyContent = ''; step2Actions.style.display = ''; }
   if (isFullscreen) {
     document.body.classList.add('rms-fullscreen');
     const targetPanel = n === 2 ? panel2 : panel3;
