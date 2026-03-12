@@ -337,6 +337,22 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 
     <!-- 楽天 固有設定（RMS風レイアウト） -->
     <div class="master-mall-panel" id="mall-rakuten" style="display:none;">
+
+      <!-- 楽天 共通設定 -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:16px; font-weight:700; color:var(--primary-dark); margin-bottom:8px;">楽天 共通設定</div>
+        <div style="padding:10px 14px; background:#fff8e1; border:1px solid #ffe082; border-radius:6px; font-size:13px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="font-weight:600; color:#e65100;">楽天ウェブサービス アプリID</span>
+            <a href="https://webservice.rakuten.co.jp/" target="_blank" style="font-size:11px; color:#1565c0;">(無料取得)</a>
+          </div>
+          <input type="text" id="mall-rakuten-app-id" class="rms-input" style="width:340px;" placeholder="例: 1234567890123456789">
+          <span style="font-size:11px; color:#888; margin-left:6px;">ジャンルID→ジャンル名の自動表示に使用（全フロー共通）</span>
+        </div>
+      </div>
+
+      <div style="border-top:2px solid #e0e0e0; padding-top:16px;">
+      <!-- 自社Excel → 楽天CSV 新規登録 -->
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
         <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">自社Excel → 楽天CSV 新規登録</span>
       </div>
@@ -355,16 +371,6 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         <div class="rms-tab" onclick="switchRakutenTab('variation', this)">バリエーション</div>
         <div class="rms-tab" onclick="switchRakutenTab('display', this)">説明文</div>
         <div class="rms-tab" onclick="switchRakutenTab('image', this)">画像</div>
-      </div>
-
-      <!-- API設定 -->
-      <div style="margin-bottom:12px; padding:10px 14px; background:#fff8e1; border:1px solid #ffe082; border-radius:6px; font-size:13px;">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-          <span style="font-weight:600; color:#e65100;">楽天ウェブサービス アプリID</span>
-          <a href="https://webservice.rakuten.co.jp/" target="_blank" style="font-size:11px; color:#1565c0;">(無料取得)</a>
-        </div>
-        <input type="text" id="mall-rakuten-app-id" class="rms-input" style="width:340px;" placeholder="例: 1234567890123456789">
-        <span style="font-size:11px; color:#888; margin-left:6px;">ジャンルID→ジャンル名の自動表示に使用</span>
       </div>
 
       <!-- 商品基本情報 -->
@@ -727,6 +733,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
       <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
         <button class="btn btn-sm btn-primary" onclick="saveMallMaster('rakuten')">楽天設定を保存</button>
       </div>
+      </div><!-- /自社Excel → 楽天CSV セクション -->
     </div>
 
     <div class="master-mall-panel" id="mall-shopline" style="display:none; padding-top:16px;">
