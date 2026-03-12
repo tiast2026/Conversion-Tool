@@ -46,6 +46,7 @@
   ],
   "malls": {
     "rakuten": {
+      "rakutenAppId": "feb7b7ce-bd14-47f7-be51-82fc8375e35f",
       "controlCol": "n",
       "genreId": "",
       "catalogReason": "3",
