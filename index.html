@@ -1980,11 +1980,11 @@ function renderStep2Rms() {
   let html = '';
   // === フルスクリーンレイアウト（ステップバーの下に収まる） ===
   html += '<div id="rms-layout-root" style="display:flex; flex-direction:column; overflow:hidden; padding:0 8px 8px 0; width:100%; box-sizing:border-box;">';
-  // 2カラムレイアウト: 左=品番リスト（240px固定）、右=商品詳細（残り）
-  html += '<div id="rms-grid" style="display:grid; grid-template-columns:240px 1fr; flex:1; min-height:0; overflow:hidden;">';
+  // 2カラムレイアウト: 左=品番リスト（240px固定）、右=商品詳細（残り）— position:relativeで絶対配置の基準
+  html += '<div id="rms-grid" style="position:relative; flex:1; min-height:0; overflow:hidden;">';
 
-  // --- 左: 品番リスト（画像+品番、縦スクロール） ---
-  html += '<div id="s2rms-product-list" style="width:240px; max-width:240px; min-width:240px; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden; min-height:0;">';
+  // --- 左: 品番リスト（240px固定、absoluteで配置） ---
+  html += '<div id="s2rms-product-list" style="position:absolute; left:0; top:0; bottom:0; width:240px; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden;">';
   html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
   html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">商品一覧 (' + products.length + ')</div>';
   html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
@@ -2008,8 +2008,8 @@ function renderStep2Rms() {
   });
   html += '</div>';
 
-  // --- 右: 商品詳細パネル群 ---
-  html += '<div id="s2rms-right-panel" style="min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden; contain:inline-size;">';
+  // --- 右: 商品詳細パネル群（absoluteで左240pxの右側全体） ---
+  html += '<div id="s2rms-right-panel" style="position:absolute; left:240px; top:0; right:0; bottom:0; display:flex; flex-direction:column; overflow:hidden;">';
 
   products.forEach((prod, gi) => {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? buildRakutenImgUrl(prod.images[0].path) : '');
@@ -2243,17 +2243,7 @@ function renderStep2Rms() {
     const layoutRoot = document.getElementById('rms-layout-root');
     if (layoutRoot) {
       const top = layoutRoot.getBoundingClientRect().top;
-      const parentW = layoutRoot.parentElement.clientWidth;
       layoutRoot.style.height = (window.innerHeight - top) + 'px';
-      layoutRoot.style.width = parentW + 'px';
-      layoutRoot.style.maxWidth = parentW + 'px';
-      // 右パネルに明示的なピクセル幅を設定（左240px + border分を差し引く）
-      const rightPanel = document.getElementById('s2rms-right-panel');
-      if (rightPanel) {
-        const rightW = parentW - 240 - 10; // 10px = padding/border余裕
-        rightPanel.style.width = rightW + 'px';
-        rightPanel.style.maxWidth = rightW + 'px';
-      }
     }
   }
   adjustRmsHeight();
