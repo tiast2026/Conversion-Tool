@@ -357,18 +357,18 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         </table>
       </div>
 
-      <!-- 自社Excel → 楽天CSV 新規登録（折りたたみ） -->
+      <!-- 楽天CSV 出力設定 -->
       <details open style="border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
         <summary style="padding:12px 16px; background:linear-gradient(135deg, var(--primary-dark), var(--primary)); color:white; cursor:pointer; font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; user-select:none;">
-          <span>自社Excel → 楽天CSV 新規登録</span>
-          <span style="font-size:11px; font-weight:400; opacity:0.8; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:10px;">今後実装予定</span>
+          <span>楽天CSV 出力設定</span>
+          <span style="font-size:11px; font-weight:400; opacity:0.8; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:10px;">楽天CSV入力時・自社Excel変換時の両方で使用</span>
         </summary>
         <div style="padding:12px 16px 0;">
       <p style="font-size:13px; color:var(--text-light); margin:0 0 12px 0;">
         <span class="src-excel">自社Excel</span> Excelから自動取得
         <span class="src-master">マスタ</span> この画面で設定する値
         <span class="src-auto">自動</span> 自動生成
-        <span class="badge-req">必須</span> 楽天の新規登録に必須
+        <span class="badge-req">必須</span> 楽天の必須項目
       </p>
 
       <!-- RMS風タブ -->
@@ -751,7 +751,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         <button class="btn btn-sm btn-primary" onclick="saveMallMaster('rakuten')">楽天設定を保存</button>
       </div>
       </div><!-- /details内のpadding div -->
-      </details><!-- /自社Excel → 楽天CSV セクション -->
+      </details><!-- /楽天CSV 出力設定 セクション -->
     </div>
 
     <div class="master-mall-panel" id="mall-shopline" style="display:none; padding-top:16px;">
