@@ -14,6 +14,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; display: flex; flex-direction: column; }
 body.rms-fullscreen { height: 100vh; overflow: hidden; }
+.s2rms-tab-area { scrollbar-gutter: stable; }
 header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 10px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 100; }
 header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
 header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
@@ -1980,11 +1981,11 @@ function renderStep2Rms() {
   let html = '';
   // === フルスクリーンレイアウト（ステップバーの下に収まる） ===
   html += '<div id="rms-layout-root" style="display:flex; flex-direction:column; overflow:hidden; padding:0 8px 8px 0; width:100%; box-sizing:border-box;">';
-  // 2カラムレイアウト: 左=品番リスト（240px固定）、右=商品詳細（残り）— position:relativeで絶対配置の基準
-  html += '<div id="rms-grid" style="position:relative; flex:1; min-height:0; overflow:hidden;">';
+  // 2カラムレイアウト: 左=品番リスト（240px固定）、右=商品詳細（残り）
+  html += '<div style="display:grid; grid-template-columns:240px 1fr; flex:1; min-height:0; overflow:hidden;">';
 
-  // --- 左: 品番リスト（240px固定、absoluteで配置） ---
-  html += '<div id="s2rms-product-list" style="position:absolute; left:0; top:0; bottom:0; width:240px; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden;">';
+  // --- 左: 品番リスト（画像+品番、縦スクロール） ---
+  html += '<div id="s2rms-product-list" style="background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden; min-height:0;">';
   html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
   html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">商品一覧 (' + products.length + ')</div>';
   html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
@@ -2008,8 +2009,8 @@ function renderStep2Rms() {
   });
   html += '</div>';
 
-  // --- 右: 商品詳細パネル群（absoluteで左240pxの右側全体） ---
-  html += '<div id="s2rms-right-panel" style="position:absolute; left:240px; top:0; right:0; bottom:0; display:flex; flex-direction:column; overflow:hidden;">';
+  // --- 右: 商品詳細パネル群 ---
+  html += '<div style="min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden;">';
 
   products.forEach((prod, gi) => {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? buildRakutenImgUrl(prod.images[0].path) : '');
@@ -2021,7 +2022,7 @@ function renderStep2Rms() {
     html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
 
     // === スクロール領域（パンくず・ヘッダー・タブバー・タブコンテンツすべて含む） ===
-    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;">';
+    html += '<div class="s2rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:scroll; overflow-x:hidden;">';
 
     // パンくず + ヘッダーカード（スクロールで消える）
     html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">楽天CSV取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
