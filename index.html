@@ -1981,10 +1981,10 @@ function renderStep2Rms() {
   // === フルスクリーンレイアウト（ステップバーの下に収まる） ===
   html += '<div id="rms-layout-root" style="display:flex; flex-direction:column; overflow:hidden; padding:0 8px 8px 0; width:100%; box-sizing:border-box;">';
   // 2カラムレイアウト: 左=品番リスト（240px固定）、右=商品詳細（残り）
-  html += '<div style="display:grid; grid-template-columns:240px 1fr; flex:1; min-height:0; overflow:hidden;">';
+  html += '<div id="rms-grid" style="display:grid; grid-template-columns:240px 1fr; flex:1; min-height:0; overflow:hidden;">';
 
   // --- 左: 品番リスト（画像+品番、縦スクロール） ---
-  html += '<div id="s2rms-product-list" style="background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden; min-height:0;">';
+  html += '<div id="s2rms-product-list" style="width:240px; max-width:240px; min-width:240px; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden; min-height:0;">';
   html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
   html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">商品一覧 (' + products.length + ')</div>';
   html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
@@ -2009,7 +2009,7 @@ function renderStep2Rms() {
   html += '</div>';
 
   // --- 右: 商品詳細パネル群 ---
-  html += '<div style="min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden;">';
+  html += '<div id="s2rms-right-panel" style="min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden; contain:inline-size;">';
 
   products.forEach((prod, gi) => {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? buildRakutenImgUrl(prod.images[0].path) : '');
@@ -2092,7 +2092,7 @@ function renderStep2Rms() {
     html += '<div class="s2rms-tab" data-tab="s2var" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">バリエーション設定</h4>';
     if (prod.varDef && prod.varDef.keys) {
-      html += '<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:16px;">';
+      html += '<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px; margin-bottom:16px;">';
       html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.varDef.keys) + '</td></tr>';
       html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.varDef.names) + '</td></tr>';
       prod.varDef.options.forEach((opt, oi) => {
@@ -2105,7 +2105,7 @@ function renderStep2Rms() {
     // SKU一覧
     if (prod.skus.length > 0) {
       html += '<h4 style="font-size:16px; color:#333; margin:14px 0 10px; border-bottom:2px solid #333; padding-bottom:8px;">SKU一覧（' + prod.skus.length + '件）</h4>';
-      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
+      html += '<div style="overflow-x:auto;"><table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:13px;">';
       html += '<thead><tr>';
       ['SKU管理番号','システム連携SKU','バリエーション','価格','表示価格','在庫','カタログID'].forEach(h => {
         html += '<th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600; font-size:13px; white-space:nowrap;">' + esc(h) + '</th>';
@@ -2130,7 +2130,7 @@ function renderStep2Rms() {
     // 販売・価格
     html += '<div class="s2rms-tab" data-tab="s2price" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">販売・価格設定</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+    html += '<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px;">';
     const priceFields = [
       ['消費税', (prod.taxType === '0' ? '税込み' : prod.taxType || '')],
       ['消費税率', (prod.taxRate || '') + '%'],
@@ -2145,7 +2145,7 @@ function renderStep2Rms() {
     html += '</table>';
     if (prod.pointRate) {
       html += '<h4 style="font-size:16px; color:#333; margin:16px 0 10px; border-bottom:2px solid #333; padding-bottom:8px;">ポイント変倍</h4>';
-      html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+      html += '<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px;">';
       html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">変倍率</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.pointRate) + '倍</td></tr>';
       if (prod.pointStart) html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用開始</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.pointStart) + '</td></tr>';
       if (prod.pointEnd) html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用終了</td><td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.pointEnd) + '</td></tr>';
@@ -2205,7 +2205,7 @@ function renderStep2Rms() {
     html += '<div class="s2rms-tab" data-tab="s2opt" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品オプション</h4>';
     if (prod.options && prod.options.length > 0) {
-      html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+      html += '<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px;">';
       html += '<thead><tr><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">タイプ</th><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">項目名</th><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">必須</th><th style="background:#f5f5f5; padding:8px 12px; border:1px solid #ddd; font-weight:600;">選択肢</th></tr></thead><tbody>';
       prod.options.forEach(opt => {
         html += '<tr><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(opt.type || '') + '</td>';
@@ -2243,8 +2243,17 @@ function renderStep2Rms() {
     const layoutRoot = document.getElementById('rms-layout-root');
     if (layoutRoot) {
       const top = layoutRoot.getBoundingClientRect().top;
+      const parentW = layoutRoot.parentElement.clientWidth;
       layoutRoot.style.height = (window.innerHeight - top) + 'px';
-      layoutRoot.style.maxWidth = layoutRoot.parentElement.clientWidth + 'px';
+      layoutRoot.style.width = parentW + 'px';
+      layoutRoot.style.maxWidth = parentW + 'px';
+      // 右パネルに明示的なピクセル幅を設定（左240px + border分を差し引く）
+      const rightPanel = document.getElementById('s2rms-right-panel');
+      if (rightPanel) {
+        const rightW = parentW - 240 - 10; // 10px = padding/border余裕
+        rightPanel.style.width = rightW + 'px';
+        rightPanel.style.maxWidth = rightW + 'px';
+      }
     }
   }
   adjustRmsHeight();
