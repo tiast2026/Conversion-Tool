@@ -419,9 +419,11 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
             <td>
               <span class="src-master">マスタ</span>
               <select id="mall-rakuten-catalog-reason" class="rms-input">
-                <option value="3">3: 該当なし</option>
-                <option value="1">1: JANなし</option>
-                <option value="2">2: セット商品</option>
+                <option value="3">3: 店舗オリジナル商品</option>
+                <option value="1">1: セット商品</option>
+                <option value="2">2: サービス商品</option>
+                <option value="4">4: 項目選択肢在庫商品</option>
+                <option value="5">5: 該当製品コードなし</option>
               </select>
             </td>
           </tr>
@@ -530,10 +532,49 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
             </td>
           </tr>
           <tr>
+            <th>送料区分1</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-shipping-cat1" class="rms-input" style="width:200px;" placeholder="">
+            </td>
+          </tr>
+          <tr>
+            <th>送料区分2</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-shipping-cat2" class="rms-input" style="width:200px;" placeholder="">
+            </td>
+          </tr>
+          <tr>
             <th>あす楽配送管理番号</th>
             <td>
               <span class="src-master">マスタ</span>
               <input type="text" id="mall-rakuten-asuraku" class="rms-input" style="width:200px;" placeholder="">
+            </td>
+          </tr>
+          <tr>
+            <th>出荷リードタイム</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-ship-leadtime" class="rms-input" style="width:200px;" placeholder="例: 1~5営業日で出荷予定">
+            </td>
+          </tr>
+          <tr>
+            <th>配送リードタイム</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-delivery-leadtime" class="rms-input" style="width:200px;" placeholder="例: NOAHL【自社倉庫】">
+            </td>
+          </tr>
+          <tr>
+            <th>置き配指定</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <select id="mall-rakuten-okihai" class="rms-input">
+                <option value="">未設定</option>
+                <option value="1">受け付ける</option>
+                <option value="0">受け付けない</option>
+              </select>
             </td>
           </tr>
           <tr>
@@ -826,6 +867,7 @@ let MASTER = {
   malls: {
     rakuten:  {
       controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0', rakutenAppId: '',
+      shippingCat1: '', shippingCat2: '', shipLeadtime: '', deliveryLeadtime: '', okihai: '',
       namePrefix: '', nameSuffix: '',
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
       shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', asuraku: '', deliveryInfo: '', noshi: '0',
@@ -991,9 +1033,14 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-point-end')) el('mall-rakuten-point-end').value = m.pointEnd || '';
     if (el('mall-rakuten-shipping-fee')) el('mall-rakuten-shipping-fee').value = m.shippingFee || '0';
     if (el('mall-rakuten-indiv-shipping')) el('mall-rakuten-indiv-shipping').value = m.indivShipping || 0;
+    if (el('mall-rakuten-shipping-cat1')) el('mall-rakuten-shipping-cat1').value = m.shippingCat1 || '';
+    if (el('mall-rakuten-shipping-cat2')) el('mall-rakuten-shipping-cat2').value = m.shippingCat2 || '';
     if (el('mall-rakuten-shipping-set')) el('mall-rakuten-shipping-set').value = m.shippingSet || '';
     if (el('mall-rakuten-shipping-name')) el('mall-rakuten-shipping-name').value = m.shippingName || '';
     if (el('mall-rakuten-asuraku')) el('mall-rakuten-asuraku').value = m.asuraku || '';
+    if (el('mall-rakuten-ship-leadtime')) el('mall-rakuten-ship-leadtime').value = m.shipLeadtime || '';
+    if (el('mall-rakuten-delivery-leadtime')) el('mall-rakuten-delivery-leadtime').value = m.deliveryLeadtime || '';
+    if (el('mall-rakuten-okihai')) el('mall-rakuten-okihai').value = m.okihai || '';
     if (el('mall-rakuten-delivery-info')) el('mall-rakuten-delivery-info').value = m.deliveryInfo || '';
     if (el('mall-rakuten-noshi')) el('mall-rakuten-noshi').value = m.noshi || '0';
     if (el('mall-rakuten-pc-desc-tpl')) el('mall-rakuten-pc-desc-tpl').value = m.pcDescTpl || '';
@@ -1067,9 +1114,14 @@ function saveMallMaster(mall) {
     m.pointEnd = el('mall-rakuten-point-end')?.value?.trim() || '';
     m.shippingFee = el('mall-rakuten-shipping-fee')?.value || '0';
     m.indivShipping = parseInt(el('mall-rakuten-indiv-shipping')?.value) || 0;
+    m.shippingCat1 = el('mall-rakuten-shipping-cat1')?.value?.trim() || '';
+    m.shippingCat2 = el('mall-rakuten-shipping-cat2')?.value?.trim() || '';
     m.shippingSet = el('mall-rakuten-shipping-set')?.value?.trim() || '';
     m.shippingName = el('mall-rakuten-shipping-name')?.value?.trim() || '';
     m.asuraku = el('mall-rakuten-asuraku')?.value?.trim() || '';
+    m.shipLeadtime = el('mall-rakuten-ship-leadtime')?.value?.trim() || '';
+    m.deliveryLeadtime = el('mall-rakuten-delivery-leadtime')?.value?.trim() || '';
+    m.okihai = el('mall-rakuten-okihai')?.value || '';
     m.deliveryInfo = el('mall-rakuten-delivery-info')?.value?.trim() || '';
     m.noshi = el('mall-rakuten-noshi')?.value || '0';
     m.pcDescTpl = el('mall-rakuten-pc-desc-tpl')?.value || '';
@@ -2574,6 +2626,8 @@ function convertToRakuten() {
       pRow[RI['消費税']] = rm.taxType || '0';
       pRow[RI['送料']] = rm.shippingFee || '0';
       pRow[RI['個別送料（税込）']] = String(rm.indivShipping || 0);
+      pRow[RI['送料区分1']] = rm.shippingCat1 || '';
+      pRow[RI['送料区分2']] = rm.shippingCat2 || '';
       pRow[RI['配送方法セット管理番号']] = rm.shippingSet || '';
       pRow[RI['配送方法セット名（配送方法セット管理番号が未指定の場合のみ有効）']] = rm.shippingName || '';
       pRow[RI['あす楽配送管理番号']] = rm.asuraku || '';
