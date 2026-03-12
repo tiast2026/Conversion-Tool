@@ -831,36 +831,52 @@ let products = [];
 let editedFields = {};
 let CI = {};
 
-// 楽天ジャンル名キャッシュ
+// 楽天ジャンル名キャッシュ（JSONP方式でCORS回避）
 const _genreCache = {};
-async function fetchRakutenGenrePath(genreId) {
-  if (!genreId) return '';
-  const gid = String(genreId).trim();
-  if (_genreCache[gid]) return _genreCache[gid];
-  const appId = MASTER.malls?.rakuten?.rakutenAppId || '';
-  if (!appId) return '';
-  try {
-    const res = await fetch('https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20140222?applicationId=' + encodeURIComponent(appId) + '&genreId=' + encodeURIComponent(gid));
-    if (!res.ok) return '';
-    const data = await res.json();
-    const parts = [];
-    if (data.parents) data.parents.forEach(p => { if (p.parent) parts.push(p.parent.genreName); });
-    if (data.current) parts.push(data.current.genreName);
-    const path = parts.join(' > ');
-    _genreCache[gid] = path;
-    return path;
-  } catch (e) { return ''; }
+let _genreCallbackId = 0;
+function fetchRakutenGenrePath(genreId) {
+  return new Promise(resolve => {
+    if (!genreId) return resolve('');
+    const gid = String(genreId).trim();
+    if (_genreCache[gid]) return resolve(_genreCache[gid]);
+    const appId = MASTER.malls?.rakuten?.rakutenAppId || '';
+    if (!appId) return resolve('');
+    const cbName = '_genreCb' + (++_genreCallbackId);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => { cleanup(); resolve(''); }, 5000);
+    function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+    window[cbName] = function(data) {
+      cleanup();
+      const parts = [];
+      if (data.parents) data.parents.forEach(p => { if (p.parent) parts.push(p.parent.genreName); });
+      if (data.current) parts.push(data.current.genreName);
+      const path = parts.join(' > ');
+      _genreCache[gid] = path;
+      resolve(path);
+    };
+    script.src = 'https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20140222?applicationId=' + encodeURIComponent(appId) + '&genreId=' + encodeURIComponent(gid) + '&callback=' + cbName;
+    script.onerror = function() { cleanup(); resolve(''); };
+    document.head.appendChild(script);
+  });
 }
 function resolveGenreNames() {
-  document.querySelectorAll('.genre-name-display').forEach(async el => {
-    const gid = el.dataset.genreId;
-    if (!gid) return;
-    el.textContent = '取得中...';
-    el.style.color = '#999';
-    const path = await fetchRakutenGenrePath(gid);
-    if (path) { el.textContent = path; el.style.color = '#1565c0'; }
-    else { el.textContent = ''; }
-  });
+  const els = [...document.querySelectorAll('.genre-name-display')];
+  // 重複genreIdを排除して順次取得（API制限対策）
+  const uniqueIds = [...new Set(els.map(el => el.dataset.genreId).filter(Boolean))];
+  let i = 0;
+  function next() {
+    if (i >= uniqueIds.length) return;
+    const gid = uniqueIds[i++];
+    fetchRakutenGenrePath(gid).then(path => {
+      els.filter(el => el.dataset.genreId === gid).forEach(el => {
+        if (path) { el.textContent = path; el.style.color = '#1565c0'; }
+        else { el.textContent = ''; }
+      });
+      setTimeout(next, _genreCache[gid] ? 0 : 300); // キャッシュ済みは即座に、未取得は300ms間隔
+    });
+  }
+  els.forEach(el => { if (el.dataset.genreId) { el.textContent = '取得中...'; el.style.color = '#999'; } });
+  next();
 }
 let MASTER = {
   colorOrder: {}, nameCleanPatterns: [], deleteTemplates: [],
