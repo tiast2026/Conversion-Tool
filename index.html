@@ -1854,7 +1854,7 @@ function renderStep2Rms() {
   html += '<div style="display:flex; gap:0; flex:1; min-height:0; overflow:hidden;">';
 
   // --- 左: 品番リスト（画像+品番、縦スクロール） ---
-  html += '<div id="s2rms-product-list" style="width:240px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
+  html += '<div id="s2rms-product-list" style="width:240px; min-width:240px; max-width:240px; flex-shrink:0; background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto;">';
   html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
   html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">商品一覧 (' + products.length + ')</div>';
   html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
