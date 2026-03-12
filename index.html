@@ -2053,27 +2053,50 @@ function renderStep2() {
   const totalImages = products.reduce((s, p) => s + p.images.length, 0);
   const totalOptions = products.reduce((s, p) => s + (p.options ? p.options.length : 0), 0);
   const src = sourceType === 'rakuten' ? '楽天' : sourceType === 'jisha' ? '自社Excel' : '自社';
-  // 全ソースタイプでRMSフルスクリーンビューを使用
-  document.getElementById('summary-cards').innerHTML = '';
   const containerEl = document.querySelector('.container');
   const panelEl = document.getElementById('panel-2');
   const headerText = document.getElementById('step2-header-text');
-  document.getElementById('step2-jisha-view').style.display = 'none';
-  document.getElementById('step2-rms-view').style.display = '';
-  if (headerText) headerText.style.display = 'none';
-  // RMSフルスクリーンモード
-  document.body.classList.add('rms-fullscreen');
-  if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0 16px'; }
-  if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
-  const rmsView = document.getElementById('step2-rms-view');
-  if (rmsView) {
-    rmsView.style.background = '#f5f0eb';
-    rmsView.style.width = '100%';
-    rmsView.style.overflow = 'hidden';
+  if (sourceType === 'rakuten') {
+    // 楽天: summary-cardsは非表示にし、左サイドバー内に統計を表示
+    document.getElementById('summary-cards').innerHTML = '';
+    document.getElementById('step2-jisha-view').style.display = 'none';
+    document.getElementById('step2-rms-view').style.display = '';
+    if (headerText) headerText.style.display = 'none';
+    // RMSフルスクリーンモード
+    document.body.classList.add('rms-fullscreen');
+    if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0 16px'; }
+    if (panelEl) { panelEl.style.padding = '0'; panelEl.style.margin = '0'; panelEl.style.borderRadius = '0'; panelEl.style.boxShadow = 'none'; }
+    const rmsView = document.getElementById('step2-rms-view');
+    if (rmsView) {
+      rmsView.style.background = '#f5f0eb';
+      rmsView.style.width = '100%';
+      rmsView.style.overflow = 'hidden';
+    }
+    const step2Actions = document.getElementById('step2-actions');
+    if (step2Actions) step2Actions.style.display = 'none';
+    renderStep2Rms();
+  } else {
+    document.getElementById('summary-cards').innerHTML = `
+      <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
+      <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
+      <div class="summary-card"><div class="num">${totalImages}</div><div class="label">画像数</div></div>
+      <div class="summary-card"><div class="num">${src}</div><div class="label">ソース</div></div>
+    `;
+    document.getElementById('step2-jisha-view').style.display = '';
+    document.getElementById('step2-rms-view').style.display = 'none';
+    if (headerText) headerText.style.display = '';
+    // 通常幅に戻す
+    document.body.classList.remove('rms-fullscreen');
+    if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
+    if (panelEl) { panelEl.style.padding = ''; panelEl.style.margin = ''; panelEl.style.borderRadius = ''; panelEl.style.boxShadow = ''; }
+    const rmsView2 = document.getElementById('step2-rms-view');
+    if (rmsView2) { rmsView2.style.background = ''; rmsView2.style.overflow = ''; }
+    if (window._rmsResizeHandler) { window.removeEventListener('resize', window._rmsResizeHandler); window._rmsResizeHandler = null; }
+    const step2Actions2 = document.getElementById('step2-actions');
+    if (step2Actions2) step2Actions2.style.display = '';
+    renderCardView();
+    renderTableView();
   }
-  const step2Actions = document.getElementById('step2-actions');
-  if (step2Actions) step2Actions.style.display = 'none';
-  renderStep2Rms();
 }
 
 function renderStep2Rms() {
@@ -2720,10 +2743,10 @@ function goToStep(n) {
     editedFields = {};
   }
   if (n > 1 && products.length === 0) return;
-  // Step2以外では通常幅に復元
+  // Step2楽天表示以外では通常幅に復元
   const containerEl = document.querySelector('.container');
   const panel2 = document.getElementById('panel-2');
-  if (n !== 2) {
+  if (n !== 2 || sourceType !== 'rakuten') {
     document.body.classList.remove('rms-fullscreen');
     if (containerEl) { containerEl.style.maxWidth = ''; containerEl.style.padding = ''; }
     if (panel2) { panel2.style.padding = ''; }
