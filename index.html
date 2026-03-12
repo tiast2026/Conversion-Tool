@@ -357,6 +357,16 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
         <div class="rms-tab" onclick="switchRakutenTab('image', this)">画像</div>
       </div>
 
+      <!-- API設定 -->
+      <div style="margin-bottom:12px; padding:10px 14px; background:#fff8e1; border:1px solid #ffe082; border-radius:6px; font-size:13px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <span style="font-weight:600; color:#e65100;">楽天ウェブサービス アプリID</span>
+          <a href="https://webservice.rakuten.co.jp/" target="_blank" style="font-size:11px; color:#1565c0;">(無料取得)</a>
+        </div>
+        <input type="text" id="mall-rakuten-app-id" class="rms-input" style="width:340px;" placeholder="例: 1234567890123456789">
+        <span style="font-size:11px; color:#888; margin-left:6px;">ジャンルID→ジャンル名の自動表示に使用</span>
+      </div>
+
       <!-- 商品基本情報 -->
       <div class="rakuten-tab-panel active" id="rtab-basic" style="display:block;">
         <table class="rms-form">
@@ -779,11 +789,43 @@ let headers = [];
 let products = [];
 let editedFields = {};
 let CI = {};
+
+// 楽天ジャンル名キャッシュ
+const _genreCache = {};
+async function fetchRakutenGenrePath(genreId) {
+  if (!genreId) return '';
+  const gid = String(genreId).trim();
+  if (_genreCache[gid]) return _genreCache[gid];
+  const appId = MASTER.malls?.rakuten?.rakutenAppId || '';
+  if (!appId) return '';
+  try {
+    const res = await fetch('https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20140222?applicationId=' + encodeURIComponent(appId) + '&genreId=' + encodeURIComponent(gid));
+    if (!res.ok) return '';
+    const data = await res.json();
+    const parts = [];
+    if (data.parents) data.parents.forEach(p => { if (p.parent) parts.push(p.parent.genreName); });
+    if (data.current) parts.push(data.current.genreName);
+    const path = parts.join(' > ');
+    _genreCache[gid] = path;
+    return path;
+  } catch (e) { return ''; }
+}
+function resolveGenreNames() {
+  document.querySelectorAll('.genre-name-display').forEach(async el => {
+    const gid = el.dataset.genreId;
+    if (!gid) return;
+    el.textContent = '取得中...';
+    el.style.color = '#999';
+    const path = await fetchRakutenGenrePath(gid);
+    if (path) { el.textContent = path; el.style.color = '#1565c0'; }
+    else { el.textContent = ''; }
+  });
+}
 let MASTER = {
   colorOrder: {}, nameCleanPatterns: [], deleteTemplates: [],
   malls: {
     rakuten:  {
-      controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0',
+      controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0', rakutenAppId: '',
       namePrefix: '', nameSuffix: '',
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
       shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', asuraku: '', deliveryInfo: '', noshi: '0',
@@ -938,6 +980,7 @@ function loadMallMasterUI(mall) {
   if (el(`mall-${mall}-brand`)) el(`mall-${mall}-brand`).value = m.brand || '';
   // 楽天固有
   if (mall === 'rakuten') {
+    if (el('mall-rakuten-app-id')) el('mall-rakuten-app-id').value = m.rakutenAppId || '';
     if (el('mall-rakuten-control-col')) el('mall-rakuten-control-col').value = m.controlCol || 'n';
     if (el('mall-rakuten-genre-id')) el('mall-rakuten-genre-id').value = m.genreId || '';
     if (el('mall-rakuten-catalog-reason')) el('mall-rakuten-catalog-reason').value = m.catalogReason || '3';
@@ -1013,6 +1056,7 @@ function saveMallMaster(mall) {
   if (el(`mall-${mall}-brand`)) m.brand = el(`mall-${mall}-brand`).value.trim();
   // 楽天固有
   if (mall === 'rakuten') {
+    m.rakutenAppId = el('mall-rakuten-app-id')?.value?.trim() || '';
     m.controlCol = el('mall-rakuten-control-col')?.value || 'n';
     m.genreId = el('mall-rakuten-genre-id')?.value?.trim() || '';
     m.catalogReason = el('mall-rakuten-catalog-reason')?.value || '3';
@@ -1677,7 +1721,7 @@ function renderRmsPreview() {
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">製品情報</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ジャンルID</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(v('ジャンルID')) + '</td></tr>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(v('ジャンルID')) + ' <span class="genre-name-display" data-genre-id="' + esc(v('ジャンルID')) + '" style="font-size:12px; margin-left:8px;"></span></td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログID</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + (v('カタログID') || '<span style="color:#ccc;">未設定</span>') + '</td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由</td>';
@@ -1724,6 +1768,7 @@ function renderRmsPreview() {
   });
 
   container.innerHTML = html;
+  resolveGenreNames();
 }
 
 function switchRmsTab(tabId, gi, sideEl) {
@@ -1945,7 +1990,12 @@ function renderStep2Rms() {
     ];
     basicFields.forEach(([label, key, val]) => {
       html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600; white-space:nowrap;">' + esc(label) + '</td>';
-      if (key) {
+      if (key === 'genreId') {
+        html += '<td style="padding:10px 14px; border:1px solid #ddd; word-break:break-all; overflow-wrap:break-word;">';
+        html += '<span contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="outline:none; cursor:text;" onfocus="this.style.background=\'#fff8e8\'" onblur="this.style.background=\'\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(val || '') + '</span>';
+        html += ' <span class="genre-name-display" data-genre-id="' + esc(val || '') + '" style="font-size:12px; margin-left:8px;"></span>';
+        html += '</td></tr>';
+      } else if (key) {
         html += '<td contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="padding:10px 14px; border:1px solid #ddd; outline:none; cursor:text; word-break:break-all; overflow-wrap:break-word;" onfocus="this.style.background=\'#fff8e8\'" onblur="this.style.background=\'\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(val || '') + '</td></tr>';
       } else {
         html += '<td style="padding:10px 14px; border:1px solid #ddd; word-break:break-all; overflow-wrap:break-word;">' + esc(val || '') + '</td></tr>';
@@ -2114,6 +2164,7 @@ function renderStep2Rms() {
   adjustRmsHeight();
   window._rmsResizeHandler = adjustRmsHeight;
   window.addEventListener('resize', adjustRmsHeight);
+  resolveGenreNames();
 }
 
 function switchStep2RmsProduct(idx) {
@@ -2211,7 +2262,9 @@ function renderCardView() {
         const editable = !key.startsWith('_');
         html += `<div class="field-row">`;
         html += `<div class="field-label">${label}</div>`;
-        html += `<div class="field-value"${editable ? ` contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')"` : ''}>${esc(trunc(value, 200))}</div>`;
+        html += `<div class="field-value"${editable ? ` contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')"` : ''}>${esc(trunc(value, 200))}`;
+        if (key === 'genreId' && value) html += ` <span class="genre-name-display" data-genre-id="${esc(String(value))}" style="font-size:12px; margin-left:8px;"></span>`;
+        html += `</div>`;
         html += `</div>`;
       });
       html += `<div class="field-row"><div class="field-label">PC用商品説明文</div>`;
@@ -2289,6 +2342,7 @@ function renderCardView() {
     html += `</div></div>`;
   });
   container.innerHTML = html;
+  resolveGenreNames();
 }
 
 function renderTableView() {
