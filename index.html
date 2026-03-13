@@ -1344,7 +1344,7 @@ function previewHtml(htmlContent, title) {
 // カタログIDなしの理由を名前に変換
 function catalogReasonLabel(code) {
   const map = {'1':'セット商品', '2':'サービス商品', '3':'店舗オリジナル商品', '4':'項目選択肢在庫商品', '5':'該当製品コードなし'};
-  return code ? (code + ': ' + (map[code] || '不明')) : '';
+  return code ? (map[code] || '不明') : '';
 }
 
 function loadDefaultColorOrder() {
@@ -1967,7 +1967,7 @@ function renderRmsPreview() {
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ジャンルID</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(v('ジャンルID')) + ' <span class="genre-name-display" data-genre-id="' + esc(v('ジャンルID')) + '" style="font-size:12px; margin-left:8px;"></span></td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログID</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + (v('カタログID') || '<span style="color:#ccc;">未設定</span>') + '</td></tr>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(v('カタログID') || v('カタログIDなしの理由') || '') + '</td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(catalogReasonLabel(v('カタログIDなしの理由'))) + '</td></tr>';
     html += '</table>';
@@ -2435,8 +2435,9 @@ function renderStep2Rms() {
     html += '</td></tr>';
     // カタログID情報
     const catReason = (prod.skus.length > 0 && prod.skus[0].catalogNoReason) ? prod.skus[0].catalogNoReason : MASTER.malls.rakuten.catalogReason || '3';
+    const catId = (prod.skus.length > 0 && prod.skus[0].catalogId) ? prod.skus[0].catalogId : '';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログID</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.skus.length > 0 && prod.skus[0].catalogId ? prod.skus[0].catalogId : '') + '</td></tr>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(catId || catReason) + '</td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(catalogReasonLabel(catReason)) + '</td></tr>';
     // 自社Excel固有情報
