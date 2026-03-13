@@ -271,23 +271,25 @@ function applyMasterData(d) {
 }
 
 (async function initMaster() {
-  // 1) master-config.json を取得（リポジトリ同梱の共有設定）
+  // 1) GitHubからmaster-config.jsonを取得（最新のマスタ設定）
+  let loaded = false;
   try {
-    const res = await fetch('master-config.json?t=' + Date.now());
+    const ghUrl = `https://raw.githubusercontent.com/${GH_REPO_OWNER}/${GH_REPO_NAME}/${GH_BRANCH}/${GH_FILE_PATH}?t=${Date.now()}`;
+    const res = await fetch(ghUrl);
     if (res.ok) {
       const remote = await res.json();
       applyMasterData(remote);
-      // リモート設定をlocalStorageにも反映
       localStorage.setItem('noahl_master', JSON.stringify(MASTER));
+      loaded = true;
     }
-  } catch(e) {
-    // fetch失敗時はlocalStorageから復元
+  } catch(e) {}
+  // 2) GitHub取得失敗時はlocalStorageから復元
+  if (!loaded) {
     try {
       const saved = localStorage.getItem('noahl_master');
       if (saved) {
         const d = JSON.parse(saved);
         applyMasterData(d);
-        // 旧形式からの移行
         if (d.priceRate && !d.malls) MASTER.malls.rakuten.priceRate = d.priceRate;
         if (d.taxType !== undefined && !d.malls) MASTER.malls.rakuten.taxType = d.taxType;
       }
@@ -305,15 +307,87 @@ function applyMasterData(d) {
   }
 })();
 
-// マスタ設定をJSONファイルとしてエクスポート
-function exportMasterConfig() {
-  // API認証情報はエクスポートしない（セキュリティ）
+// GitHub連携設定
+const GH_REPO_OWNER = 'tiast2026';
+const GH_REPO_NAME = 'Conversion-Tool';
+const GH_FILE_PATH = 'master-config.json';
+const GH_BRANCH = 'main';
+
+function getGitHubToken() {
+  return localStorage.getItem('noahl_gh_token') || '';
+}
+
+function saveGitHubToken(token) {
+  if (token) {
+    localStorage.setItem('noahl_gh_token', token.trim());
+  } else {
+    localStorage.removeItem('noahl_gh_token');
+  }
+}
+
+// マスタ設定をGitHubに保存（API認証情報は除外）
+function buildExportData() {
   const exportData = JSON.parse(JSON.stringify(MASTER));
   if (exportData.malls && exportData.malls.rakuten) {
     delete exportData.malls.rakuten.serviceSecret;
     delete exportData.malls.rakuten.licenseKey;
     delete exportData.malls.rakuten.corsProxy;
   }
+  return exportData;
+}
+
+async function saveToGitHub() {
+  const token = getGitHubToken();
+  if (!token) {
+    notify('GitHub Tokenが未設定です。マスタ設定 → 共通 → GitHub連携 から設定してください。', 'warning');
+    return false;
+  }
+  const exportData = buildExportData();
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(exportData, null, 2))));
+  const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${GH_FILE_PATH}`;
+  try {
+    // 既存ファイルのSHAを取得（更新時に必要）
+    let sha = '';
+    const getRes = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (getRes.ok) {
+      const existing = await getRes.json();
+      sha = existing.sha;
+    }
+    // ファイルを作成/更新
+    const body = {
+      message: 'マスタ設定を更新',
+      content: content,
+      branch: GH_BRANCH
+    };
+    if (sha) body.sha = sha;
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (putRes.ok) {
+      notify('GitHubに保存しました', 'success');
+      return true;
+    } else {
+      const err = await putRes.json();
+      notify('GitHub保存エラー: ' + (err.message || putRes.status), 'warning');
+      return false;
+    }
+  } catch(e) {
+    notify('GitHub通信エラー: ' + e.message, 'warning');
+    return false;
+  }
+}
+
+// マスタ設定をJSONファイルとしてエクスポート（ローカルダウンロード用）
+function exportMasterConfig() {
+  const exportData = buildExportData();
   const json = JSON.stringify(exportData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -322,7 +396,7 @@ function exportMasterConfig() {
   a.download = 'master-config.json';
   a.click();
   URL.revokeObjectURL(url);
-  notify('master-config.json をダウンロードしました。GitHubリポジトリのルートに配置してコミットすると共有されます。', 'success');
+  notify('master-config.json をダウンロードしました。', 'success');
 }
 
 function parseColorOrderText(text) {
@@ -353,6 +427,12 @@ function openMaster() {
   loadMallMasterUI('amazon');
   loadMallMasterUI('qoo10');
   initCorsProxyCodeDisplay();
+  // GitHub Token を表示（マスク済みの値を入力欄にセット）
+  const ghInput = document.getElementById('gh-token-input');
+  if (ghInput) {
+    const t = getGitHubToken();
+    ghInput.value = t;
+  }
 }
 
 function loadMallMasterUI(mall) {
@@ -437,7 +517,7 @@ function saveMaster(which) {
     MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  exportMasterConfig();
+  saveToGitHub();
 }
 
 function saveMallMaster(mall) {
@@ -489,7 +569,7 @@ function saveMallMaster(mall) {
     m.corsProxy = el('mall-rakuten-cors-proxy')?.value?.trim() || '';
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  exportMasterConfig();
+  saveToGitHub();
 }
 
 // 配送方法セット管理

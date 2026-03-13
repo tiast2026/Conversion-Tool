@@ -132,6 +132,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:var(--primary-dark); border-radius:12px 12px 0 0;">
       <h2 style="font-size:16px; color:white; margin:0;">マスタ設定</h2>
       <div style="display:flex; gap:8px;">
+        <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="saveToGitHub()">GitHubに保存</button>
         <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="exportMasterConfig()">JSONエクスポート</button>
         <button style="background:rgba(255,255,255,0.15); border:none; color:white; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px;" onclick="closeMaster()">✕ 閉じる</button>
       </div>
@@ -153,6 +154,7 @@
         <div class="sub-tab active" onclick="switchMasterTab('color-order', this)">カラー表示順</div>
         <div class="sub-tab" onclick="switchMasterTab('name-clean', this)">商品名クリーニング</div>
         <div class="sub-tab" onclick="switchMasterTab('delete-tpl', this)">削除テンプレート</div>
+        <div class="sub-tab" onclick="switchMasterTab('github', this)">GitHub連携</div>
       </div>
       <div class="tab-panel active master-form-card" id="tab-color-order">
         <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
@@ -175,6 +177,20 @@
         <div style="margin-top:10px;">
           <button class="btn btn-sm btn-primary" onclick="saveMaster('deleteTpl')">保存</button>
         </div>
+      </div>
+      <div class="tab-panel master-form-card" id="tab-github">
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">マスタ設定をGitHubリポジトリに直接保存します。保存ボタンを押すとGitHubにコミットされ、次回以降はどの端末でも最新の設定が読み込まれます。</p>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">GitHub Personal Access Token</label>
+          <input type="password" id="gh-token-input" style="width:100%; max-width:500px; border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:13px; font-family:monospace;" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+          <p style="font-size:11px; color:var(--text-light); margin-top:6px;">Settings → Developer settings → Personal access tokens → Fine-grained tokens で作成。<br>権限: <strong>Contents</strong>（Read and write）のみ必要。スコープは <code>tiast2026/Conversion-Tool</code> リポジトリのみに限定推奨。<br>※ Tokenはこのブラウザの localStorage にのみ保存されます（GitHubにはコミットされません）。</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-primary" onclick="saveGitHubToken(document.getElementById('gh-token-input').value); notify('GitHub Tokenを保存しました','success');">Tokenを保存</button>
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('gh-token-input').value=''; saveGitHubToken(''); notify('Tokenを削除しました','success');">Tokenを削除</button>
+          <button class="btn btn-sm btn-outline" onclick="saveToGitHub()">接続テスト（GitHubに保存）</button>
+        </div>
+        <div id="gh-status" style="margin-top:12px; font-size:12px; color:var(--text-light);"></div>
       </div>
     </div>
 
