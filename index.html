@@ -3825,16 +3825,21 @@ function getRakutenApiUrl(path) {
 
 async function testRakutenApi() {
   const resultEl = document.getElementById('rakuten-api-test-result');
-  const auth = getRakutenApiAuth();
-  if (!auth) {
+  // 入力欄から直接読み取る（MASTER保存前でもテスト可能にする）
+  const ss = document.getElementById('mall-rakuten-service-secret')?.value?.trim();
+  const lk = document.getElementById('mall-rakuten-license-key')?.value?.trim();
+  const proxy = document.getElementById('mall-rakuten-cors-proxy')?.value?.trim();
+  if (!ss || !lk) {
     resultEl.textContent = 'serviceSecretとlicenseKeyを入力してください';
     resultEl.style.color = '#c33';
     return;
   }
+  const auth = 'ESA ' + btoa(ss + ':' + lk);
   resultEl.textContent = '接続テスト中...';
   resultEl.style.color = '#999';
   try {
-    const url = getRakutenApiUrl('/items/manage-numbers/___test___');
+    const baseUrl = proxy || 'https://api.rms.rakuten.co.jp';
+    const url = baseUrl.replace(/\/+$/, '') + '/items/manage-numbers/___test___';
     const res = await fetch(url, {
       method: 'GET',
       headers: { 'Authorization': auth }
