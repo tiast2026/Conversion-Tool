@@ -186,10 +186,10 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     <span class="step-number">1</span><span class="step-label">アップロード</span>
   </div>
   <div class="step" data-step="2" onclick="goToStep(2)">
-    <span class="step-number">2</span><span class="step-label">確認・編集</span>
+    <span class="step-number">2</span><span class="step-label">確認</span>
   </div>
   <div class="step" data-step="3" onclick="goToStep(3)">
-    <span class="step-number">3</span><span class="step-label">アップロード確認</span>
+    <span class="step-number">3</span><span class="step-label">編集</span>
   </div>
   <div class="step" data-step="4" onclick="goToStep(4)">
     <span class="step-number">4</span><span class="step-label">ダウンロード</span>
@@ -235,7 +235,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
   <!-- STEP 2 -->
   <div class="panel" id="panel-2">
     <div id="step2-header-text">
-      <h2>商品データの確認・編集</h2>
+      <h2>商品データの確認</h2>
       <p class="desc">データをクリックして直接編集できます。編集はダウンロード時に自動反映されます。</p>
     </div>
     <div class="summary-cards" id="summary-cards"></div>
@@ -261,13 +261,13 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
     <div id="step2-rms-view" style="display:none;"></div>
     <div class="actions" id="step2-actions">
       <button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>
-      <button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>
+      <button class="btn btn-primary" onclick="goToStep(3)">編集へ →</button>
     </div>
   </div>
 
-  <!-- STEP 3: アップロード確認 (楽天RMS風プレビュー) -->
+  <!-- STEP 3: 編集 (楽天RMS風プレビュー) -->
   <div class="panel" id="panel-3">
-    <h2>アップロード確認</h2>
+    <h2>編集</h2>
     <p class="desc">楽天RMS形式に変換した結果を確認できます。問題なければダウンロードへ進んでください。</p>
     <div id="rms-preview-container"></div>
     <div class="actions">
@@ -2026,7 +2026,7 @@ function renderRmsPreview() {
     html += '<div class="s3rms-tab-area" style="flex:1; min-height:0; overflow-y:scroll; overflow-x:hidden;">';
 
     // パンくず
-    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">アップロード確認 &gt; <span style="color:#333; font-weight:600;">' + esc(v('商品番号') || v('商品管理番号（商品URL）')) + '</span></div>';
+    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">編集 &gt; <span style="color:#333; font-weight:600;">' + esc(v('商品番号') || v('商品管理番号（商品URL）')) + '</span></div>';
 
     // 基本情報ヘッダー
     html += '<div style="padding:16px 24px;">';
@@ -2037,13 +2037,13 @@ function renderRmsPreview() {
     html += '</div>';
     html += '<div style="flex:1; min-width:0;">';
     html += '<div style="display:flex; gap:24px; margin-bottom:10px; font-size:13px;">';
-    html += '<div><span style="color:#666;">商品管理番号</span><div contenteditable="true" data-rms-field="number" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品管理番号（商品URL）')) + '</div></div>';
-    html += '<div><span style="color:#666;">商品番号</span><div contenteditable="true" data-rms-field="productNo" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品番号')) + '</div></div>';
+    html += '<div><span style="color:#666;">商品管理番号 ' + bReq + bImp + '</span><div contenteditable="true" data-rms-field="number" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品管理番号（商品URL）')) + '</div></div>';
+    html += '<div><span style="color:#666;">商品番号 ' + bReq + bImp + '</span><div contenteditable="true" data-rms-field="productNo" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品番号')) + '</div></div>';
     html += '</div>';
-    html += '<div style="margin-bottom:8px;"><div style="font-size:13px; color:#666; margin-bottom:2px;">商品名</div>';
-    html += '<div contenteditable="true" data-rms-field="cleanName" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="font-size:13px; font-weight:600; word-break:break-all; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text;">' + esc(v('商品名')) + '</div></div>';
-    html += '<div style="margin-bottom:8px;"><div style="font-size:13px; color:#666; margin-bottom:2px;">キャッチコピー</div>';
-    html += '<div contenteditable="true" data-rms-field="catchCopy" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="font-size:13px; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-height:18px;">' + esc(v('キャッチコピー')) + '</div></div>';
+    html += '<div style="margin-bottom:8px;"><div style="font-size:13px; color:#666; margin-bottom:2px;">商品名 ' + bReq + bImp + '</div>';
+    html += '<div contenteditable="true" data-rms-field="cleanName" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="font-size:13px; font-weight:600; word-break:break-all; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text;">' + esc(v('商品名')) + '</div></div>';
+    html += '<div style="margin-bottom:8px;"><div style="font-size:13px; color:#666; margin-bottom:2px;">キャッチコピー ' + bImp + '</div>';
+    html += '<div contenteditable="true" data-rms-field="catchCopy" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="font-size:13px; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-height:18px;">' + esc(v('キャッチコピー')) + '</div></div>';
     html += '</div></div></div>';
 
     // 横タブ
@@ -2064,6 +2064,11 @@ function renderRmsPreview() {
 
     html += '<div style="padding:16px 24px 24px;">';
 
+    // バッジヘルパー
+    const bReq = '<span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">必須</span>';
+    const bImp = '<span style="background:#1565c0; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">取込</span>';
+    const bMst = '<span style="background:#2e7d32; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">マスタ</span>';
+
     // ===== タブコンテンツ =====
 
     // --- バリエーション ---
@@ -2074,15 +2079,15 @@ function renderRmsPreview() {
     if (varKeyDef) {
       html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">バリエーション設定</h4>';
       html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(varKeyDef) + '</td></tr>';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(v('バリエーション項目名定義')) + '</td></tr>';
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義 ' + bReq + '</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(varKeyDef) + '</td></tr>';
+      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義 ' + bReq + '</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(v('バリエーション項目名定義')) + '</td></tr>';
       if (var1Def) {
-        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢1（カラー）</td><td style="padding:8px 12px; border:1px solid #ddd;">';
+        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢1（カラー） ' + bReq + bImp + '</td><td style="padding:8px 12px; border:1px solid #ddd;">';
         var1Def.split('|').forEach(c => { html += '<span style="display:inline-block; background:#fff3e0; border:1px solid #ffcc80; border-radius:4px; padding:3px 10px; margin:2px 3px; font-size:12px;">' + esc(c) + '</span>'; });
         html += '</td></tr>';
       }
       if (var2Def) {
-        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢2（サイズ）</td><td style="padding:8px 12px; border:1px solid #ddd;">';
+        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢2（サイズ） ' + bReq + bImp + '</td><td style="padding:8px 12px; border:1px solid #ddd;">';
         var2Def.split('|').forEach(s => { html += '<span style="display:inline-block; background:#e3f2fd; border:1px solid #90caf9; border-radius:4px; padding:3px 10px; margin:2px 3px; font-size:12px;">' + esc(s) + '</span>'; });
         html += '</td></tr>';
       }
@@ -2093,24 +2098,36 @@ function renderRmsPreview() {
       html += '<h4 style="font-size:14px; color:#333; margin:20px 0 10px; border-bottom:2px solid #333; padding-bottom:6px;">SKU一覧（' + g.skuRows.length + '件）</h4>';
       html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12px;">';
       html += '<thead><tr>';
-      ['SKU管理番号','システム連携用SKU番号','カラー','サイズ','通常購入販売価格','在庫数','型番','カタログIDなしの理由','SKU画像タイプ','SKU画像パス'].forEach(h => {
-        html += '<th style="background:#f5f5f5; padding:8px; border:1px solid #ddd; font-weight:600; font-size:11px; white-space:nowrap;">' + esc(h) + '</th>';
+      const skuHeaders = [
+        ['SKU管理番号', bReq],
+        ['システム連携用SKU番号', bImp],
+        ['カラー', bReq + bImp],
+        ['サイズ', bReq + bImp],
+        ['通常購入販売価格', bReq + bImp],
+        ['在庫数', ''],
+        ['型番', bImp],
+        ['カタログIDなしの理由', bReq + bMst],
+        ['SKU画像タイプ', ''],
+        ['SKU画像パス', ''],
+      ];
+      skuHeaders.forEach(([h, badge]) => {
+        html += '<th style="background:#f5f5f5; padding:8px; border:1px solid #ddd; font-weight:600; font-size:11px; white-space:nowrap;">' + esc(h) + ' ' + badge + '</th>';
       });
       html += '</tr></thead><tbody>';
       const edSkuCell = 'padding:6px 8px; border:1px solid #ddd; outline:none; cursor:text;';
       g.skuRows.forEach((sRow, si) => {
         const bg = si % 2 === 0 ? '#fff' : '#fafafa';
         html += '<tr style="background:' + bg + ';">';
-        html += '<td contenteditable="true" data-rms-sku="skuMgmt" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['SKU管理番号']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="systemSku" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['システム連携用SKU番号']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="color" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['バリエーション項目選択肢1']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="size" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['バリエーション項目選択肢2']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="price" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + ' text-align:right;">' + esc(sRow[RI['通常購入販売価格']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="stock" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + ' text-align:center;">' + esc(sRow[RI['SKU在庫数']] || '0') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="jan" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['自由入力行（値）1']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="catalogReason" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['カタログIDなしの理由']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="skuImgType" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['SKU画像タイプ']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="skuImgPath" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSkuCell + '">' + esc(sRow[RI['SKU画像パス']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="skuMgmt" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['SKU管理番号']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="systemSku" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['システム連携用SKU番号']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="color" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['バリエーション項目選択肢1']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="size" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['バリエーション項目選択肢2']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="price" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + ' text-align:right;">' + esc(sRow[RI['通常購入販売価格']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="stock" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + ' text-align:center;">' + esc(sRow[RI['SKU在庫数']] || '0') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="jan" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['自由入力行（値）1']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="catalogReason" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['カタログIDなしの理由']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="skuImgType" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['SKU画像タイプ']] || '') + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="skuImgPath" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['SKU画像パス']] || '') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -2122,12 +2139,12 @@ function renderRmsPreview() {
     html += '<div class="s3rms-tab-content" data-tab="price" data-gi="' + gi + '" style="padding:20px; display:none;">';
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">価格設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">通常購入販売価格 <span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px;">必須</span><br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="sellPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('販売価格')) + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">表示価格<br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="displayPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('表示価格') || '') + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">消費税</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="taxType" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('消費税')) + '</span> <span style="color:#888; font-size:11px;">0:税込み / 1:税別</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">通常購入販売価格 ' + bReq + bImp + '<br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="sellPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('販売価格')) + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">表示価格 ' + bImp + '<br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="displayPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('表示価格') || '') + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">消費税 ' + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="taxType" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('消費税')) + '</span> <span style="color:#888; font-size:11px;">0:税込み / 1:税別</span></td></tr>';
     html += '</table>';
     html += '<h4 style="font-size:14px; color:#333; margin:20px 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">販売設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
@@ -2139,12 +2156,12 @@ function renderRmsPreview() {
     const spMatch = salePeriodVal.match(/^(.+?\s\d{2}:\d{2})\/(.+)$/);
     const spStart = spMatch ? spMatch[1] : (prod ? (prod.saleStartDate || '') : '');
     const spEnd = spMatch ? spMatch[2] : (prod ? (prod.saleEndDate || '') : '');
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">販売期間（開始）</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(spStart) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">販売期間（終了）</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(spEnd) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">販売期間（開始） ' + bImp + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(spStart) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">販売期間（終了） ' + bImp + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(spEnd) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">注文受付数</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="orderLimit" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('注文受付数')) + '</span></td></tr>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="orderLimit" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('注文受付数')) + '</span></td></tr>';
     html += '</table>';
     html += '</div>'; // price tab
 
@@ -2152,26 +2169,26 @@ function renderRmsPreview() {
     html += '<div class="s3rms-tab-content" data-tab="shipping" data-gi="' + gi + '" style="padding:20px; display:none;">';
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">在庫設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">在庫タイプ</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="stockType" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('在庫タイプ')) + '</span> <span style="color:#888; font-size:11px;">1:通常在庫設定 / 2:項目選択肢在庫</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">再入荷お知らせボタン</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="restockBtn" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('再入荷お知らせボタン')) + '</span> <span style="color:#888; font-size:11px;">0:非表示 / 1:表示</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">在庫タイプ ' + bReq + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="stockType" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('在庫タイプ')) + '</span> <span style="color:#888; font-size:11px;">1:通常在庫設定 / 2:項目選択肢在庫</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">再入荷お知らせボタン ' + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="restockBtn" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('再入荷お知らせボタン')) + '</span> <span style="color:#888; font-size:11px;">0:非表示 / 1:表示</span></td></tr>';
     html += '</table>';
     html += '<h4 style="font-size:14px; color:#333; margin:20px 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">配送設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
     const shipFields = [
-      ['送料', 'shippingFee', v('送料'), '0:送料込み / 1:送料別'],
-      ['個別送料（税込）', 'indivShipping', v('個別送料（税込）'), '円'],
-      ['送料区分1', 'shippingCat1', v('送料区分1'), ''],
-      ['送料区分2', 'shippingCat2', v('送料区分2'), ''],
-      ['配送方法セット管理番号', 'shippingSet', v('配送方法セット管理番号'), ''],
-      ['配送方法セット名', 'shippingName', v('配送方法セット名（配送方法セット管理番号が未指定の場合のみ有効）'), '管理番号が未指定の場合のみ有効'],
-      ['あす楽配送管理番号', 'asuraku', v('あす楽配送管理番号'), ''],
-      ['のし対応', 'noshi', v('のし対応'), '0:対応しない / 1:対応する'],
+      ['送料', 'shippingFee', v('送料'), '0:送料込み / 1:送料別', bMst],
+      ['個別送料（税込）', 'indivShipping', v('個別送料（税込）'), '円', bMst],
+      ['送料区分1', 'shippingCat1', v('送料区分1'), '', bMst],
+      ['送料区分2', 'shippingCat2', v('送料区分2'), '', bMst],
+      ['配送方法セット管理番号', 'shippingSet', v('配送方法セット管理番号'), '', bMst],
+      ['配送方法セット名', 'shippingName', v('配送方法セット名（配送方法セット管理番号が未指定の場合のみ有効）'), '管理番号が未指定の場合のみ有効', bMst],
+      ['あす楽配送管理番号', 'asuraku', v('あす楽配送管理番号'), '', bMst],
+      ['のし対応', 'noshi', v('のし対応'), '0:対応しない / 1:対応する', bMst],
     ];
-    shipFields.forEach(([label, field, val, hint]) => {
-      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">' + esc(label) + '</td>';
-      html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="' + field + '" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(val) + '</span>';
+    shipFields.forEach(([label, field, val, hint, badge]) => {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">' + esc(label) + ' ' + badge + '</td>';
+      html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="' + field + '" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(val) + '</span>';
       if (hint) html += ' <span style="color:#888; font-size:11px;">' + esc(hint) + '</span>';
       html += '</td></tr>';
     });
@@ -2182,14 +2199,14 @@ function renderRmsPreview() {
     html += '<div class="s3rms-tab-content" data-tab="product" data-gi="' + gi + '" style="padding:20px; display:none;">';
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">製品情報</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">コントロールカラム</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="controlCol" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('コントロールカラム')) + '</span> <span style="color:#888; font-size:11px;">n:新規 / u:更新 / d:削除</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">ジャンルID <span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px;">必須</span></td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="genreId" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('ジャンルID')) + '</span> <span class="genre-name-display" data-genre-id="' + esc(v('ジャンルID')) + '" style="font-size:12px; margin-left:8px;"></span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログID</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="catalogId" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('カタログID') || '') + '</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="catalogReason" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('カタログIDなしの理由')) + '</span> <span style="color:#888; font-size:11px;">' + esc(catalogReasonLabel(v('カタログIDなしの理由'))) + '</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">コントロールカラム ' + bReq + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="controlCol" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('コントロールカラム')) + '</span> <span style="color:#888; font-size:11px;">n:新規 / u:更新 / d:削除</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">ジャンルID ' + bReq + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="genreId" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ジャンルID')) + '</span> <span class="genre-name-display" data-genre-id="' + esc(v('ジャンルID')) + '" style="font-size:12px; margin-left:8px;"></span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログID ' + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="catalogId" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('カタログID') || '') + '</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由 ' + bReq + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="catalogReason" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('カタログIDなしの理由')) + '</span> <span style="color:#888; font-size:11px;">' + esc(catalogReasonLabel(v('カタログIDなしの理由'))) + '</span></td></tr>';
     html += '</table>';
     html += '</div>'; // product tab
 
@@ -2197,12 +2214,12 @@ function renderRmsPreview() {
     html += '<div class="s3rms-tab-content" data-tab="design" data-gi="' + gi + '" style="padding:20px; display:none;">';
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品説明文</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    [['PC用商品説明文', 'pcDesc', v('PC用商品説明文')], ['スマートフォン用商品説明文', 'spDesc', v('スマートフォン用商品説明文')], ['PC用販売説明文', 'saleDesc', v('PC用販売説明文')]].forEach(([label, field, val]) => {
-      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600; vertical-align:top;">' + esc(label);
+    [['PC用商品説明文', 'pcDesc', v('PC用商品説明文'), bMst], ['スマートフォン用商品説明文', 'spDesc', v('スマートフォン用商品説明文'), bMst], ['PC用販売説明文', 'saleDesc', v('PC用販売説明文'), bMst]].forEach(([label, field, val, badge]) => {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600; vertical-align:top;">' + esc(label) + ' ' + badge;
       if (val) html += ' <button onclick="previewHtml(decodeURIComponent(\'' + encodeURIComponent(val) + '\'), \'' + esc(label) + '\')" style="font-size:10px; padding:2px 6px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; margin-left:4px;">確認</button>';
       html += '</td>';
       html += '<td style="padding:10px 14px; border:1px solid #ddd;">';
-      html += '<textarea data-rms-field="' + field + '" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="width:100%; min-height:120px; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; font-size:11px; word-break:break-all; white-space:pre-wrap; font-family:inherit; resize:vertical; outline:none; box-sizing:border-box;">' + esc(val) + '</textarea>';
+      html += '<textarea data-rms-field="' + field + '" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="width:100%; min-height:120px; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; font-size:11px; word-break:break-all; white-space:pre-wrap; font-family:inherit; resize:vertical; outline:none; box-sizing:border-box;">' + esc(val) + '</textarea>';
       if (val) html += '<div style="font-size:10px; color:#888; margin-top:4px;">' + val.length + '文字</div>';
       html += '</td></tr>';
     });
@@ -2213,12 +2230,12 @@ function renderRmsPreview() {
     html += '<div class="s3rms-tab-content" data-tab="point" data-gi="' + gi + '" style="padding:20px; display:none;">';
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品別ポイント変倍</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ポイント変倍率</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointRate" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('ポイント変倍率')) + '</span> <span style="color:#888; font-size:11px;">倍</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用期間開始</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('ポイント変倍率適用期間開始')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用期間終了</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('ポイント変倍率適用期間終了')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ポイント変倍率 ' + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointRate" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ポイント変倍率')) + '</span> <span style="color:#888; font-size:11px;">倍</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用期間開始 ' + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ポイント変倍率適用期間開始')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用期間終了 ' + bMst + '</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ポイント変倍率適用期間終了')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
     html += '</table>';
     html += '</div>'; // point tab
 
@@ -2315,12 +2332,24 @@ function switchRmsProduct(idx, btn) {
   }
 }
 
+// フォーカス時に元の値を記憶（修正検知用）
+function onRmsFocus(el) {
+  const val = el.tagName === 'TEXTAREA' ? el.value : el.innerText;
+  el.dataset._origVal = val;
+}
+
 // RMSプレビュー編集ハンドラ: 商品フィールド
 function onRmsEdit(el, gi) {
   const field = el.dataset.rmsField;
   // textarea の場合は value、contenteditable の場合は innerText
   const val = el.tagName === 'TEXTAREA' ? el.value.trim() : el.innerText.trim();
   if (!field || !products[gi]) return;
+  // 修正検知: 元の値と違えば赤くする
+  const origVal = (el.dataset._origVal || '').trim();
+  if (val !== origVal) {
+    el.style.borderColor = '#bf0000';
+    el.style.background = '#fff5f5';
+  }
   const prod = products[gi];
   switch (field) {
     case 'number': prod.number = val; prod.id = val; break;
@@ -2360,6 +2389,12 @@ function onRmsEdit(el, gi) {
 function onRmsSkuEdit(el, gi, si) {
   const field = el.dataset.rmsSku;
   const val = el.innerText.trim();
+  // 修正検知
+  const origVal = (el.dataset._origVal || '').trim();
+  if (val !== origVal) {
+    el.style.borderColor = '#bf0000';
+    el.style.background = '#fff5f5';
+  }
   if (!products[gi] || !products[gi].skus[si]) return;
   const sku = products[gi].skus[si];
   switch (field) {
@@ -2463,7 +2498,7 @@ function renderStep2Rms() {
 
   products.forEach((prod, gi) => {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? (prod.images[0].url || buildRakutenImgUrl(prod.images[0].path)) : '');
-    const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="this.style.borderColor=\'#bf0000\'" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
+    const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="onRmsFocus(this)" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
 
     html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden;">';
 
@@ -2786,7 +2821,7 @@ function renderStep2Rms() {
   html += '<div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">';
   html += '<button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>';
   html += '<div style="font-size:13px; color:#666;">' + products.length + '商品 / ' + totalSkus + ' SKU / 楽天CSV</div>';
-  html += '<button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>';
+  html += '<button class="btn btn-primary" onclick="goToStep(3)">編集へ →</button>';
   html += '</div>';
   html += '</div>'; // フルスクリーンレイアウト
 
@@ -3021,7 +3056,7 @@ function renderJishaRmsView() {
   html += '<div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">';
   html += '<button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>';
   html += '<div style="font-size:13px; color:#666;">' + products.length + '商品 / ' + totalSkus + ' SKU / ' + src + '</div>';
-  html += '<button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>';
+  html += '<button class="btn btn-primary" onclick="goToStep(3)">編集へ →</button>';
   html += '</div>';
 
   html += '</div>'; // layout root
