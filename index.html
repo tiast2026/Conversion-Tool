@@ -857,52 +857,116 @@ let products = [];
 let editedFields = {};
 let CI = {};
 
-// 楽天ジャンル名キャッシュ（JSONP方式でCORS回避）
-const _genreCache = {};
+// 楽天ジャンルID → ジャンル名パス（静的マップ）
+const GENRE_MAP = {
+  '303656': 'レディースファッション > トップス > Tシャツ・カットソー',
+  '566018': 'レディースファッション > トップス > タンクトップ',
+  '206471': 'レディースファッション > トップス > シャツ・ブラウス',
+  '409352': 'レディースファッション > トップス > ポロシャツ',
+  '303662': 'レディースファッション > トップス > キャミソール',
+  '303655': 'レディースファッション > トップス > ベアトップ・チューブトップ',
+  '403871': 'レディースファッション > トップス > カーディガン・ボレロ',
+  '403890': 'レディースファッション > トップス > ベスト・ジレ',
+  '303699': 'レディースファッション > トップス > アンサンブル',
+  '566028': 'レディースファッション > トップス > ニット・セーター > セーター',
+  '566029': 'レディースファッション > トップス > ニット・セーター > ニットパーカー',
+  '566030': 'レディースファッション > トップス > ニット・セーター > ニットキャミソール',
+  '200343': 'レディースファッション > トップス > ニット・セーター > その他',
+  '502556': 'レディースファッション > トップス > パーカー',
+  '403923': 'レディースファッション > トップス > スウェット・トレーナー',
+  '112719': 'レディースファッション > トップス > その他',
+  '110734': 'レディースファッション > ボトムス > スカート',
+  '303587': 'レディースファッション > ボトムス > キュロット',
+  '206440': 'レディースファッション > ボトムス > パンツ',
+  '555087': 'レディースファッション > コート・ジャケット',
+  '110729': 'レディースファッション > ワンピース',
+  '568650': 'レディースファッション > シャツワンピース',
+  '568651': 'レディースファッション > ジャンパースカート',
+  '553029': 'レディースファッション > チュニック',
+  '555084': 'レディースファッション > ドレス',
+  '568279': 'レディースファッション > パンツドレス',
+  '110724': 'レディースファッション > スーツ・セットアップ > パンツスーツ',
+  '409073': 'レディースファッション > スーツ・セットアップ > スカートスーツ',
+  '409120': 'レディースファッション > スーツ・セットアップ > ワンピーススーツ',
+  '409096': 'レディースファッション > スーツ・セットアップ > 3・4点セット',
+  '566020': 'レディースファッション > スーツ・セットアップ > トップスのみ',
+  '566021': 'レディースファッション > スーツ・セットアップ > ボトムスのみ',
+  '555083': 'レディースファッション > オールインワン・サロペット',
+  '553037': 'レディースファッション > レインウェア > レインコート',
+  '553038': 'レディースファッション > レインウェア > レインスーツ',
+  '409395': 'レディースファッション > レインウェア > その他',
+  '409365': 'レディースファッション > 水着',
+  '206545': 'レディースファッション > 和服 > 着物',
+  '110824': 'レディースファッション > 和服 > 着物セット',
+  '567437': 'レディースファッション > 和服 > 花嫁着物',
+  '567438': 'レディースファッション > 和服 > 花嫁着物セット',
+  '206549': 'レディースファッション > 和服 > 浴衣',
+  '206585': 'レディースファッション > 和服 > 浴衣セット',
+  '206546': 'レディースファッション > 和服 > 帯',
+  '206547': 'レディースファッション > 和服 > 部屋着',
+  '206548': 'レディースファッション > 和服 > 履物',
+  '206617': 'レディースファッション > 和服 > 和装小物 > 髪飾り',
+  '206618': 'レディースファッション > 和服 > 和装小物 > ショール',
+  '206625': 'レディースファッション > 和服 > 和装小物 > バッグ',
+  '206626': 'レディースファッション > 和服 > 和装小物 > 巾着袋',
+  '206629': 'レディースファッション > 和服 > 和装小物 > 扇子',
+  '206630': 'レディースファッション > 和服 > 和装小物 > うちわ',
+  '206631': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > 帯留',
+  '206632': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > 帯揚',
+  '506700': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > 帯締',
+  '206633': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > 羽織紐',
+  '506701': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > 根付',
+  '206637': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > セット',
+  '206634': 'レディースファッション > 和服 > 和装小物 > 着付け小物 > その他',
+  '502526': 'レディースファッション > 和服 > 和装小物 > 風呂敷',
+  '206635': 'レディースファッション > 和服 > 和装小物 > セット',
+  '112735': 'レディースファッション > 和服 > 和装小物 > その他',
+  '409176': 'レディースファッション > 和服 > 反物',
+  '567225': 'レディースファッション > 和服 > 裏物・八掛',
+  '206614': 'レディースファッション > 和服 > 和装下着・足袋 > 半衿',
+  '206613': 'レディースファッション > 和服 > 和装下着・足袋 > 肌襦袢',
+  '566699': 'レディースファッション > 和服 > 和装下着・足袋 > 長襦袢',
+  '566700': 'レディースファッション > 和服 > 和装下着・足袋 > 半襦袢',
+  '566701': 'レディースファッション > 和服 > 和装下着・足袋 > 和装ブラジャー',
+  '206620': 'レディースファッション > 和服 > 和装下着・足袋 > 足袋',
+  '566704': 'レディースファッション > 和服 > 和装下着・足袋 > セット',
+  '567771': 'レディースファッション > 和服 > 巫女用装束',
+  '409166': 'レディースファッション > 事務服 > セットアップ',
+  '409167': 'レディースファッション > 事務服 > ジャケット',
+  '409168': 'レディースファッション > 事務服 > ベスト',
+  '409169': 'レディースファッション > 事務服 > シャツ・ブラウス',
+  '409170': 'レディースファッション > 事務服 > スカート',
+  '409171': 'レディースファッション > 事務服 > キュロット',
+  '409172': 'レディースファッション > 事務服 > パンツ',
+  '409173': 'レディースファッション > 事務服 > リボン・ネクタイ・スカーフ',
+  '206522': 'レディースファッション > 事務服 > その他',
+  '303736': 'レディースファッション > 学生服 > セーラー服',
+  '566022': 'レディースファッション > 学生服 > ジャケット',
+  '568587': 'レディースファッション > 学生服 > シャツ',
+  '567458': 'レディースファッション > 学生服 > スカート',
+  '409164': 'レディースファッション > 学生服 > ネクタイ・リボン',
+  '206521': 'レディースファッション > 学生服 > その他',
+  '564338': 'レディースファッション > ウェディングドレス',
+  '403911': 'レディースファッション > 福袋',
+  '101801': 'レディースファッション > その他'
+};
 let _genreCallbackId = 0;
 function fetchRakutenGenrePath(genreId) {
   return new Promise(resolve => {
     if (!genreId) return resolve('');
     const gid = String(genreId).trim();
-    if (_genreCache[gid]) return resolve(_genreCache[gid]);
-    const appId = MASTER.malls?.rakuten?.rakutenAppId || '';
-    if (!appId) return resolve('');
-    const cbName = '_genreCb' + (++_genreCallbackId);
-    const script = document.createElement('script');
-    const timeout = setTimeout(() => { cleanup(); resolve(''); }, 5000);
-    function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
-    window[cbName] = function(data) {
-      cleanup();
-      const parts = [];
-      if (data.parents) data.parents.forEach(p => { if (p.parent) parts.push(p.parent.genreName); });
-      if (data.current) parts.push(data.current.genreName);
-      const path = parts.join(' > ');
-      _genreCache[gid] = path;
-      resolve(path);
-    };
-    script.src = 'https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20140222?applicationId=' + encodeURIComponent(appId) + '&genreId=' + encodeURIComponent(gid) + '&callback=' + cbName;
-    script.onerror = function() { cleanup(); resolve(''); };
-    document.head.appendChild(script);
+    resolve(GENRE_MAP[gid] || '');
   });
 }
 function resolveGenreNames() {
   const els = [...document.querySelectorAll('.genre-name-display')];
-  // 重複genreIdを排除して順次取得（API制限対策）
-  const uniqueIds = [...new Set(els.map(el => el.dataset.genreId).filter(Boolean))];
-  let i = 0;
-  function next() {
-    if (i >= uniqueIds.length) return;
-    const gid = uniqueIds[i++];
-    fetchRakutenGenrePath(gid).then(path => {
-      els.filter(el => el.dataset.genreId === gid).forEach(el => {
-        if (path) { el.textContent = path; el.style.color = '#1565c0'; }
-        else { el.textContent = ''; }
-      });
-      setTimeout(next, _genreCache[gid] ? 0 : 300); // キャッシュ済みは即座に、未取得は300ms間隔
-    });
-  }
-  els.forEach(el => { if (el.dataset.genreId) { el.textContent = '取得中...'; el.style.color = '#999'; } });
-  next();
+  els.forEach(el => {
+    const gid = (el.dataset.genreId || '').trim();
+    if (!gid) return;
+    const path = GENRE_MAP[gid];
+    if (path) { el.textContent = path; el.style.color = '#1565c0'; }
+    else { el.textContent = '（不明なジャンルID: ' + gid + '）'; el.style.color = '#c33'; }
+  });
 }
 let MASTER = {
   colorOrder: {}, nameCleanPatterns: [], deleteTemplates: [],
@@ -1245,38 +1309,25 @@ function lookupGenreId() {
   });
 }
 
-// ジャンル名でキーワード検索
+// ジャンル名でキーワード検索（静的マップから検索）
 function searchGenreByKeyword() {
   const keyword = document.getElementById('mall-rakuten-genre-search').value.trim();
   const resultEl = document.getElementById('genre-search-result');
-  const appId = MASTER.malls?.rakuten?.rakutenAppId || document.getElementById('mall-rakuten-app-id').value.trim();
   if (!keyword) { resultEl.textContent = 'キーワードを入力してください'; resultEl.style.color = '#c33'; return; }
-  if (!appId) { resultEl.textContent = 'アプリIDを先に設定してください'; resultEl.style.color = '#c33'; return; }
-  resultEl.textContent = '検索中...'; resultEl.style.color = '#999';
-  const cbName = '_genreSearchCb' + (++_genreCallbackId);
-  const script = document.createElement('script');
-  const timeout = setTimeout(() => { cleanup(); resultEl.textContent = 'タイムアウトしました'; resultEl.style.color = '#c33'; }, 8000);
-  function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
-  window[cbName] = function(data) {
-    cleanup();
-    if (!data || !data.children || data.children.length === 0) {
-      resultEl.innerHTML = '<span style="color:#c33;">結果なし。楽天ジャンルAPIはキーワード検索非対応のため、<a href="https://www.rakuten.co.jp/category/" target="_blank" style="color:#1565c0;">楽天カテゴリページ</a>でジャンルを探してIDをコピーしてください。</span>';
-      return;
-    }
-    let html = '<div style="max-height:200px; overflow-y:auto; border:1px solid #ddd; border-radius:4px; padding:4px; margin-top:4px;">';
-    data.children.forEach(child => {
-      const g = child.child;
-      html += '<div style="padding:4px 8px; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:12px;" onmouseover="this.style.background=\'#e3f2fd\'" onmouseout="this.style.background=\'#fff\'" onclick="document.getElementById(\'mall-rakuten-genre-id\').value=\'' + g.genreId + '\'; lookupGenreId();">';
-      html += '<span style="font-weight:600; color:#1565c0;">' + g.genreId + '</span> ' + g.genreName;
-      html += '</div>';
-    });
+  const kw = keyword.toLowerCase();
+  const matches = Object.entries(GENRE_MAP).filter(([id, path]) => path.toLowerCase().includes(kw));
+  if (matches.length === 0) {
+    resultEl.innerHTML = '<span style="color:#c33;">「' + keyword + '」に一致するジャンルが見つかりませんでした。</span>';
+    return;
+  }
+  let html = '<div style="max-height:200px; overflow-y:auto; border:1px solid #ddd; border-radius:4px; padding:4px; margin-top:4px;">';
+  matches.forEach(([gid, path]) => {
+    html += '<div style="padding:4px 8px; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:12px;" onmouseover="this.style.background=\'#e3f2fd\'" onmouseout="this.style.background=\'#fff\'" onclick="document.getElementById(\'mall-rakuten-genre-id\').value=\'' + gid + '\'; lookupGenreId();">';
+    html += '<span style="font-weight:600; color:#1565c0;">' + gid + '</span> ' + path;
     html += '</div>';
-    resultEl.innerHTML = html;
-  };
-  // ジャンルAPIはキーワード検索非対応なので、ルートジャンルから探す
-  script.src = 'https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20140222?applicationId=' + encodeURIComponent(appId) + '&genreId=0&callback=' + cbName;
-  script.onerror = function() { cleanup(); resultEl.textContent = 'API通信エラー'; resultEl.style.color = '#c33'; };
-  document.head.appendChild(script);
+  });
+  html += '</div>';
+  resultEl.innerHTML = html;
 }
 
 // HTMLプレビュー：新しいウィンドウで商品説明文を表示
