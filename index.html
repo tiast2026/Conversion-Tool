@@ -2035,6 +2035,11 @@ function renderRmsPreview() {
     if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>No Image</div>\'">';
     else html += '<div style="color:#ccc; font-size:10px;">No Image</div>';
     html += '</div>';
+    // バッジヘルパー
+    const bReq = '<span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">必須</span>';
+    const bImp = '<span style="background:#1565c0; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">取込</span>';
+    const bMst = '<span style="background:#2e7d32; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">マスタ</span>';
+
     html += '<div style="flex:1; min-width:0;">';
     html += '<div style="display:flex; gap:24px; margin-bottom:10px; font-size:13px;">';
     html += '<div><span style="color:#666;">商品管理番号 ' + bReq + bImp + '</span><div contenteditable="true" data-rms-field="number" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品管理番号（商品URL）')) + '</div></div>';
@@ -2063,11 +2068,6 @@ function renderRmsPreview() {
     html += '</div>';
 
     html += '<div style="padding:16px 24px 24px;">';
-
-    // バッジヘルパー
-    const bReq = '<span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">必須</span>';
-    const bImp = '<span style="background:#1565c0; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">取込</span>';
-    const bMst = '<span style="background:#2e7d32; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">マスタ</span>';
 
     // ===== タブコンテンツ =====
 
