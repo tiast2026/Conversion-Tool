@@ -24,7 +24,7 @@ header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
 .container { max-width: 1400px; margin: 0 auto; padding: 8px 16px; flex: 1; min-height: 0; }
 body.rms-fullscreen .container { overflow: hidden; max-width: none; padding: 0; margin: 0; width: 100%; }
 body.rms-fullscreen .panel.active { background: transparent; border-radius: 0; box-shadow: none; padding: 0; margin: 0; }
-body.rms-fullscreen #panel-1.active { display: flex; flex-direction: column; background: var(--bg); }
+body.rms-fullscreen #panel-1.active { display: flex; flex-direction: column; background: var(--bg); height: 100%; }
 .steps { display: flex; background: var(--card); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex-shrink: 0; z-index: 99; }
 .step { flex: 1; padding: 8px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
 .step.active { background: var(--accent); border-bottom-color: var(--primary); }
@@ -198,7 +198,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 <div class="container">
 
   <!-- STEP 1 -->
-  <div class="panel active" id="panel-1" style="display:flex; flex-direction:column; height:100%;">
+  <div class="panel active" id="panel-1">
     <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:700px; margin:0 auto; width:100%; padding:0 16px;">
       <h2>CSVファイルをアップロード</h2>
       <p class="desc">楽天RMSからダウンロードしたCSV、または自社システムのExcelをアップロードしてください。</p>
@@ -953,6 +953,55 @@ const GENRE_MAP = {
   '403911': 'レディースファッション > 福袋',
   '101801': 'レディースファッション > その他'
 };
+// カテゴリ名→ジャンルID自動推測
+// GENRE_MAPのパスの末尾セグメントでマッチング（例: 「Tシャツ・カットソー」→ 303656）
+function guessGenreId(category, productName) {
+  if (!category && !productName) return '';
+  const cat = (category || '').trim();
+  // 1. カテゴリ名でGENRE_MAPの末尾と完全一致
+  if (cat) {
+    for (const [gid, path] of Object.entries(GENRE_MAP)) {
+      const segments = path.split(' > ');
+      const last = segments[segments.length - 1];
+      if (last === cat) return gid;
+    }
+    // 2. カテゴリ名がパスのいずれかのセグメントに完全一致
+    for (const [gid, path] of Object.entries(GENRE_MAP)) {
+      const segments = path.split(' > ');
+      if (segments.some(s => s === cat)) return gid;
+    }
+    // 3. カテゴリ名がパスに部分一致
+    for (const [gid, path] of Object.entries(GENRE_MAP)) {
+      if (path.includes(cat)) return gid;
+    }
+  }
+  // 4. 商品名からキーワードマッチ（主要カテゴリのみ）
+  const name = (productName || '').toLowerCase();
+  const nameRules = [
+    { keywords: ['ワンピース', 'ワンピ'], gid: '110729' },
+    { keywords: ['tシャツ', 'カットソー', 'ティーシャツ'], gid: '303656' },
+    { keywords: ['タンクトップ'], gid: '566018' },
+    { keywords: ['シャツワンピ'], gid: '568650' },
+    { keywords: ['ブラウス'], gid: '206471' },
+    { keywords: ['カーディガン', 'ボレロ'], gid: '403871' },
+    { keywords: ['パーカー'], gid: '502556' },
+    { keywords: ['スウェット', 'トレーナー'], gid: '403923' },
+    { keywords: ['ニット', 'セーター'], gid: '566028' },
+    { keywords: ['スカート'], gid: '110734' },
+    { keywords: ['ワイドパンツ', 'パンツ', 'ボトムス'], gid: '206440' },
+    { keywords: ['コート', 'ジャケット', 'アウター'], gid: '555087' },
+    { keywords: ['チュニック'], gid: '553029' },
+    { keywords: ['ドレス'], gid: '555084' },
+    { keywords: ['オールインワン', 'サロペット'], gid: '555083' },
+    { keywords: ['ベスト', 'ジレ'], gid: '403890' },
+    { keywords: ['キャミソール', 'キャミ'], gid: '303662' },
+    { keywords: ['ポロシャツ'], gid: '409352' },
+  ];
+  for (const rule of nameRules) {
+    if (rule.keywords.some(kw => name.includes(kw.toLowerCase()))) return rule.gid;
+  }
+  return '';
+}
 let _genreCallbackId = 0;
 function fetchRakutenGenrePath(genreId) {
   return new Promise(resolve => {
@@ -3184,7 +3233,7 @@ function convertToRakuten() {
       pRow[RI['商品名']] = applyMallName(prod.cleanName || prod.name, 'rakuten');
       pRow[RI['販売価格']] = prod.sellPrice;
       pRow[RI['表示価格']] = prod._displayPrice || prod.sellPrice || '';
-      pRow[RI['ジャンルID']] = rm.genreId || '';
+      pRow[RI['ジャンルID']] = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
       pRow[RI['消費税']] = rm.taxType || '0';
       pRow[RI['送料']] = rm.shippingFee || '0';
       pRow[RI['個別送料（税込）']] = String(rm.indivShipping || 0);
@@ -3196,7 +3245,7 @@ function convertToRakuten() {
       pRow[RI['のし対応']] = rm.noshi || '0';
       pRow[RI['在庫タイプ']] = rm.stockType || '1';
       pRow[RI['再入荷お知らせボタン']] = rm.restockBtn || '0';
-      pRow[RI['キャッチコピー']] = prod._catchCopy || '';
+      pRow[RI['キャッチコピー']] = prod._catchCopy || prod.productPoint || '';
       pRow[RI['PC用商品説明文']] = applyDescTemplate(rm.pcDescTpl, prod);
       pRow[RI['スマートフォン用商品説明文']] = applyDescTemplate(rm.spDescTpl, prod);
       pRow[RI['PC用販売説明文']] = applyDescTemplate(rm.saleDescTpl, prod);
