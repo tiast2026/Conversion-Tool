@@ -2595,7 +2595,7 @@ function switchS2RmsTab(tabId, gi) {
 }
 
 // ============================================================
-// STEP 2 自社Excel: RMS風2カラムレイアウト
+// STEP 2 自社Excel: シンプルなデータ確認画面
 // ============================================================
 function renderJishaRmsView() {
   const jishaView = document.getElementById('step2-jisha-view');
@@ -2604,6 +2604,17 @@ function renderJishaRmsView() {
   const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
   const totalImages = products.reduce((s, p) => s + p.images.length, 0);
   const src = '自社Excel';
+
+  // 全商品で不足している情報を集計
+  const missingStats = { image: 0, category: 0, material: 0, sellPrice: 0, jan: 0 };
+  products.forEach(p => {
+    if (!p.imageUrl && p.images.length === 0) missingStats.image++;
+    if (!p.category) missingStats.category++;
+    if (!p.material) missingStats.material++;
+    if (!p.sellPrice) missingStats.sellPrice++;
+    const noJan = p.skus.some(s => !s.jan);
+    if (noJan) missingStats.jan++;
+  });
 
   let html = '';
   html += '<div id="jisha-layout-root" style="display:flex; flex-direction:column; overflow:hidden; width:100%; box-sizing:border-box;">';
@@ -2614,11 +2625,10 @@ function renderJishaRmsView() {
   // --- 左サイドバー: 商品リスト ---
   html += '<div id="jisha-product-list" style="background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden; min-height:0;">';
   html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
-  html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">商品一覧 (' + products.length + ')</div>';
-  html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
+  html += '<div style="font-size:13px; font-weight:700; color:var(--primary-dark); margin-bottom:4px;">取込データ (' + products.length + '商品)</div>';
+  html += '<div style="display:flex; gap:6px; font-size:10px; color:#888; flex-wrap:wrap;">';
   html += '<span style="background:#ece8e3; padding:1px 6px; border-radius:8px;"><strong>' + totalSkus + '</strong> SKU</span>';
   html += '<span style="background:#ece8e3; padding:1px 6px; border-radius:8px;"><strong>' + totalImages + '</strong> 画像</span>';
-  html += '<span style="background:#ece8e3; padding:1px 6px; border-radius:8px;">' + src + '</span>';
   html += '</div></div>';
 
   products.forEach((p, i) => {
@@ -2633,7 +2643,7 @@ function renderJishaRmsView() {
     html += '<div style="min-width:0; flex:1;">';
     html += '<div style="font-size:13px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(label) + '</div>';
     html += '<div style="font-size:12px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">' + esc(shortName) + '</div>';
-    html += '<div style="font-size:11px; color:#aaa; margin-top:2px;">SKU:' + p.skus.length + '</div>';
+    html += '<div style="font-size:11px; color:#aaa; margin-top:2px;">SKU:' + p.skus.length + ' / ' + esc(p.category || '未分類') + '</div>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -2645,144 +2655,90 @@ function renderJishaRmsView() {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? (prod.images[0].url || '') : '');
     html += '<div class="jisha-detail-panel" data-jisha-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden;">';
     html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:0 6px 6px 0; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
+    html += '<div style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:20px 24px;">';
 
-    // スクロール領域
-    html += '<div class="jisha-scroll-area" style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:0;">';
-
-    // パンくず
-    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">自社Excel取込 &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
-
-    // 基本情報ヘッダー
-    html += '<div style="padding:16px 24px;">';
-    html += '<div style="display:flex; gap:16px; align-items:flex-start;">';
-    // 商品画像
-    html += '<div style="flex-shrink:0;">';
-    html += '<div style="width:80px; height:80px; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
+    // 商品ヘッダー（画像＋基本）
+    html += '<div style="display:flex; gap:16px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid var(--primary);">';
+    html += '<div style="width:80px; height:80px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
     if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>No Image</div>\'">';
     else html += '<div style="color:#ccc; font-size:10px;">No Image</div>';
-    html += '</div></div>';
-    // 基本フィールド
+    html += '</div>';
     html += '<div style="flex:1; min-width:0;">';
-    html += '<div style="display:flex; gap:24px; margin-bottom:10px; font-size:13px;">';
-    html += '<div><span style="color:#666;">商品番号</span><div style="margin-top:2px; font-weight:600; color:#333;">' + esc(prod.number || prod.id || '') + '</div></div>';
-    html += '<div><span style="color:#666;">カテゴリ</span><div style="margin-top:2px; font-weight:600; color:#333;">' + esc(prod.category || '') + '</div></div>';
-    html += '</div>';
-    html += '<div style="margin-bottom:8px;">';
-    html += '<div style="font-size:13px; color:#666; margin-bottom:2px;">商品名</div>';
-    html += '<div contenteditable="true" data-pi="' + gi + '" data-key="name" onblur="onFieldEdit(this,' + gi + ',\'name\')" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;">' + esc(prod.name || '') + '</div>';
-    html += '</div>';
+    html += '<div style="font-size:16px; font-weight:700; color:#333; margin-bottom:6px; word-break:break-all;">' + esc(prod.name || '') + '</div>';
+    html += '<div style="display:flex; gap:16px; font-size:13px; color:#666; flex-wrap:wrap;">';
+    html += '<span>商品番号: <strong>' + esc(prod.number || '-') + '</strong></span>';
+    html += '<span>カテゴリ: <strong>' + esc(prod.category || '-') + '</strong></span>';
+    html += '<span>販売金額: <strong>' + esc(prod.sellPrice ? prod.sellPrice + '円' : '-') + '</strong></span>';
+    html += '<span>SKU: <strong>' + prod.skus.length + '件</strong></span>';
     html += '</div></div></div>';
 
-    // タブバー
-    const tabItems = [
-      {label:'基本情報', tab:'jbasic'},
-      {label:'SKU・バリエーション', tab:'jsku'},
-      {label:'画像', tab:'jimg'},
-      {label:'価格・その他', tab:'jprice'},
+    // 取り込みデータ一覧（フラットなテーブル形式）
+    html += '<div style="margin-bottom:20px;">';
+    html += '<div style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-bottom:10px;">取り込み項目</div>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    const allFields = [
+      ['商品名', prod.name],
+      ['商品名（クリーン）', prod.cleanName],
+      ['商品番号', prod.number],
+      ['カテゴリ', prod.category],
+      ['販売金額(税込)', prod.sellPrice],
+      ['仕入金額(円)', prod.costPrice],
+      ['素材', prod.material],
+      ['採寸サイズ', prod.measureSize],
+      ['商品ポイント', prod.productPoint],
+      ['仕様', prod.spec],
+      ['洗濯表記', prod.laundryLabel],
+      ['販売日', prod.saleStartDate],
+      ['終了日', prod.saleEndDate],
+      ['配送方法', prod.shippingMethod],
+      ['参考URL', prod.referenceUrl],
+      ['メモ', prod.memo],
+      ['画像', imgUrl],
     ];
-    html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2;">';
-    tabItems.forEach((t, ti) => {
-      const active = ti === 0;
-      html += '<div class="jisha-tab-btn" data-gi="' + gi + '" data-tab="' + t.tab + '" onclick="switchJishaTab(\'' + t.tab + '\',' + gi + ')" style="padding:8px 16px; cursor:pointer; font-size:13px; border:1px solid ' + (active ? '#ccc' : 'transparent') + '; border-bottom:' + (active ? '2px solid #fff' : '2px solid transparent') + '; background:' + (active ? '#fff' : 'transparent') + '; color:' + (active ? '#333' : '#888') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; font-weight:' + (active ? '600' : '400') + '; transition:all 0.15s;">' + t.label + '</div>';
+    allFields.forEach(([label, value]) => {
+      const hasVal = value && String(value).trim();
+      html += '<tr style="border-bottom:1px solid #f0f0f0;">';
+      html += '<td style="padding:6px 12px; width:150px; color:#666; background:#faf8f6; font-weight:600; white-space:nowrap;">' + esc(label) + '</td>';
+      html += '<td style="padding:6px 12px; word-break:break-all;">';
+      if (hasVal) {
+        if (label === '画像' && String(value).match(/^https?:\/\//)) {
+          html += '<a href="' + esc(value) + '" target="_blank" style="color:#1565c0; font-size:12px;">' + esc(String(value).substring(0, 60)) + '</a>';
+        } else {
+          html += esc(String(value));
+        }
+      } else {
+        html += '<span style="color:#ccc;">-</span>';
+      }
+      html += '</td></tr>';
     });
-    html += '</div>';
+    html += '</table></div>';
 
-    // タブコンテンツ: 基本情報
-    html += '<div class="jisha-tab-content" data-gi="' + gi + '" data-tab="jbasic" style="">';
-    html += '<div style="padding:16px 24px;">';
-    const basicFields = [
-      ['商品名（クリーン）', 'cleanName', prod.cleanName],
-      ['素材', 'material', prod.material],
-      ['採寸サイズ', 'measureSize', prod.measureSize],
-      ['商品ポイント', 'productPoint', prod.productPoint],
-      ['仕様', 'spec', prod.spec],
-      ['洗濯表記', 'laundryLabel', prod.laundryLabel],
-      ['メモ', 'memo', prod.memo],
-    ];
-    basicFields.forEach(([label, key, value]) => {
-      html += '<div style="display:flex; border-bottom:1px solid #f0f0f0; padding:8px 0; align-items:flex-start;">';
-      html += '<div style="width:160px; flex-shrink:0; font-size:13px; color:#666; padding-top:4px;">' + label + '</div>';
-      html += '<div contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="flex:1; padding:4px 8px; border:1px solid transparent; border-radius:4px; font-size:13px; outline:none; cursor:text; min-height:24px; word-break:break-all;" onfocus="this.style.borderColor=\'#97887d\'" onblur="this.style.borderColor=\'transparent\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(value || '') + '</div>';
-      html += '</div>';
-    });
-    html += '</div></div>';
-
-    // タブコンテンツ: SKU・バリエーション
-    html += '<div class="jisha-tab-content" data-gi="' + gi + '" data-tab="jsku" style="display:none;">';
-    html += '<div style="padding:16px 24px;">';
+    // SKU一覧
+    html += '<div style="margin-bottom:20px;">';
+    html += '<div style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-bottom:10px;">SKU一覧（' + prod.skus.length + '件）</div>';
     if (prod.skus.length > 0) {
-      html += '<div style="font-size:14px; font-weight:600; margin-bottom:12px;">SKU一覧（' + prod.skus.length + '件）</div>';
       html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
       html += '<thead><tr style="background:#f8f6f4;">';
-      html += '<th style="padding:8px 10px; text-align:left; border-bottom:2px solid #ddd;">SKU番号</th>';
+      html += '<th style="padding:8px 10px; text-align:left; border-bottom:2px solid #ddd; white-space:nowrap;">SKU番号</th>';
       html += '<th style="padding:8px 10px; text-align:left; border-bottom:2px solid #ddd;">カラー</th>';
       html += '<th style="padding:8px 10px; text-align:left; border-bottom:2px solid #ddd;">サイズ</th>';
       html += '<th style="padding:8px 10px; text-align:left; border-bottom:2px solid #ddd;">JAN</th>';
-      html += '<th style="padding:8px 10px; text-align:left; border-bottom:2px solid #ddd;">価格</th>';
+      html += '<th style="padding:8px 10px; text-align:right; border-bottom:2px solid #ddd;">価格</th>';
       html += '</tr></thead><tbody>';
-      prod.skus.forEach((sku, si) => {
+      prod.skus.forEach((sku) => {
         html += '<tr style="border-bottom:1px solid #f0f0f0;">';
-        html += '<td style="padding:8px 10px;">' + esc(sku.skuMgmtNo || '') + '</td>';
-        html += '<td style="padding:8px 10px;">' + esc(sku.color || '') + '</td>';
-        html += '<td style="padding:8px 10px;">' + esc(sku.size || '') + '</td>';
-        html += '<td style="padding:8px 10px;">' + esc(sku.jan || '') + '</td>';
-        html += '<td style="padding:8px 10px;" contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'price\')" style="padding:8px 10px; cursor:text;">' + esc(sku.price || '') + '</td>';
+        html += '<td style="padding:6px 10px;">' + esc(sku.skuMgmtNo || '-') + '</td>';
+        html += '<td style="padding:6px 10px;">' + esc(sku.color || '-') + '</td>';
+        html += '<td style="padding:6px 10px;">' + esc(sku.size || '-') + '</td>';
+        html += '<td style="padding:6px 10px;">' + (sku.jan ? esc(sku.jan) : '<span style="color:#ccc;">-</span>') + '</td>';
+        html += '<td style="padding:6px 10px; text-align:right;">' + esc(sku.price || '-') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table>';
     } else {
-      html += '<div style="color:#999; text-align:center; padding:20px;">SKUデータなし</div>';
+      html += '<div style="color:#999; padding:12px; text-align:center;">SKUデータなし</div>';
     }
-    html += '</div></div>';
-
-    // タブコンテンツ: 画像
-    html += '<div class="jisha-tab-content" data-gi="' + gi + '" data-tab="jimg" style="display:none;">';
-    html += '<div style="padding:16px 24px;">';
-    if (prod.images.length > 0) {
-      html += '<div style="font-size:14px; font-weight:600; margin-bottom:12px;">商品画像（' + prod.images.length + '枚）</div>';
-      html += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
-      prod.images.forEach(img => {
-        const url = img.url || '';
-        html += '<div style="width:100px; height:100px; border:1px solid #ddd; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#fafafa;">';
-        if (url) html += '<img src="' + esc(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.style.display=\'none\'" loading="lazy">';
-        else html += '<span style="font-size:10px; color:#ccc;">-</span>';
-        html += '</div>';
-      });
-      html += '</div>';
-    } else {
-      html += '<div style="color:#999; text-align:center; padding:20px;">画像データなし</div>';
-    }
-    html += '</div></div>';
-
-    // タブコンテンツ: 価格・その他
-    html += '<div class="jisha-tab-content" data-gi="' + gi + '" data-tab="jprice" style="display:none;">';
-    html += '<div style="padding:16px 24px;">';
-    const priceFields = [
-      ['仕入金額(円)', 'costPrice', prod.costPrice],
-      ['販売金額(税込)', 'sellPrice', prod.sellPrice],
-      ['販売開始日', 'saleStartDate', prod.saleStartDate],
-      ['販売終了日', 'saleEndDate', prod.saleEndDate],
-      ['配送方法', 'shippingMethod', prod.shippingMethod],
-    ];
-    priceFields.forEach(([label, key, value]) => {
-      html += '<div style="display:flex; border-bottom:1px solid #f0f0f0; padding:8px 0; align-items:center;">';
-      html += '<div style="width:160px; flex-shrink:0; font-size:13px; color:#666;">' + label + '</div>';
-      html += '<div contenteditable="true" data-pi="' + gi + '" data-key="' + key + '" onblur="onFieldEdit(this,' + gi + ',\'' + key + '\')" style="flex:1; padding:4px 8px; border:1px solid transparent; border-radius:4px; font-size:13px; outline:none; cursor:text; min-height:24px;" onfocus="this.style.borderColor=\'#97887d\'" onblur="this.style.borderColor=\'transparent\';onFieldEdit(this,' + gi + ',\'' + key + '\')">' + esc(value || '') + '</div>';
-      html += '</div>';
-    });
-    // 読み取り専用フィールド
-    const readonlyFields = [
-      ['モデル撮影予定日', prod.modelShootDate],
-      ['制作担当者', prod.productionStaff],
-      ['担当者', prod.assignee],
-    ];
-    readonlyFields.forEach(([label, value]) => {
-      html += '<div style="display:flex; border-bottom:1px solid #f0f0f0; padding:8px 0; align-items:center;">';
-      html += '<div style="width:160px; flex-shrink:0; font-size:13px; color:#666;">' + label + '</div>';
-      html += '<div style="flex:1; padding:4px 8px; font-size:13px; color:#999;">' + esc(value || '') + '</div>';
-      html += '</div>';
-    });
-    html += '</div></div>';
+    html += '</div>';
 
     html += '</div>'; // scroll area
     html += '</div>'; // border wrapper
