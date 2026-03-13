@@ -2534,8 +2534,10 @@ function renderStep2Rms() {
   html += '</div>'; // 右: 商品詳細パネル群
   html += '</div>'; // 2カラムレイアウト
   // 固定フッターボタン
-  html += '<div style="flex-shrink:0; display:flex; justify-content:flex-end; gap:12px; padding:8px 16px; border-top:1px solid #e0e0e0; background:#fff;">';
+  const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
+  html += '<div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">';
   html += '<button class="btn btn-outline" onclick="goToStep(1)">← 戻る</button>';
+  html += '<div style="font-size:13px; color:#666;">' + products.length + '商品 / ' + totalSkus + ' SKU / 楽天CSV</div>';
   html += '<button class="btn btn-primary" onclick="goToStep(3)">アップロード確認へ →</button>';
   html += '</div>';
   html += '</div>'; // フルスクリーンレイアウト
