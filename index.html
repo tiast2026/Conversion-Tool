@@ -359,6 +359,45 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
             </td>
           </tr>
         </table>
+
+        <!-- RMS API 認証情報 -->
+        <details style="border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-top:12px;">
+          <summary style="padding:10px 16px; background:linear-gradient(135deg, #c45c5c, #d47070); color:white; cursor:pointer; font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; user-select:none;">
+            <span>RMS API 認証情報（商品登録API用）</span>
+            <span style="font-size:11px; font-weight:400; opacity:0.8; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:10px;">自社Excel → 楽天API直接登録</span>
+          </summary>
+          <div style="padding:16px;">
+            <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:12px; color:#856404;">
+              ⚠ API認証情報はブラウザのローカルストレージに保存されます。共有PCでの使用にご注意ください。<br>
+              CORSの制約により、ブラウザから直接RMS APIを呼び出すにはCORSプロキシが必要です。
+            </div>
+            <table class="rms-form" style="margin:0;">
+              <tr>
+                <th style="width:200px;">serviceSecret</th>
+                <td>
+                  <input type="password" id="mall-rakuten-service-secret" class="rms-input" style="width:340px;" placeholder="RMS > 各種設定 > API設定で取得">
+                  <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
+                </td>
+              </tr>
+              <tr>
+                <th>licenseKey</th>
+                <td>
+                  <input type="password" id="mall-rakuten-license-key" class="rms-input" style="width:340px;" placeholder="RMS > 各種設定 > API設定で取得">
+                  <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
+                </td>
+              </tr>
+              <tr>
+                <th>CORSプロキシURL</th>
+                <td>
+                  <input type="text" id="mall-rakuten-cors-proxy" class="rms-input" style="width:340px;" placeholder="例: https://your-proxy.workers.dev/">
+                  <div style="font-size:11px; color:#888; margin-top:3px;">Cloudflare Workers等のプロキシURL。未設定の場合は直接接続を試みます。</div>
+                </td>
+              </tr>
+            </table>
+            <button class="btn btn-sm btn-primary" style="margin-top:10px;" onclick="testRakutenApi()">接続テスト</button>
+            <span id="rakuten-api-test-result" style="margin-left:10px; font-size:12px;"></span>
+          </div>
+        </details>
       </div>
 
       <!-- 楽天CSV 出力設定 -->
@@ -1055,6 +1094,7 @@ let MASTER = {
   malls: {
     rakuten:  {
       controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0', rakutenAppId: 'feb7b7ce-bd14-47f7-be51-82fc8375e35f',
+      serviceSecret: '', licenseKey: '', corsProxy: '',
       shippingCat1: '', shippingCat2: '', shipLeadtime: '', deliveryLeadtime: '', okihai: '',
       namePrefix: '', nameSuffix: '',
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
@@ -1158,7 +1198,14 @@ function applyMasterData(d) {
 
 // マスタ設定をJSONファイルとしてエクスポート
 function exportMasterConfig() {
-  const json = JSON.stringify(MASTER, null, 2);
+  // API認証情報はエクスポートしない（セキュリティ）
+  const exportData = JSON.parse(JSON.stringify(MASTER));
+  if (exportData.malls && exportData.malls.rakuten) {
+    delete exportData.malls.rakuten.serviceSecret;
+    delete exportData.malls.rakuten.licenseKey;
+    delete exportData.malls.rakuten.corsProxy;
+  }
+  const json = JSON.stringify(exportData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1237,6 +1284,9 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-sale-desc-tpl')) el('mall-rakuten-sale-desc-tpl').value = m.saleDescTpl || '';
     if (el('mall-rakuten-img-cabinet')) el('mall-rakuten-img-cabinet').value = m.imgCabinet || '';
     if (el('mall-rakuten-img-type')) el('mall-rakuten-img-type').value = m.imgType || '0';
+    if (el('mall-rakuten-service-secret')) el('mall-rakuten-service-secret').value = m.serviceSecret || '';
+    if (el('mall-rakuten-license-key')) el('mall-rakuten-license-key').value = m.licenseKey || '';
+    if (el('mall-rakuten-cors-proxy')) el('mall-rakuten-cors-proxy').value = m.corsProxy || '';
   }
 }
 
@@ -1324,6 +1374,9 @@ function saveMallMaster(mall) {
     m.saleDescTpl = el('mall-rakuten-sale-desc-tpl')?.value || '';
     m.imgCabinet = el('mall-rakuten-img-cabinet')?.value?.trim() || '';
     m.imgType = el('mall-rakuten-img-type')?.value || '0';
+    m.serviceSecret = el('mall-rakuten-service-secret')?.value?.trim() || '';
+    m.licenseKey = el('mall-rakuten-license-key')?.value?.trim() || '';
+    m.corsProxy = el('mall-rakuten-cors-proxy')?.value?.trim() || '';
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
   exportMasterConfig();
@@ -3195,8 +3248,28 @@ function renderStep4Download() {
     html += `<div class="mall-desc">${mall.desc}</div>`;
     if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
     html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ CSVダウンロード</button>`;
+    // 楽天 + 自社Excelの場合: API直接登録ボタンを追加
+    if (key === 'rakuten' && sourceType === 'jisha') {
+      const hasApiCreds = MASTER.malls.rakuten.serviceSecret && MASTER.malls.rakuten.licenseKey;
+      html += `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">`;
+      if (hasApiCreds) {
+        html += `<button class="btn btn-primary" onclick="registerToRakutenApi()" style="background:#c45c5c;">🔗 楽天APIで直接登録</button>`;
+      } else {
+        html += `<button class="btn btn-outline" disabled style="opacity:0.5; cursor:not-allowed;">🔗 楽天APIで直接登録</button>`;
+        html += `<div style="font-size:11px; color:#999; margin-top:4px;">マスタ設定でRMS API認証情報を設定してください</div>`;
+      }
+      html += `</div>`;
+    }
     html += `</div>`;
   });
+  // API登録の進捗表示エリア
+  if (sourceType === 'jisha') {
+    html += `<div id="api-register-status" style="display:none; grid-column:1/-1; border:1px solid var(--border); border-radius:10px; padding:16px;">`;
+    html += `<div style="font-weight:600; margin-bottom:8px; color:var(--primary-dark);">楽天API登録 進捗</div>`;
+    html += `<div id="api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>`;
+    html += `<div id="api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>`;
+    html += `</div>`;
+  }
   document.getElementById('download-grid').innerHTML = html;
 }
 
@@ -3586,6 +3659,273 @@ function convertToQoo10() {
     rows.push(r);
   });
   return { headers: qH, rows };
+}
+
+// ============================================================
+// RAKUTEN RMS API 2.0 DIRECT REGISTRATION
+// ============================================================
+function getRakutenApiAuth() {
+  const ss = MASTER.malls.rakuten.serviceSecret;
+  const lk = MASTER.malls.rakuten.licenseKey;
+  if (!ss || !lk) return null;
+  return 'ESA ' + btoa(ss + ':' + lk);
+}
+
+function getRakutenApiUrl(path) {
+  const proxy = MASTER.malls.rakuten.corsProxy;
+  const base = 'https://api.rms.rakuten.co.jp';
+  if (proxy) {
+    // プロキシURL末尾のスラッシュを正規化
+    const p = proxy.endsWith('/') ? proxy.slice(0, -1) : proxy;
+    return p + '/es/2.0' + path;
+  }
+  return base + '/es/2.0' + path;
+}
+
+async function testRakutenApi() {
+  const resultEl = document.getElementById('rakuten-api-test-result');
+  const auth = getRakutenApiAuth();
+  if (!auth) {
+    resultEl.textContent = 'serviceSecretとlicenseKeyを入力してください';
+    resultEl.style.color = '#c33';
+    return;
+  }
+  resultEl.textContent = '接続テスト中...';
+  resultEl.style.color = '#999';
+  try {
+    const url = getRakutenApiUrl('/items/manage-numbers/___test___');
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': auth }
+    });
+    if (res.status === 404) {
+      resultEl.textContent = '接続成功（認証OK）';
+      resultEl.style.color = '#5a9e6f';
+    } else if (res.status === 401) {
+      resultEl.textContent = '認証失敗（serviceSecret/licenseKeyを確認してください）';
+      resultEl.style.color = '#c33';
+    } else {
+      resultEl.textContent = `レスポンス: ${res.status} ${res.statusText}`;
+      resultEl.style.color = res.ok ? '#5a9e6f' : '#c33';
+    }
+  } catch(e) {
+    resultEl.textContent = 'CORS エラー: CORSプロキシを設定してください → ' + e.message;
+    resultEl.style.color = '#c33';
+  }
+}
+
+function buildRakutenApiItem(prod) {
+  const rm = MASTER.malls.rakuten;
+  const genreId = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
+  const itemName = applyMallName(prod.cleanName || prod.name, 'rakuten');
+  const catchCopy = prod._catchCopy || prod.productPoint || '';
+
+  // バリエーション情報の収集
+  const colorSet = new Set();
+  const sizeSet = new Set();
+  prod.skus.forEach(sku => {
+    if (sku.color) colorSet.add(sku.color);
+    if (sku.size) sizeSet.add(sku.size);
+  });
+  const hasColor = colorSet.size > 0;
+  const hasSize = sizeSet.size > 0;
+
+  // バリエーション定義
+  const variants = [];
+  if (hasColor) {
+    const sortedColors = [...colorSet].sort((a, b) =>
+      (MASTER.colorOrder[a] || 9999) - (MASTER.colorOrder[b] || 9999)
+    );
+    variants.push({
+      key: 'カラー',
+      name: 'カラー',
+      values: sortedColors
+    });
+  }
+  if (hasSize) {
+    const sizeOrder = {'S':1, 'M':2, 'L':3, 'XL':4, 'XXL':5, 'F':0, 'F(M)':0, 'フリー':0, 'FREE':0};
+    const sortedSizes = [...sizeSet].sort((a, b) => (sizeOrder[a] || 99) - (sizeOrder[b] || 99));
+    variants.push({
+      key: 'サイズ',
+      name: 'サイズ',
+      values: sortedSizes
+    });
+  }
+
+  // API用JSONボディ
+  const item = {
+    title: itemName,
+    tagline: catchCopy,
+    productDescription: {
+      pc: applyDescTemplate(rm.pcDescTpl, prod) || undefined,
+      sp: applyDescTemplate(rm.spDescTpl, prod) || undefined
+    },
+    salesDescription: applyDescTemplate(rm.saleDescTpl, prod) || undefined,
+    taxType: parseInt(rm.taxType) || 0,
+    postageSegment1: rm.shippingCat1 ? parseInt(rm.shippingCat1) : undefined,
+    postageSegment2: rm.shippingCat2 ? parseInt(rm.shippingCat2) : undefined,
+    shippingMethodSetId: rm.shippingSet ? parseInt(rm.shippingSet) : undefined,
+    genreId: genreId ? parseInt(genreId) : undefined,
+    noshiFlag: parseInt(rm.noshi) || 0
+  };
+
+  // undefinedフィールド除去
+  Object.keys(item).forEach(k => { if (item[k] === undefined) delete item[k]; });
+  if (item.productDescription) {
+    Object.keys(item.productDescription).forEach(k => { if (!item.productDescription[k]) delete item.productDescription[k]; });
+    if (Object.keys(item.productDescription).length === 0) delete item.productDescription;
+  }
+
+  // SKU情報
+  const skus = prod.skus.map(sku => {
+    let skuSuffix = '';
+    const skuFull = (sku.skuMgmtNo || '').trim();
+    const parentNo = (prod.number || '').trim();
+    if (skuFull && parentNo && skuFull.startsWith(parentNo)) {
+      skuSuffix = skuFull.substring(parentNo.length);
+    } else if (skuFull && parentNo) {
+      const parts = skuFull.split('-');
+      if (parts.length > 2) skuSuffix = '-' + parts.slice(2).join('-');
+      else skuSuffix = skuFull;
+    } else {
+      skuSuffix = skuFull || sku.jan;
+    }
+
+    const skuObj = {
+      manageNumber: skuSuffix,
+      merchantDefinedSkuId: sku.skuMgmtNo || (prod.number + skuSuffix),
+      standardPrice: parseInt(sku.price || prod.sellPrice) || 0,
+      stockQuantity: parseInt(sku._stock) || 0,
+      catalogIdNotRequiredReason: parseInt(rm.catalogReason) || 3
+    };
+
+    // バリエーション値
+    const variantSelections = [];
+    if (hasColor) variantSelections.push({ key: 'カラー', value: sku.color || '' });
+    if (hasSize) variantSelections.push({ key: 'サイズ', value: sku.size || '' });
+    if (variantSelections.length > 0) skuObj.variantSelections = variantSelections;
+
+    return skuObj;
+  });
+
+  return { item, skus, variants, manageNumber: prod.number };
+}
+
+async function registerToRakutenApi() {
+  const auth = getRakutenApiAuth();
+  if (!auth) {
+    notify('RMS API認証情報が未設定です。マスタ設定から設定してください。', 'warning');
+    return;
+  }
+  if (!products || products.length === 0) {
+    notify('登録する商品がありません', 'warning');
+    return;
+  }
+
+  // 確認ダイアログ
+  const cnt = products.length;
+  const skuCnt = products.reduce((s, p) => s + p.skus.length, 0);
+  if (!confirm(`楽天RMS APIで ${cnt}商品（${skuCnt} SKU）を登録します。\n\n続行しますか？`)) return;
+
+  // 進捗表示
+  const statusEl = document.getElementById('api-register-status');
+  if (statusEl) statusEl.style.display = 'block';
+  const progressEl = document.getElementById('api-register-progress');
+  const logEl = document.getElementById('api-register-log');
+  if (logEl) logEl.innerHTML = '';
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (let i = 0; i < products.length; i++) {
+    const prod = products[i];
+    const apiData = buildRakutenApiItem(prod);
+    if (progressEl) progressEl.textContent = `${i + 1} / ${cnt} 処理中: ${prod.cleanName || prod.name}`;
+
+    try {
+      // 1. 商品登録（UPSERT）
+      const itemUrl = getRakutenApiUrl('/items/manage-numbers/' + encodeURIComponent(apiData.manageNumber));
+      const itemRes = await fetch(itemUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': auth,
+          'Content-Type': 'application/json; charset=utf-8'
+        },
+        body: JSON.stringify(apiData.item)
+      });
+
+      if (!itemRes.ok) {
+        const errBody = await itemRes.text();
+        throw new Error(`商品登録失敗 (${itemRes.status}): ${errBody}`);
+      }
+
+      // 2. SKU登録（在庫一括更新）
+      if (apiData.skus.length > 0) {
+        // SKU個別登録
+        for (const sku of apiData.skus) {
+          const skuUrl = getRakutenApiUrl('/items/manage-numbers/' + encodeURIComponent(apiData.manageNumber) + '/skus/' + encodeURIComponent(sku.manageNumber));
+          const skuBody = {
+            merchantDefinedSkuId: sku.merchantDefinedSkuId,
+            standardPrice: sku.standardPrice,
+            catalogIdNotRequiredReason: sku.catalogIdNotRequiredReason
+          };
+          if (sku.variantSelections) skuBody.variantSelections = sku.variantSelections;
+
+          const skuRes = await fetch(skuUrl, {
+            method: 'PUT',
+            headers: {
+              'Authorization': auth,
+              'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify(skuBody)
+          });
+
+          if (!skuRes.ok) {
+            const skuErr = await skuRes.text();
+            appendApiLog(logEl, 'warning', `SKU ${sku.manageNumber}: ${skuRes.status} ${skuErr}`);
+          }
+        }
+
+        // 3. 在庫一括更新
+        const inventoryItems = apiData.skus.map(sku => ({
+          manageNumber: apiData.manageNumber,
+          skuManageNumber: sku.manageNumber,
+          quantity: sku.stockQuantity
+        }));
+        const invUrl = getRakutenApiUrl('/inventories/bulk-upsert');
+        const invRes = await fetch(invUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': auth,
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          body: JSON.stringify({ inventories: inventoryItems })
+        });
+
+        if (!invRes.ok) {
+          const invErr = await invRes.text();
+          appendApiLog(logEl, 'warning', `在庫更新: ${invRes.status} ${invErr}`);
+        }
+      }
+
+      successCount++;
+      appendApiLog(logEl, 'success', `${prod.number}: ${prod.cleanName || prod.name} - 登録完了`);
+    } catch(e) {
+      errorCount++;
+      appendApiLog(logEl, 'error', `${prod.number}: ${e.message}`);
+    }
+  }
+
+  if (progressEl) progressEl.textContent = `完了: 成功 ${successCount}件 / エラー ${errorCount}件`;
+  notify(`楽天API登録完了: 成功 ${successCount}件、エラー ${errorCount}件`, errorCount > 0 ? 'warning' : 'success');
+}
+
+function appendApiLog(logEl, type, msg) {
+  if (!logEl) return;
+  const colors = { success: '#5a9e6f', warning: '#d4a843', error: '#c45c5c' };
+  const icons = { success: '✓', warning: '⚠', error: '✕' };
+  logEl.innerHTML += `<div style="padding:3px 0; font-size:12px; color:${colors[type] || '#333'};">${icons[type] || ''} ${esc(msg)}</div>`;
+  logEl.scrollTop = logEl.scrollHeight;
 }
 
 // ============================================================
