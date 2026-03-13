@@ -24,6 +24,7 @@ header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 1px; }
 .container { max-width: 1400px; margin: 0 auto; padding: 8px 16px; flex: 1; min-height: 0; }
 body.rms-fullscreen .container { overflow: hidden; max-width: none; padding: 0; margin: 0; width: 100%; }
 body.rms-fullscreen .panel.active { background: transparent; border-radius: 0; box-shadow: none; padding: 0; margin: 0; }
+body.rms-fullscreen #panel-1.active { display: flex; flex-direction: column; background: var(--bg); }
 .steps { display: flex; background: var(--card); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex-shrink: 0; z-index: 99; }
 .step { flex: 1; padding: 8px 20px; text-align: center; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; user-select: none; }
 .step.active { background: var(--accent); border-bottom-color: var(--primary); }
@@ -167,7 +168,7 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 }
 </style>
 </head>
-<body>
+<body class="rms-fullscreen">
 <header>
   <div>
     <h1>他モール変換ツール</h1>
@@ -197,34 +198,36 @@ td[contenteditable="true"]:focus { background: #fff8e8; box-shadow: inset 0 0 0 
 <div class="container">
 
   <!-- STEP 1 -->
-  <div class="panel active" id="panel-1">
-    <h2>CSVファイルをアップロード</h2>
-    <p class="desc">楽天RMSからダウンロードしたCSV、または自社システムのExcelをアップロードしてください。</p>
-    <div class="source-select">
-      <div class="source-btn selected" data-source="rakuten" onclick="selectSource('rakuten')">🏪 楽天CSV（RMS）</div>
-      <div class="source-btn" data-source="jisha" onclick="selectSource('jisha')">📊 自社システム（Excel）</div>
-    </div>
-    <div class="upload-area" id="upload-area"
-      onclick="document.getElementById('file-input').click()"
-      ondragover="event.preventDefault(); this.classList.add('dragover')"
-      ondragleave="this.classList.remove('dragover')"
-      ondrop="handleDrop(event)">
-      <div class="icon">📄</div>
-      <p>ここにファイルをドロップ<br>またはクリックして選択</p>
-      <div class="formats">対応形式：CSV（UTF-8 / Shift-JIS 自動判別）/ Excel（.xlsx）</div>
-    </div>
-    <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
-    <div id="upload-status" style="display:none; margin-top:6px;">
-      <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f0f8f0; border-radius:8px; border:1px solid #d4e8d4;">
-        <span style="font-size:18px;">✅</span>
-        <div>
-          <div style="font-weight:600; font-size:13px;" id="file-name"></div>
-          <div style="font-size:12px; color:#666;" id="file-info"></div>
+  <div class="panel active" id="panel-1" style="display:flex; flex-direction:column; height:100%;">
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:700px; margin:0 auto; width:100%; padding:0 16px;">
+      <h2>CSVファイルをアップロード</h2>
+      <p class="desc">楽天RMSからダウンロードしたCSV、または自社システムのExcelをアップロードしてください。</p>
+      <div class="source-select">
+        <div class="source-btn selected" data-source="rakuten" onclick="selectSource('rakuten')">🏪 楽天CSV（RMS）</div>
+        <div class="source-btn" data-source="jisha" onclick="selectSource('jisha')">📊 自社システム（Excel）</div>
+      </div>
+      <div class="upload-area" id="upload-area"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="event.preventDefault(); this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="handleDrop(event)">
+        <div class="icon">📄</div>
+        <p>ここにファイルをドロップ<br>またはクリックして選択</p>
+        <div class="formats">対応形式：CSV（UTF-8 / Shift-JIS 自動判別）/ Excel（.xlsx）</div>
+      </div>
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+      <div id="upload-status" style="display:none; margin-top:6px;">
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f0f8f0; border-radius:8px; border:1px solid #d4e8d4;">
+          <span style="font-size:18px;">✅</span>
+          <div>
+            <div style="font-weight:600; font-size:13px;" id="file-name"></div>
+            <div style="font-size:12px; color:#666;" id="file-info"></div>
+          </div>
         </div>
       </div>
+      <div id="parse-log" style="display:none; margin-top:6px; padding:8px 12px; background:#fdfcfb; border:1px solid var(--border); border-radius:8px; font-size:11px; max-height:120px; overflow:auto;"></div>
     </div>
-    <div id="parse-log" style="display:none; margin-top:6px; padding:8px 12px; background:#fdfcfb; border:1px solid var(--border); border-radius:8px; font-size:11px; max-height:120px; overflow:auto;"></div>
-    <div class="actions">
+    <div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:flex-end; flex-shrink:0;">
       <button class="btn btn-primary" onclick="processAndGoStep2()" id="btn-next-1" disabled>確認画面へ →</button>
     </div>
   </div>
@@ -3027,7 +3030,7 @@ function goToStep(n) {
   const containerEl = document.querySelector('.container');
   const panel2 = document.getElementById('panel-2');
   const panel3 = document.getElementById('panel-3');
-  const isFullscreen = n === 2 || n === 3;
+  const isFullscreen = n === 1 || n === 2 || n === 3;
   // body.style.overflowをリセット（renderStep2で変更される可能性あり）
   document.body.style.overflow = '';
   // step2-actionsの固定位置をリセット
@@ -3035,7 +3038,8 @@ function goToStep(n) {
   if (step2Actions) { step2Actions.style.position = ''; step2Actions.style.bottom = ''; step2Actions.style.left = ''; step2Actions.style.right = ''; step2Actions.style.borderTop = ''; step2Actions.style.zIndex = ''; step2Actions.style.justifyContent = ''; step2Actions.style.display = ''; }
   if (isFullscreen) {
     document.body.classList.add('rms-fullscreen');
-    const targetPanel = n === 2 ? panel2 : panel3;
+    const panel1 = document.getElementById('panel-1');
+    const targetPanel = n === 1 ? panel1 : n === 2 ? panel2 : panel3;
     if (containerEl) { containerEl.style.maxWidth = 'none'; containerEl.style.padding = '0'; containerEl.style.margin = '0'; containerEl.style.width = '100%'; containerEl.style.overflow = ''; }
     if (targetPanel) { targetPanel.style.padding = '0'; targetPanel.style.margin = '0'; targetPanel.style.borderRadius = '0'; targetPanel.style.boxShadow = 'none'; targetPanel.style.background = 'transparent'; }
   } else {
