@@ -954,49 +954,79 @@ const GENRE_MAP = {
   '101801': 'レディースファッション > その他'
 };
 // カテゴリ名→ジャンルID自動推測
-// GENRE_MAPのパスの末尾セグメントでマッチング（例: 「Tシャツ・カットソー」→ 303656）
+// カテゴリ名＋商品名から楽天ジャンルIDを推測
 function guessGenreId(category, productName) {
   if (!category && !productName) return '';
   const cat = (category || '').trim();
-  // 1. カテゴリ名でGENRE_MAPの末尾と完全一致
+  const name = (productName || '').toLowerCase();
+  const nameRules = [
+    { keywords: ['シャツワンピ'], gid: '568650' },
+    { keywords: ['ワンピース', 'ワンピ'], gid: '110729' },
+    { keywords: ['tシャツ', 'カットソー', 'ティーシャツ'], gid: '303656' },
+    { keywords: ['タンクトップ'], gid: '566018' },
+    { keywords: ['ブラウス'], gid: '206471' },
+    { keywords: ['ポロシャツ'], gid: '409352' },
+    { keywords: ['カーディガン', 'ボレロ'], gid: '403871' },
+    { keywords: ['パーカー'], gid: '502556' },
+    { keywords: ['スウェット', 'トレーナー'], gid: '403923' },
+    { keywords: ['ニット', 'セーター'], gid: '566028' },
+    { keywords: ['キャミソール', 'キャミ'], gid: '303662' },
+    { keywords: ['ベスト', 'ジレ'], gid: '403890' },
+    { keywords: ['キュロット'], gid: '303587' },
+    { keywords: ['スカート'], gid: '110734' },
+    { keywords: ['ワイドパンツ', 'イージーパンツ', 'パンツ', 'ボトムス'], gid: '206440' },
+    { keywords: ['コート', 'ジャケット', 'アウター'], gid: '555087' },
+    { keywords: ['チュニック'], gid: '553029' },
+    { keywords: ['パンツドレス'], gid: '568279' },
+    { keywords: ['ドレス'], gid: '555084' },
+    { keywords: ['オールインワン', 'サロペット'], gid: '555083' },
+    { keywords: ['ジャンパースカート'], gid: '568651' },
+    { keywords: ['アンサンブル'], gid: '303699' },
+  ];
+  // 1. カテゴリ名でGENRE_MAPの末尾と完全一致（最も確実）
   if (cat) {
     for (const [gid, path] of Object.entries(GENRE_MAP)) {
       const segments = path.split(' > ');
       const last = segments[segments.length - 1];
       if (last === cat) return gid;
     }
-    // 2. カテゴリ名がパスのいずれかのセグメントに完全一致
+  }
+  // 2. カテゴリが中間セグメント（例:ボトムス、トップス）の場合、商品名で絞り込み
+  if (cat && name) {
+    const candidates = [];
     for (const [gid, path] of Object.entries(GENRE_MAP)) {
       const segments = path.split(' > ');
-      if (segments.some(s => s === cat)) return gid;
+      if (segments.some(s => s === cat)) candidates.push([gid, path]);
     }
-    // 3. カテゴリ名がパスに部分一致
-    for (const [gid, path] of Object.entries(GENRE_MAP)) {
-      if (path.includes(cat)) return gid;
+    if (candidates.length > 0) {
+      // 商品名キーワードで候補を絞る
+      for (const rule of nameRules) {
+        if (rule.keywords.some(kw => name.includes(kw.toLowerCase()))) {
+          const match = candidates.find(([gid]) => gid === rule.gid);
+          if (match) return match[0];
+        }
+      }
+      // 商品名で絞れなければ候補の先頭を返す
+      return candidates[0][0];
     }
   }
-  // 4. 商品名からキーワードマッチ（主要カテゴリのみ）
-  const name = (productName || '').toLowerCase();
-  const nameRules = [
-    { keywords: ['ワンピース', 'ワンピ'], gid: '110729' },
-    { keywords: ['tシャツ', 'カットソー', 'ティーシャツ'], gid: '303656' },
-    { keywords: ['タンクトップ'], gid: '566018' },
-    { keywords: ['シャツワンピ'], gid: '568650' },
-    { keywords: ['ブラウス'], gid: '206471' },
-    { keywords: ['カーディガン', 'ボレロ'], gid: '403871' },
-    { keywords: ['パーカー'], gid: '502556' },
-    { keywords: ['スウェット', 'トレーナー'], gid: '403923' },
-    { keywords: ['ニット', 'セーター'], gid: '566028' },
-    { keywords: ['スカート'], gid: '110734' },
-    { keywords: ['ワイドパンツ', 'パンツ', 'ボトムス'], gid: '206440' },
-    { keywords: ['コート', 'ジャケット', 'アウター'], gid: '555087' },
-    { keywords: ['チュニック'], gid: '553029' },
-    { keywords: ['ドレス'], gid: '555084' },
-    { keywords: ['オールインワン', 'サロペット'], gid: '555083' },
-    { keywords: ['ベスト', 'ジレ'], gid: '403890' },
-    { keywords: ['キャミソール', 'キャミ'], gid: '303662' },
-    { keywords: ['ポロシャツ'], gid: '409352' },
-  ];
+  // 3. カテゴリ名がパスに部分一致
+  if (cat) {
+    const candidates = [];
+    for (const [gid, path] of Object.entries(GENRE_MAP)) {
+      if (path.includes(cat)) candidates.push([gid, path]);
+    }
+    if (candidates.length > 0) {
+      for (const rule of nameRules) {
+        if (rule.keywords.some(kw => name.includes(kw.toLowerCase()))) {
+          const match = candidates.find(([gid]) => gid === rule.gid);
+          if (match) return match[0];
+        }
+      }
+      return candidates[0][0];
+    }
+  }
+  // 4. 商品名からキーワードマッチのみ
   for (const rule of nameRules) {
     if (rule.keywords.some(kw => name.includes(kw.toLowerCase()))) return rule.gid;
   }
