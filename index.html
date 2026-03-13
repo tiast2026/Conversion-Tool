@@ -3123,10 +3123,13 @@ function renderStep4Download() {
   document.getElementById('summary-cards-dl').innerHTML = `
     <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
     <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
-    <div class="summary-card"><div class="num">${Object.keys(MALLS).length}</div><div class="label">出力先モール</div></div>
+    <div class="summary-card"><div class="num">${sourceType === 'jisha' ? 1 : Object.keys(MALLS).length}</div><div class="label">出力先モール</div></div>
   `;
   let html = '';
-  Object.entries(MALLS).forEach(([key, mall]) => {
+  const mallEntries = sourceType === 'jisha'
+    ? [['rakuten', MALLS.rakuten]]
+    : Object.entries(MALLS);
+  mallEntries.forEach(([key, mall]) => {
     const isSame = (key === sourceType);
     html += `<div class="download-card">`;
     html += `<div class="mall-name">${mall.name}</div>`;
