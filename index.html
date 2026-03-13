@@ -2131,8 +2131,18 @@ function renderRmsPreview() {
     html += '</table>';
     html += '<h4 style="font-size:14px; color:#333; margin:20px 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">販売設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">販売期間指定</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriod" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('販売期間指定')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00/2024/12/31 23:59</span></td></tr>';
+    const salePeriodVal = v('販売期間指定') || '';
+    const salePeriodParts = salePeriodVal.split('/');
+    const salePeriodStart = (salePeriodParts.length >= 2) ? (salePeriodParts[0] + '/' + salePeriodParts[1] + '/' + salePeriodParts[2]).replace(/\/undefined/g, '') : '';
+    const salePeriodEnd = (salePeriodParts.length >= 4) ? salePeriodParts.slice(3).join('/') : (salePeriodParts.length === 2 ? salePeriodParts[1] : '');
+    // 日時部分を正しく分割: "2024/01/01 00:00/2024/12/31 23:59" → 空白の前後で分割
+    const spMatch = salePeriodVal.match(/^(.+?\s\d{2}:\d{2})\/(.+)$/);
+    const spStart = spMatch ? spMatch[1] : (prod ? (prod.saleStartDate || '') : '');
+    const spEnd = spMatch ? spMatch[2] : (prod ? (prod.saleEndDate || '') : '');
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">販売期間（開始）</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(spStart) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">販売期間（終了）</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(spEnd) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">注文受付数</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="orderLimit" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="this.style.borderColor=\'#bf0000\'" style="' + edSpan + '">' + esc(v('注文受付数')) + '</span></td></tr>';
     html += '</table>';
@@ -2320,7 +2330,8 @@ function onRmsEdit(el, gi) {
     case 'sellPrice': prod.sellPrice = val; break;
     case 'displayPrice': prod._displayPrice = val; break;
     case 'taxType': prod._taxType = val; break;
-    case 'salePeriod': prod._salePeriod = val; break;
+    case 'salePeriodStart': prod._salePeriodStart = val; break;
+    case 'salePeriodEnd': prod._salePeriodEnd = val; break;
     case 'orderLimit': prod._orderLimit = val; break;
     case 'stockType': prod._stockType = val; break;
     case 'restockBtn': prod._restockBtn = val; break;
@@ -3478,7 +3489,9 @@ function convertToRakuten() {
       pRow[RI['ポイント変倍率']] = prod._pointRate !== undefined ? prod._pointRate : String(rm.pointRate || 1);
       pRow[RI['ポイント変倍率適用期間開始']] = prod._pointStart !== undefined ? prod._pointStart : (rm.pointStart || '');
       pRow[RI['ポイント変倍率適用期間終了']] = prod._pointEnd !== undefined ? prod._pointEnd : (rm.pointEnd || '');
-      pRow[RI['販売期間指定']] = prod._salePeriod !== undefined ? prod._salePeriod : ((prod.saleStartDate && prod.saleEndDate) ? `${prod.saleStartDate}/${prod.saleEndDate}` : '');
+      const spStartVal = prod._salePeriodStart !== undefined ? prod._salePeriodStart : (prod.saleStartDate || '');
+      const spEndVal = prod._salePeriodEnd !== undefined ? prod._salePeriodEnd : (prod.saleEndDate || '');
+      pRow[RI['販売期間指定']] = (spStartVal && spEndVal) ? `${spStartVal}/${spEndVal}` : '';
       pRow[RI['注文受付数']] = prod._orderLimit || '';
       pRow[RI['カタログID']] = prod._catalogId || '';
       // バリエーション定義
