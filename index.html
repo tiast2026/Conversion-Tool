@@ -2795,6 +2795,27 @@ function renderJishaRmsView() {
     });
     html += '</table></div>';
 
+    // 楽天変換プレビュー（推測結果）
+    const guessedGid = guessGenreId(prod.category, prod.cleanName || prod.name);
+    const guessedGenrePath = guessedGid ? GENRE_MAP[guessedGid] : '';
+    const catchCopy = prod.productPoint || '';
+    html += '<div style="margin-bottom:20px;">';
+    html += '<div style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-bottom:10px;">楽天変換プレビュー（自動推測）</div>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    html += '<tr style="border-bottom:1px solid #f0f0f0;">';
+    html += '<td style="padding:6px 12px; width:150px; color:#666; background:#faf8f6; font-weight:600; white-space:nowrap;">ジャンルID</td>';
+    html += '<td style="padding:6px 12px;">';
+    if (guessedGid) {
+      html += '<strong>' + esc(guessedGid) + '</strong> <span style="color:#1565c0; font-size:12px; margin-left:8px;">' + esc(guessedGenrePath) + '</span>';
+    } else {
+      html += '<span style="color:#c33;">推測できませんでした（マスタ設定のジャンルIDが使われます）</span>';
+    }
+    html += '</td></tr>';
+    html += '<tr style="border-bottom:1px solid #f0f0f0;">';
+    html += '<td style="padding:6px 12px; width:150px; color:#666; background:#faf8f6; font-weight:600; white-space:nowrap;">キャッチコピー</td>';
+    html += '<td style="padding:6px 12px;">' + (catchCopy ? esc(catchCopy) : '<span style="color:#ccc;">商品ポイント未設定</span>') + '</td></tr>';
+    html += '</table></div>';
+
     // SKU一覧
     html += '<div style="margin-bottom:20px;">';
     html += '<div style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-bottom:10px;">SKU一覧（' + prod.skus.length + '件）</div>';
