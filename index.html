@@ -1166,7 +1166,7 @@ function exportMasterConfig() {
   a.download = 'master-config.json';
   a.click();
   URL.revokeObjectURL(url);
-  notify('master-config.json をダウンロードしました。リポジトリにコミットすると全ブラウザに反映されます。', 'success');
+  notify('master-config.json をダウンロードしました。GitHubリポジトリのルートに配置してコミットすると共有されます。', 'success');
 }
 
 function parseColorOrderText(text) {
@@ -1277,7 +1277,7 @@ function saveMaster(which) {
     MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  notify(`共通マスタ「${which}」を保存しました`, 'success');
+  exportMasterConfig();
 }
 
 function saveMallMaster(mall) {
@@ -1326,8 +1326,7 @@ function saveMallMaster(mall) {
     m.imgType = el('mall-rakuten-img-type')?.value || '0';
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  const mallNames = { rakuten:'楽天', shopline:'SHOPLINE', yahoo:'Yahoo!', amazon:'Amazon', qoo10:'Qoo10' };
-  notify(`${mallNames[mall] || mall}のマスタを保存しました`, 'success');
+  exportMasterConfig();
 }
 
 // 配送方法セット管理
