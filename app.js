@@ -547,14 +547,8 @@ function syncMasterToProfile() {
   if (ncEl && ncEl.value) MASTER.nameCleanPatterns = ncEl.value.split('\n').filter(l => l.trim());
   const dtEl = document.getElementById('master-delete-tpl');
   if (dtEl && dtEl.value) MASTER.deleteTemplates = dtEl.value.split('\n').filter(l => l.trim());
-  // プロファイルに保存（API認証情報は除外）
-  const exportData = JSON.parse(JSON.stringify(MASTER));
-  if (exportData.malls && exportData.malls.rakuten) {
-    delete exportData.malls.rakuten.serviceSecret;
-    delete exportData.malls.rakuten.licenseKey;
-    delete exportData.malls.rakuten.corsProxy;
-  }
-  PROFILES[ACTIVE_PROFILE] = exportData;
+  // プロファイルに保存
+  PROFILES[ACTIVE_PROFILE] = JSON.parse(JSON.stringify(MASTER));
 }
 
 // 全プロファイルをGitHubに保存
