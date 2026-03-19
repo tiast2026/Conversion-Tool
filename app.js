@@ -4123,43 +4123,6 @@ function buildCSV(hdrs, rows) {
 }
 
 // ============================================================
-// BACKUP / RESTORE
-// ============================================================
-function exportState() {
-  const state = { version: '2.1', date: new Date().toISOString(), master: MASTER, sourceType, headers, rawRows, products };
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `noahl_backup_${dateStr()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  notify('バックアップを保存しました', 'success');
-}
-
-function importState(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const state = JSON.parse(e.target.result);
-      if (state.master) { MASTER = state.master; localStorage.setItem('noahl_master', JSON.stringify(MASTER)); }
-      if (state.headers) headers = state.headers;
-      if (state.rawRows) rawRows = state.rawRows;
-      if (state.products) products = state.products;
-      if (state.sourceType) sourceType = state.sourceType;
-      CI = {};
-      headers.forEach((h, i) => { CI[h] = i; });
-      if (products.length > 0) { renderStep2(); goToStep(2); }
-      notify('バックアップを復元しました', 'success');
-    } catch(err) {
-      notify('JSONの読み込みに失敗しました', 'warning');
-    }
-  };
-  reader.readAsText(file);
-}
-
-// ============================================================
 // UTILITIES
 // ============================================================
 function esc(str) {
