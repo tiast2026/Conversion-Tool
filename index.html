@@ -651,21 +651,24 @@
             <th>PC用商品説明文</th>
             <td>
               <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
-              <textarea id="mall-rakuten-pc-desc-tpl" class="rms-textarea" placeholder="HTMLテンプレート（置換タグで自社Excelの値を埋め込み）"></textarea>
+              <textarea id="mall-rakuten-pc-desc-tpl" class="rms-textarea" style="height:200px;" placeholder="HTMLテンプレート（置換タグで自社Excelの値を埋め込み）"></textarea>
+              <div style="margin-top:6px;"><button class="btn btn-sm btn-outline" onclick="loadDefaultPcDescTpl()">デフォルト読込</button></div>
             </td>
           </tr>
           <tr>
             <th>スマートフォン用商品説明文</th>
             <td>
               <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
-              <textarea id="mall-rakuten-sp-desc-tpl" class="rms-textarea" placeholder="HTMLテンプレート"></textarea>
+              <textarea id="mall-rakuten-sp-desc-tpl" class="rms-textarea" style="height:200px;" placeholder="HTMLテンプレート"></textarea>
+              <div style="margin-top:6px;"><button class="btn btn-sm btn-outline" onclick="loadDefaultSpDescTpl()">デフォルト読込</button></div>
             </td>
           </tr>
           <tr>
             <th>PC用販売説明文</th>
             <td>
               <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
-              <textarea id="mall-rakuten-sale-desc-tpl" class="rms-textarea" placeholder="HTMLテンプレート"></textarea>
+              <textarea id="mall-rakuten-sale-desc-tpl" class="rms-textarea" style="height:200px;" placeholder="HTMLテンプレート"></textarea>
+              <div style="margin-top:6px;"><button class="btn btn-sm btn-outline" onclick="loadDefaultSaleDescTpl()">デフォルト読込</button></div>
             </td>
           </tr>
           <tr>
@@ -679,7 +682,11 @@
               <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{洗濯表記}</code>
               <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{販売金額}</code>
               <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{商品番号}</code>
-              <br><span style="color:var(--text-light);">↑ 自社Excelの対応列の値で自動置換されます</span>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{カテゴリ}</code>
+              <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{仕入金額}</code>
+              <br>
+              <code style="background:#e8f5e9; padding:2px 6px; border-radius:3px;">{画像URL1}</code>〜<code style="background:#e8f5e9; padding:2px 6px; border-radius:3px;">{画像URL20}</code>
+              <br><span style="color:var(--text-light);">↑ 自社Excelの対応列の値で自動置換されます。画像URLは品番+カラーコードから自動生成されます。</span>
             </td>
           </tr>
         </table>
@@ -700,6 +707,22 @@
             </td>
           </tr>
           <tr>
+            <th>画像キャビネットベース</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="text" id="mall-rakuten-img-cabinet-base" class="rms-input" style="width:200px;" value="/shohin/" placeholder="/shohin/">
+              <br><span style="font-size:11px; color:var(--text-light);">品番から自動生成するURLの基準パス。例: /shohin/ → cabinet/shohin/2026/202603/nlpt495-1r.jpg</span>
+            </td>
+          </tr>
+          <tr>
+            <th>最大画像枚数</th>
+            <td>
+              <span class="src-master">マスタ</span>
+              <input type="number" id="mall-rakuten-max-images" class="rms-input" style="width:80px;" value="20" min="3" max="20">
+              <span style="font-size:11px; color:var(--text-light); margin-left:6px;">楽天の上限は20枚。1枚目(メイン) + カラバリ + 最後2枚(固定) で構成</span>
+            </td>
+          </tr>
+          <tr>
             <th>SKU画像タイプ</th>
             <td>
               <span class="src-master">マスタ</span>
@@ -707,6 +730,16 @@
                 <option value="0">0: 商品画像</option>
                 <option value="1">1: 商品説明画像</option>
               </select>
+            </td>
+          </tr>
+          <tr>
+            <th>画像URL生成ルール</th>
+            <td style="font-size:12px; line-height:1.8; color:var(--text-light);">
+              品番 <code>nlpt495-2603</code> + カラーコード <code>EC, BK</code> の場合：<br>
+              <code>1枚目: nlpt495-1r.jpg</code>（メイン画像）<br>
+              <code>2〜N枚目: nlpt495-ec1.jpg, nlpt495-ec2.jpg, ... nlpt495-bk1.jpg, ...</code>（カラバリ均等割当）<br>
+              <code>最後-1: nlpt495-10.jpg</code> / <code>最後: nlpt495-11.jpg</code>（固定）<br>
+              フォルダは品番の末尾4桁から自動生成: <code>2603</code> → <code>2026/202603/</code>
             </td>
           </tr>
         </table>

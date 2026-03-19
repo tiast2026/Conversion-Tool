@@ -209,7 +209,8 @@ let MASTER = {
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
       shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', shippingSets: [], asuraku: '', deliveryInfo: '', noshi: '0',
       pcDescTpl: '', spDescTpl: '', saleDescTpl: '',
-      imgCabinet: '', imgType: '0'
+      imgCabinet: '', imgType: '0',
+      imgCabinetBase: '/shohin/', maxProductImages: 20
     },
     shopline: { priceRate: 100, defaultStock: 0, namePrefix: '', nameSuffix: '' },
     yahoo:    { priceRate: 40, namePrefix: '', nameSuffix: '' },
@@ -255,6 +256,76 @@ Lサイズ,3
 
 const DEFAULT_NAME_CLEAN = `《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
 const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レビューを書いて-->\n<!--コンセプト-->\n<!--よくある質問-->`;
+
+// デフォルト説明文テンプレート
+const DEFAULT_PC_DESC_TPL = `<table border="0" cellpadding="0" cellspacing="0" width="100%">
+<tr><td>
+<img src="{画像URL1}" alt="{商品名}" width="750"><br>
+<img src="{画像URL2}" alt="{商品名}" width="750"><br>
+<img src="{画像URL3}" alt="{商品名}" width="750"><br>
+<img src="{画像URL4}" alt="{商品名}" width="750"><br>
+<img src="{画像URL5}" alt="{商品名}" width="750"><br>
+<img src="{画像URL6}" alt="{商品名}" width="750"><br>
+<img src="{画像URL7}" alt="{商品名}" width="750"><br>
+<img src="{画像URL8}" alt="{商品名}" width="750"><br>
+<img src="{画像URL9}" alt="{商品名}" width="750"><br>
+<img src="{画像URL10}" alt="{商品名}" width="750"><br>
+<img src="{画像URL11}" alt="{商品名}" width="750"><br>
+<img src="{画像URL12}" alt="{商品名}" width="750"><br>
+<img src="{画像URL13}" alt="{商品名}" width="750"><br>
+<img src="{画像URL14}" alt="{商品名}" width="750"><br>
+<img src="{画像URL15}" alt="{商品名}" width="750"><br>
+<img src="{画像URL16}" alt="{商品名}" width="750"><br>
+<img src="{画像URL17}" alt="{商品名}" width="750"><br>
+<img src="{画像URL18}" alt="{商品名}" width="750"><br>
+<img src="{画像URL19}" alt="{商品名}" width="750"><br>
+<img src="{画像URL20}" alt="{商品名}" width="750">
+</td></tr>
+</table>`;
+
+const DEFAULT_SP_DESC_TPL = `<div style="width:100%; max-width:640px; margin:0 auto;">
+<img src="{画像URL1}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL2}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL3}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL4}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL5}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL6}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL7}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL8}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL9}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL10}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL11}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL12}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL13}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL14}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL15}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL16}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL17}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL18}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL19}" alt="{商品名}" width="100%"><br>
+<img src="{画像URL20}" alt="{商品名}" width="100%">
+</div>`;
+
+const DEFAULT_SALE_DESC_TPL = `<div style="font-size:14px; line-height:1.8;">
+<h3 style="border-bottom:2px solid #333; padding-bottom:6px;">{商品名}</h3>
+<p>{商品ポイント}</p>
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse; width:100%; max-width:600px; font-size:13px;">
+<tr><th style="background:#f5f5f5; width:120px;">素材</th><td>{素材}</td></tr>
+<tr><th style="background:#f5f5f5;">サイズ</th><td>{採寸サイズ}</td></tr>
+<tr><th style="background:#f5f5f5;">仕様</th><td>{仕様}</td></tr>
+<tr><th style="background:#f5f5f5;">洗濯表記</th><td>{洗濯表記}</td></tr>
+</table>
+</div>`;
+
+function loadDefaultPcDescTpl() {
+  document.getElementById('mall-rakuten-pc-desc-tpl').value = DEFAULT_PC_DESC_TPL;
+}
+function loadDefaultSpDescTpl() {
+  document.getElementById('mall-rakuten-sp-desc-tpl').value = DEFAULT_SP_DESC_TPL;
+}
+function loadDefaultSaleDescTpl() {
+  document.getElementById('mall-rakuten-sale-desc-tpl').value = DEFAULT_SALE_DESC_TPL;
+}
 
 // ============================================================
 // INIT
@@ -473,6 +544,8 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-sp-desc-tpl')) el('mall-rakuten-sp-desc-tpl').value = m.spDescTpl || '';
     if (el('mall-rakuten-sale-desc-tpl')) el('mall-rakuten-sale-desc-tpl').value = m.saleDescTpl || '';
     if (el('mall-rakuten-img-cabinet')) el('mall-rakuten-img-cabinet').value = m.imgCabinet || '';
+    if (el('mall-rakuten-img-cabinet-base')) el('mall-rakuten-img-cabinet-base').value = m.imgCabinetBase || '/shohin/';
+    if (el('mall-rakuten-max-images')) el('mall-rakuten-max-images').value = m.maxProductImages || 20;
     if (el('mall-rakuten-img-type')) el('mall-rakuten-img-type').value = m.imgType || '0';
     if (el('mall-rakuten-service-secret')) el('mall-rakuten-service-secret').value = m.serviceSecret || '';
     if (el('mall-rakuten-license-key')) el('mall-rakuten-license-key').value = m.licenseKey || '';
@@ -563,6 +636,8 @@ function saveMallMaster(mall) {
     m.spDescTpl = el('mall-rakuten-sp-desc-tpl')?.value || '';
     m.saleDescTpl = el('mall-rakuten-sale-desc-tpl')?.value || '';
     m.imgCabinet = el('mall-rakuten-img-cabinet')?.value?.trim() || '';
+    m.imgCabinetBase = el('mall-rakuten-img-cabinet-base')?.value?.trim() || '/shohin/';
+    m.maxProductImages = parseInt(el('mall-rakuten-max-images')?.value) || 20;
     m.imgType = el('mall-rakuten-img-type')?.value || '0';
     m.serviceSecret = el('mall-rakuten-service-secret')?.value?.trim() || '';
     m.licenseKey = el('mall-rakuten-license-key')?.value?.trim() || '';
@@ -1038,6 +1113,12 @@ function structureJisha() {
           currentProduct.id = currentProduct.number;
         }
       }
+      // SKU商品番号からカラーコードを抽出: nlpt495-2603-EC-M → EC
+      let colorCode = '';
+      if (skuProductNo) {
+        const parts = skuProductNo.split('-');
+        if (parts.length >= 3) colorCode = parts[2];
+      }
       const sku = {
         rowIndex: r,
         parentId: currentProduct.id,
@@ -1045,6 +1126,7 @@ function structureJisha() {
         systemSku: janCode || '',
         jan: janCode || '',
         color: colorVal || '',
+        colorCode: colorCode,
         size: sizeVal || '',  // L列＝サイズ
         price: currentProduct.sellPrice || '',  // 販売金額は親行のR列をそのまま使用
         variants: [],
@@ -1066,6 +1148,65 @@ function structureJisha() {
 function buildRakutenImgUrl(imgPath) {
   if (!imgPath) return '';
   return `https://image.rakuten.co.jp/noahl/cabinet${imgPath}`;
+}
+
+// 品番から楽天商品画像URLリスト（最大20枚）を自動生成
+// 例: nlpt495-2603 → base=nlpt495, folder=2026/202603/
+// 1枚目: {base}-1r.jpg  最後: {base}-11.jpg  最後から2番目: {base}-10.jpg
+// 残り: カラーコード別に均等分配 {base}-{colorCode}1.jpg ～
+function generateRakutenImageUrls(prod) {
+  const rm = MASTER.malls.rakuten;
+  const maxImages = rm.maxProductImages || 20;
+  const number = prod.number || '';
+  if (!number) return [];
+
+  // 品番を分解: nlpt495-2603 → base=nlpt495, ymCode=2603
+  const parts = number.split('-');
+  if (parts.length < 2) return [];
+  const base = parts[0];
+  const ymCode = parts[1]; // 2603
+
+  // フォルダパス: 2603 → 2026/202603/
+  const yy = ymCode.substring(0, 2);
+  const folder = `20${yy}/20${ymCode}/`;
+  const cabinetBase = rm.imgCabinetBase || '/shohin/';
+  const urlBase = `https://image.rakuten.co.jp/noahl/cabinet${cabinetBase}${folder}${base}`;
+
+  // SKUからユニークなカラーコードを取得（出現順を維持）
+  const colorCodes = [];
+  const seen = new Set();
+  prod.skus.forEach(sku => {
+    const code = sku.colorCode || '';
+    if (code && !seen.has(code)) {
+      seen.add(code);
+      colorCodes.push(code.toLowerCase());
+    }
+  });
+
+  if (colorCodes.length === 0) return [`${urlBase}.jpg`];
+
+  const urls = [];
+
+  // 1枚目: メイン画像
+  urls.push(`${urlBase}-1r.jpg`);
+
+  // カラバリ枚数の計算: 全体 - 固定3枚(1r, -10, -11)
+  const colorSlots = maxImages - 3;
+  const perColor = Math.floor(colorSlots / colorCodes.length);
+
+  // カラーバリエーション画像
+  colorCodes.forEach(code => {
+    for (let i = 1; i <= perColor; i++) {
+      urls.push(`${urlBase}-${code}${i}.jpg`);
+    }
+  });
+
+  // 最後から2番目: -10
+  urls.push(`${urlBase}-10.jpg`);
+  // 最後: -11
+  urls.push(`${urlBase}-11.jpg`);
+
+  return urls;
 }
 
 // ============================================================
@@ -2572,7 +2713,9 @@ function downloadMall(mallKey) {
 // テンプレート置換: {商品名} {素材} 等を実データに置換
 function applyDescTemplate(tpl, prod) {
   if (!tpl) return '';
-  return tpl
+  // 画像URLリストを生成
+  const imageUrls = generateRakutenImageUrls(prod);
+  let result = tpl
     .replace(/\{商品名\}/g, prod.cleanName || prod.name || '')
     .replace(/\{素材\}/g, prod.material || '')
     .replace(/\{採寸サイズ\}/g, prod.measureSize || '')
@@ -2580,7 +2723,14 @@ function applyDescTemplate(tpl, prod) {
     .replace(/\{仕様\}/g, prod.spec || '')
     .replace(/\{洗濯表記\}/g, prod.laundryLabel || '')
     .replace(/\{販売金額\}/g, prod.sellPrice || '')
-    .replace(/\{商品番号\}/g, prod.number || '');
+    .replace(/\{商品番号\}/g, prod.number || '')
+    .replace(/\{カテゴリ\}/g, prod.category || '')
+    .replace(/\{仕入金額\}/g, prod.costPrice || '');
+  // {画像URL1}〜{画像URL20} を置換
+  for (let i = 1; i <= 20; i++) {
+    result = result.replace(new RegExp(`\\{画像URL${i}\\}`, 'g'), imageUrls[i - 1] || '');
+  }
+  return result;
 }
 
 function convertToRakuten() {
@@ -2603,7 +2753,11 @@ function convertToRakuten() {
     '通常購入販売価格','SKU在庫数',
     'カタログID','カタログIDなしの理由',
     'SKU画像タイプ','SKU画像パス',
-    '自由入力行（項目）1','自由入力行（値）1'
+    '自由入力行（項目）1','自由入力行（値）1',
+    '商品画像URL1','商品画像URL2','商品画像URL3','商品画像URL4','商品画像URL5',
+    '商品画像URL6','商品画像URL7','商品画像URL8','商品画像URL9','商品画像URL10',
+    '商品画像URL11','商品画像URL12','商品画像URL13','商品画像URL14','商品画像URL15',
+    '商品画像URL16','商品画像URL17','商品画像URL18','商品画像URL19','商品画像URL20'
   ];
   const RI = {};
   rH.forEach((h, i) => RI[h] = i);
@@ -2668,6 +2822,13 @@ function convertToRakuten() {
         const sortedSizes = [...sizeSet].sort((a, b) => (sizeOrder[a] || 99) - (sizeOrder[b] || 99));
         pRow[RI['バリエーション2選択肢定義']] = sortedSizes.join('|');
       }
+      // 商品画像URL: 自動生成
+      const imageUrls = generateRakutenImageUrls(prod);
+      imageUrls.forEach((url, i) => {
+        if (i < 20 && RI[`商品画像URL${i + 1}`] !== undefined) {
+          pRow[RI[`商品画像URL${i + 1}`]] = url;
+        }
+      });
       rows.push(pRow);
       // SKU行
       prod.skus.forEach(sku => {
