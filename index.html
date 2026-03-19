@@ -861,7 +861,14 @@
           <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品登録後にitem-cat.csvをアップロードすると、ショップカテゴリに商品が表示されます。</p>
           <table class="rms-form" style="margin:0;">
             <tr>
-              <th style="width:200px;">デフォルト優先度</th>
+              <th style="width:200px;">デフォルト表示先カテゴリ</th>
+              <td>
+                <input type="text" id="mall-rakuten-itemcat-default-cat" class="rms-input" style="width:340px;" placeholder="例: ボトムス\パンツ">
+                <span style="font-size:11px; color:var(--text-light); margin-left:6px;">マッピングに該当しない商品に適用。階層は <code>\</code> 区切り</span>
+              </td>
+            </tr>
+            <tr>
+              <th>デフォルト優先度</th>
               <td>
                 <input type="text" id="mall-rakuten-itemcat-priority" class="rms-input" style="width:100px;" placeholder="例: 100">
                 <span style="font-size:11px; color:var(--text-light); margin-left:6px;">カテゴリ内の表示順（数値が大きいほど上位）。空欄可</span>

@@ -657,6 +657,7 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-cors-proxy')) el('mall-rakuten-cors-proxy').value = m.corsProxy || '';
     // item-cat.csv設定
     if (el('mall-rakuten-itemcat-priority')) el('mall-rakuten-itemcat-priority').value = m.itemCatPriority || '';
+    if (el('mall-rakuten-itemcat-default-cat')) el('mall-rakuten-itemcat-default-cat').value = m.itemCatDefaultCat || '';
     if (el('mall-rakuten-shop-category-map')) {
       const catMap = m.shopCategoryMap || {};
       const lines = Object.entries(catMap).map(([key, val]) => {
@@ -761,15 +762,18 @@ function saveMallMaster(mall) {
     m.corsProxy = el('mall-rakuten-cors-proxy')?.value?.trim() || '';
     // item-cat.csv設定
     m.itemCatPriority = el('mall-rakuten-itemcat-priority')?.value?.trim() || '';
+    m.itemCatDefaultCat = el('mall-rakuten-itemcat-default-cat')?.value?.trim() || '';
     const catMapText = el('mall-rakuten-shop-category-map')?.value || '';
     const catMapObj = {};
-    catMapText.split('\n').map(l => l.trim()).filter(l => l && l.includes(',')).forEach(line => {
-      const parts = line.split(',');
-      const key = parts[0].trim();
-      const cat = parts[1].trim();
-      const pri = (parts[2] || '').trim();
-      if (key && cat) {
-        catMapObj[key] = pri ? { cat, priority: pri } : cat;
+    catMapText.split('\n').map(l => l.trim()).filter(l => l).forEach(line => {
+      if (line.includes(',')) {
+        const parts = line.split(',');
+        const key = parts[0].trim();
+        const cat = parts[1].trim();
+        const pri = (parts[2] || '').trim();
+        if (key && cat) {
+          catMapObj[key] = pri ? { cat, priority: pri } : cat;
+        }
       }
     });
     m.shopCategoryMap = catMapObj;
@@ -3620,11 +3624,12 @@ function convertToItemCat() {
   // or simple format: { "Tシャツ・カットソー": "トップス\\Tシャツ・カットソー", ... }
   const catMap = rm.shopCategoryMap || {};
   const defaultPriority = rm.itemCatPriority || '';
+  const defaultCat = rm.itemCatDefaultCat || '';
 
   products.forEach(prod => {
     const itemId = prod.number || '';
     if (!itemId) return;
-    // カテゴリパスを決定: shopCategoryMap > GENRE_MAP推測 > category直接
+    // カテゴリパスを決定: shopCategoryMap > GENRE_MAP推測 > category直接 > デフォルト
     const rawCat = prod.category || '';
     let shopCat = '';
     let priority = defaultPriority;
@@ -3646,6 +3651,7 @@ function convertToItemCat() {
         shopCat = rawCat;
       }
     }
+    if (!shopCat) shopCat = defaultCat;
     if (!shopCat) return;
 
     const r = new Array(catHeaders.length).fill('');
