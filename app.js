@@ -2904,8 +2904,21 @@ function convertToRakuten() {
         sRow[RI['通常購入販売価格']] = sku.price || prod.sellPrice;
         sRow[RI['SKU在庫数']] = sku._stock || '0';
         sRow[RI['カタログIDなしの理由']] = sku._catalogReason !== undefined ? sku._catalogReason : (prod._catalogReason || rm.catalogReason || '3');
-        sRow[RI['SKU画像タイプ']] = sku._skuImgType || '';
-        sRow[RI['SKU画像パス']] = sku._skuImgPath || '';
+        // SKU画像: オーバーライドがなければカラーコードから自動生成
+        if (sku._skuImgType || sku._skuImgPath) {
+          sRow[RI['SKU画像タイプ']] = sku._skuImgType || '';
+          sRow[RI['SKU画像パス']] = sku._skuImgPath || '';
+        } else if (sku.colorCode) {
+          const skuParts = (prod.number || '').split('-');
+          if (skuParts.length >= 2) {
+            const skuBase = skuParts[0];
+            const skuYm = skuParts[1];
+            const skuYy = skuYm.substring(0, 2);
+            const skuFolder = `20${skuYy}/20${skuYm}/`;
+            const skuCabinetBase = rm.imgCabinetBase || '/shohin/';
+            sRow[RI['SKU画像パス']] = `https://image.rakuten.co.jp/noahl/cabinet${skuCabinetBase}${skuFolder}${skuBase}-${sku.colorCode.toLowerCase()}1.jpg`;
+          }
+        }
         sRow[RI['自由入力行（項目）1']] = '型番';
         sRow[RI['自由入力行（値）1']] = sku.jan || sku.skuMgmtNo;
         rows.push(sRow);
