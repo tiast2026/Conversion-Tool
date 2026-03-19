@@ -76,7 +76,8 @@
       "spDescTpl": "",
       "saleDescTpl": "",
       "imgCabinet": "",
-      "imgType": "0"
+      "imgType": "0",
+      "shopCategoryMap": {}
     },
     "shopline": {
       "priceRate": 100,

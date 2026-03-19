@@ -2888,6 +2888,10 @@ function renderStep4Download() {
     html += `<div class="mall-desc">${mall.desc}</div>`;
     if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
     html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ CSVダウンロード</button>`;
+    // 楽天の場合: item-cat.csvダウンロードボタン
+    if (key === 'rakuten') {
+      html += `<button class="btn btn-outline" onclick="downloadItemCat()" style="margin-top:6px; font-size:12px;">⬇ item-cat.csv（カテゴリ）</button>`;
+    }
     // 楽天 + 自社Excelの場合: API直接登録ボタンを追加
     if (key === 'rakuten' && sourceType === 'jisha') {
       const hasApiCreds = MASTER.malls.rakuten.serviceSecret && MASTER.malls.rakuten.licenseKey;
@@ -3571,6 +3575,79 @@ function convertToQoo10() {
     rows.push(r);
   });
   return { headers: qH, rows };
+}
+
+// ============================================================
+// CONVERSION: item-cat.csv（楽天カテゴリ紐づけCSV）
+// ============================================================
+function convertToItemCat() {
+  const rm = MASTER.malls.rakuten;
+  const catHeaders = [
+    'コントロールカラム',
+    '商品管理番号（商品URL）',
+    '商品名',
+    '表示先カテゴリ',
+    '優先度',
+    '1ページ複数形式項目',
+    'カテゴリセット管理番号'
+  ];
+  const rows = [];
+  // shopCategoryMap: { "Tシャツ・カットソー": "トップス\\Tシャツ・カットソー", ... }
+  const catMap = rm.shopCategoryMap || {};
+
+  products.forEach(prod => {
+    const itemId = prod.number || '';
+    if (!itemId) return;
+    const prodName = (sourceType === 'rakuten')
+      ? (prod.cleanName || prod.name || '')
+      : applyMallName(prod.cleanName || prod.name, 'rakuten');
+    // カテゴリパスを決定: shopCategoryMap > category直接
+    const rawCat = prod.category || '';
+    let shopCat = '';
+    if (catMap[rawCat]) {
+      shopCat = catMap[rawCat];
+    } else if (rawCat) {
+      // GENRE_MAPから推測: ジャンルIDを使ってパスを取得し、先頭セグメント（レディースファッション等）を除く
+      const gid = guessGenreId(rawCat, prod.cleanName || prod.name);
+      if (gid && GENRE_MAP[gid]) {
+        const segments = GENRE_MAP[gid].split(' > ');
+        // 先頭（レディースファッション等）を除いた残りを \ で結合
+        shopCat = segments.length > 1 ? segments.slice(1).join('\\') : segments[0];
+      } else {
+        shopCat = rawCat;
+      }
+    }
+    if (!shopCat) return;
+
+    const r = new Array(catHeaders.length).fill('');
+    r[0] = rm.controlCol || 'n';  // コントロールカラム
+    r[1] = itemId;                 // 商品管理番号
+    r[2] = prodName;               // 商品名
+    r[3] = shopCat;                // 表示先カテゴリ
+    r[4] = '';                     // 優先度
+    r[5] = '';                     // 1ページ複数形式項目
+    r[6] = '';                     // カテゴリセット管理番号
+    rows.push(r);
+  });
+  return { headers: catHeaders, rows };
+}
+
+function downloadItemCat() {
+  const result = convertToItemCat();
+  if (result.rows.length === 0) {
+    notify('カテゴリ情報のある商品がありません', 'warning');
+    return;
+  }
+  const csvStr = buildCSV(result.headers, result.rows);
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvStr], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `item-cat_${dateTimeStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('item-cat.csv（カテゴリ紐づけ）をダウンロードしました', 'success');
 }
 
 // ============================================================
