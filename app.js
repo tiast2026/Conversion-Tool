@@ -2833,7 +2833,7 @@ function convertToRakuten() {
       pRow[RI['のし対応']] = prod._noshi !== undefined ? prod._noshi : (rm.noshi || '0');
       pRow[RI['在庫タイプ']] = prod._stockType !== undefined ? prod._stockType : (rm.stockType || '1');
       pRow[RI['再入荷お知らせボタン']] = prod._restockBtn !== undefined ? prod._restockBtn : (rm.restockBtn || '0');
-      pRow[RI['キャッチコピー']] = prod._catchCopy || prod.productPoint || rakutenName;
+      pRow[RI['キャッチコピー']] = prod._catchCopy || prod.name || rakutenName;
       pRow[RI['PC用商品説明文']] = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
       pRow[RI['スマートフォン用商品説明文']] = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
       pRow[RI['PC用販売説明文']] = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
