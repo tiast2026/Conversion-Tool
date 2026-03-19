@@ -1314,6 +1314,21 @@ function generateRakutenImageUrls(prod) {
   return urls;
 }
 
+// 品番img画像URL生成: nltp497img.jpg
+function generateImgUrl(prod) {
+  const rm = MASTER.malls.rakuten;
+  const number = prod.number || '';
+  if (!number) return '';
+  const parts = number.split('-');
+  if (parts.length < 2) return '';
+  const base = parts[0];
+  const ymCode = parts[1];
+  const yy = ymCode.substring(0, 2);
+  const folder = `20${yy}/20${ymCode}/`;
+  const cabinetBase = rm.imgCabinetBase || '/shohin/';
+  return `https://image.rakuten.co.jp/noahl/cabinet${cabinetBase}${folder}${base}img.jpg`;
+}
+
 // 色番号別の画像URLマップを生成: { 1: [url1, url2, ...], 2: [...], ... }
 function generateColorImageMap(prod) {
   const rm = MASTER.malls.rakuten;
@@ -1342,8 +1357,7 @@ function generateColorImageMap(prod) {
 
   if (colorCodes.length === 0) return {};
 
-  const colorSlots = maxImages - 3;
-  const perColor = Math.floor(colorSlots / colorCodes.length);
+  const perColor = rm.imagesPerColor || 10;
   const map = {};
   colorCodes.forEach((code, idx) => {
     const urls = [];
@@ -2954,6 +2968,9 @@ function applyDescTemplate(tpl, prod) {
     .replace(/\{採寸サイズ整形\}/g, formatMeasureSize(prod.measureSize))
     .replace(/\{カラー一覧\}/g, formatColorList(prod))
     .replace(/\{仕様整形\}/g, formatSpec(prod.spec));
+  // {img画像} を置換（品番img.jpg）
+  const imgUrl = generateImgUrl(prod);
+  result = result.replace(/\{img画像\}/g, imgUrl);
   // {画像URL1}〜{画像URL20} を置換
   for (let i = 1; i <= 20; i++) {
     result = result.replace(new RegExp(`\\{画像URL${i}\\}`, 'g'), imageUrls[i - 1] || '');
