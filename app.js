@@ -217,6 +217,9 @@ let MASTER = {
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
 };
+let PROFILES = {};       // { "NOAHL": {...}, "BrandB": {...} }
+let ACTIVE_PROFILE = ''; // 現在選択中のプロファイル名
+let GH_TOKEN_SHARED = ''; // GitHub Token（全プロファイル共通）
 
 // ============================================================
 // DEFAULT MASTER DATA
@@ -446,30 +449,50 @@ function applyMasterData(d) {
 }
 
 (async function initMaster() {
-  // 1) GitHubからmaster-config.jsonを取得（最新のマスタ設定）
   let loaded = false;
+  let configData = null;
+  // 1) GitHubからmaster-config.jsonを取得
   try {
     const ghUrl = `https://raw.githubusercontent.com/${GH_REPO_OWNER}/${GH_REPO_NAME}/${GH_BRANCH}/${GH_FILE_PATH}?t=${Date.now()}`;
     const res = await fetch(ghUrl);
     if (res.ok) {
-      const remote = await res.json();
-      applyMasterData(remote);
-      localStorage.setItem('noahl_master', JSON.stringify(MASTER));
+      configData = await res.json();
       loaded = true;
     }
   } catch(e) {}
   // 2) GitHub取得失敗時はlocalStorageから復元
   if (!loaded) {
     try {
-      const saved = localStorage.getItem('noahl_master');
-      if (saved) {
-        const d = JSON.parse(saved);
-        applyMasterData(d);
-        if (d.priceRate && !d.malls) MASTER.malls.rakuten.priceRate = d.priceRate;
-        if (d.taxType !== undefined && !d.malls) MASTER.malls.rakuten.taxType = d.taxType;
-      }
+      const saved = localStorage.getItem('noahl_master_profiles');
+      if (saved) configData = JSON.parse(saved);
     } catch(e2) {}
+    // 旧形式のlocalStorageからの移行
+    if (!configData) {
+      try {
+        const oldSaved = localStorage.getItem('noahl_master');
+        if (oldSaved) {
+          const d = JSON.parse(oldSaved);
+          configData = { activeProfile: 'NOAHL', ghToken: '', profiles: { 'NOAHL': d } };
+        }
+      } catch(e3) {}
+    }
   }
+  // プロファイル構造を適用
+  if (configData && configData.profiles) {
+    PROFILES = configData.profiles;
+    ACTIVE_PROFILE = configData.activeProfile || Object.keys(PROFILES)[0] || '';
+    GH_TOKEN_SHARED = configData.ghToken || '';
+    if (GH_TOKEN_SHARED) saveGitHubToken(GH_TOKEN_SHARED);
+    if (ACTIVE_PROFILE && PROFILES[ACTIVE_PROFILE]) {
+      applyMasterData(PROFILES[ACTIVE_PROFILE]);
+    }
+  } else if (configData) {
+    // 旧形式（プロファイルなし）からの移行
+    applyMasterData(configData);
+    ACTIVE_PROFILE = 'NOAHL';
+    PROFILES['NOAHL'] = JSON.parse(JSON.stringify(MASTER));
+  }
+  localStorage.setItem('noahl_master_profiles', JSON.stringify({ activeProfile: ACTIVE_PROFILE, ghToken: GH_TOKEN_SHARED, profiles: PROFILES }));
   // デフォルト値の補完
   if (Object.keys(MASTER.colorOrder).length === 0) {
     MASTER.colorOrder = parseColorOrderText(DEFAULT_COLOR_ORDER);
@@ -480,6 +503,8 @@ function applyMasterData(d) {
   if (MASTER.deleteTemplates.length === 0) {
     MASTER.deleteTemplates = DEFAULT_DELETE_TPL.split('\n').filter(l => l.trim());
   }
+  // プロファイルセレクターを更新
+  updateProfileSelector();
 })();
 
 // GitHub連携設定
@@ -488,40 +513,67 @@ const GH_REPO_NAME = 'Conversion-Tool';
 const GH_FILE_PATH = 'master-config.json';
 const GH_BRANCH = 'main';
 
+let _masterDirty = false; // 未保存の変更があるか
+
 function getGitHubToken() {
-  return localStorage.getItem('noahl_gh_token') || '';
+  return GH_TOKEN_SHARED || localStorage.getItem('noahl_gh_token') || '';
 }
 
 function saveGitHubToken(token) {
-  if (token) {
-    localStorage.setItem('noahl_gh_token', token.trim());
+  GH_TOKEN_SHARED = token ? token.trim() : '';
+  if (GH_TOKEN_SHARED) {
+    localStorage.setItem('noahl_gh_token', GH_TOKEN_SHARED);
   } else {
     localStorage.removeItem('noahl_gh_token');
   }
 }
 
-// マスタ設定をGitHubに保存（API認証情報は除外）
-function buildExportData() {
+function markMasterDirty() {
+  _masterDirty = true;
+}
+
+// 現在のMASTERをアクティブプロファイルに反映
+function syncMasterToProfile() {
+  if (!ACTIVE_PROFILE) return;
+  // UIからMASTERに値を取り込み（各モール）
+  ['rakuten', 'futureshop', 'zozo', 'rakufashion'].forEach(mall => {
+    const panel = document.getElementById('mall-' + mall);
+    if (panel) saveMallMasterSilent(mall);
+  });
+  // 変換設定
+  const coEl = document.getElementById('master-color-order');
+  if (coEl && coEl.value) MASTER.colorOrder = parseColorOrderText(coEl.value);
+  const ncEl = document.getElementById('master-name-clean');
+  if (ncEl && ncEl.value) MASTER.nameCleanPatterns = ncEl.value.split('\n').filter(l => l.trim());
+  const dtEl = document.getElementById('master-delete-tpl');
+  if (dtEl && dtEl.value) MASTER.deleteTemplates = dtEl.value.split('\n').filter(l => l.trim());
+  // プロファイルに保存（API認証情報は除外）
   const exportData = JSON.parse(JSON.stringify(MASTER));
   if (exportData.malls && exportData.malls.rakuten) {
     delete exportData.malls.rakuten.serviceSecret;
     delete exportData.malls.rakuten.licenseKey;
     delete exportData.malls.rakuten.corsProxy;
   }
-  return exportData;
+  PROFILES[ACTIVE_PROFILE] = exportData;
 }
 
+// 全プロファイルをGitHubに保存
 async function saveToGitHub() {
   const token = getGitHubToken();
   if (!token) {
     notify('GitHub Tokenが未設定です。マスタ設定 → 共通 → GitHub連携 から設定してください。', 'warning');
     return false;
   }
-  const exportData = buildExportData();
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(exportData, null, 2))));
+  syncMasterToProfile();
+  const configData = {
+    activeProfile: ACTIVE_PROFILE,
+    ghToken: GH_TOKEN_SHARED,
+    profiles: PROFILES
+  };
+  localStorage.setItem('noahl_master_profiles', JSON.stringify(configData));
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(configData, null, 2))));
   const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${GH_FILE_PATH}`;
   try {
-    // 既存ファイルのSHAを取得（更新時に必要）
     let sha = '';
     const getRes = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, {
       headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -530,23 +582,15 @@ async function saveToGitHub() {
       const existing = await getRes.json();
       sha = existing.sha;
     }
-    // ファイルを作成/更新
-    const body = {
-      message: 'マスタ設定を更新',
-      content: content,
-      branch: GH_BRANCH
-    };
+    const body = { message: `マスタ設定を更新（${ACTIVE_PROFILE}）`, content, branch: GH_BRANCH };
     if (sha) body.sha = sha;
     const putRes = await fetch(apiUrl, {
       method: 'PUT',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     if (putRes.ok) {
+      _masterDirty = false;
       notify('GitHubに保存しました', 'success');
       return true;
     } else {
@@ -560,10 +604,100 @@ async function saveToGitHub() {
   }
 }
 
+// プロファイル管理
+function updateProfileSelector() {
+  const sel = document.getElementById('profile-selector');
+  if (!sel) return;
+  sel.innerHTML = '';
+  Object.keys(PROFILES).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === ACTIVE_PROFILE) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // メイン画面のプロファイル表示も更新
+  const badge = document.getElementById('active-profile-badge');
+  if (badge) badge.textContent = ACTIVE_PROFILE || '';
+}
+
+function switchProfile(name) {
+  if (!PROFILES[name]) return;
+  // 現在のプロファイルを保存
+  syncMasterToProfile();
+  // 新しいプロファイルを適用
+  ACTIVE_PROFILE = name;
+  applyMasterData(PROFILES[name]);
+  localStorage.setItem('noahl_master_profiles', JSON.stringify({ activeProfile: ACTIVE_PROFILE, ghToken: GH_TOKEN_SHARED, profiles: PROFILES }));
+  // UIを更新
+  updateProfileSelector();
+  openMaster();
+  notify(`プロファイル「${name}」に切り替えました`, 'success');
+}
+
+function saveProfileAs() {
+  const name = prompt('プロファイル名を入力してください:', '');
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  syncMasterToProfile();
+  // 現在のMASTERを新しいプロファイルとしてコピー
+  PROFILES[trimmed] = JSON.parse(JSON.stringify(PROFILES[ACTIVE_PROFILE] || MASTER));
+  ACTIVE_PROFILE = trimmed;
+  updateProfileSelector();
+  _masterDirty = true;
+  notify(`プロファイル「${trimmed}」を作成しました。GitHubに保存してください。`, 'info');
+}
+
+function deleteProfile() {
+  const names = Object.keys(PROFILES);
+  if (names.length <= 1) { notify('最後のプロファイルは削除できません', 'warning'); return; }
+  if (!confirm(`プロファイル「${ACTIVE_PROFILE}」を削除しますか？`)) return;
+  delete PROFILES[ACTIVE_PROFILE];
+  ACTIVE_PROFILE = Object.keys(PROFILES)[0];
+  applyMasterData(PROFILES[ACTIVE_PROFILE]);
+  updateProfileSelector();
+  openMaster();
+  _masterDirty = true;
+  notify(`プロファイルを削除しました。GitHubに保存してください。`, 'info');
+}
+
+// saveMallMasterのサイレント版（通知なし）
+function saveMallMasterSilent(mall) {
+  const m = MASTER.malls[mall];
+  const el = (id) => document.getElementById(id);
+  if (el(`mall-${mall}-price-rate`)) m.priceRate = parseInt(el(`mall-${mall}-price-rate`).value) || 100;
+  if (el(`mall-${mall}-tax`)) m.taxType = el(`mall-${mall}-tax`).value;
+  if (el(`mall-${mall}-name-prefix`)) m.namePrefix = el(`mall-${mall}-name-prefix`).value;
+  if (el(`mall-${mall}-name-suffix`)) m.nameSuffix = el(`mall-${mall}-name-suffix`).value;
+  if (mall === 'rakuten') {
+    if (el('mall-rakuten-control-col')) m.controlCol = el('mall-rakuten-control-col').value;
+    if (el('mall-rakuten-genre-id')) m.genreId = el('mall-rakuten-genre-id').value.trim();
+    if (el('mall-rakuten-catalog-reason')) m.catalogReason = el('mall-rakuten-catalog-reason').value;
+    if (el('mall-rakuten-stock-type')) m.stockType = el('mall-rakuten-stock-type').value;
+    if (el('mall-rakuten-restock-btn')) m.restockBtn = el('mall-rakuten-restock-btn').value;
+    if (el('mall-rakuten-point-rate')) m.pointRate = parseInt(el('mall-rakuten-point-rate').value) || 1;
+    if (el('mall-rakuten-point-start')) m.pointStart = el('mall-rakuten-point-start').value;
+    if (el('mall-rakuten-point-end')) m.pointEnd = el('mall-rakuten-point-end').value;
+    if (el('mall-rakuten-shipping-fee')) m.shippingFee = el('mall-rakuten-shipping-fee').value;
+    if (el('mall-rakuten-indiv-shipping')) m.indivShipping = parseInt(el('mall-rakuten-indiv-shipping').value) || 0;
+    if (el('mall-rakuten-asuraku')) m.asuraku = el('mall-rakuten-asuraku').value;
+    if (el('mall-rakuten-delivery-info')) m.deliveryInfo = el('mall-rakuten-delivery-info').value;
+    if (el('mall-rakuten-noshi')) m.noshi = el('mall-rakuten-noshi').value;
+    if (el('mall-rakuten-pc-desc-tpl')) m.pcDescTpl = el('mall-rakuten-pc-desc-tpl').value;
+    if (el('mall-rakuten-sp-desc-tpl')) m.spDescTpl = el('mall-rakuten-sp-desc-tpl').value;
+    if (el('mall-rakuten-sale-desc-tpl')) m.saleDescTpl = el('mall-rakuten-sale-desc-tpl').value;
+    if (el('mall-rakuten-img-cabinet')) m.imgCabinet = el('mall-rakuten-img-cabinet').value;
+    if (el('mall-rakuten-img-type')) m.imgType = el('mall-rakuten-img-type').value;
+    if (el('mall-rakuten-img-cabinet-base')) m.imgCabinetBase = el('mall-rakuten-img-cabinet-base').value;
+    if (el('mall-rakuten-max-product-images')) m.maxProductImages = parseInt(el('mall-rakuten-max-product-images').value) || 20;
+  }
+}
+
 // マスタ設定をJSONファイルとしてエクスポート（ローカルダウンロード用）
 function exportMasterConfig() {
-  const exportData = buildExportData();
-  const json = JSON.stringify(exportData, null, 2);
+  syncMasterToProfile();
+  const configData = { activeProfile: ACTIVE_PROFILE, ghToken: GH_TOKEN_SHARED, profiles: PROFILES };
+  const json = JSON.stringify(configData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -590,6 +724,9 @@ function parseColorOrderText(text) {
 // ============================================================
 function openMaster() {
   document.getElementById('master-modal').style.display = 'block';
+  _masterDirty = false;
+  // プロファイルセレクターを更新
+  updateProfileSelector();
   // 共通 変換設定を読み込み
   const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
   if (document.getElementById('master-color-order')) document.getElementById('master-color-order').value = co;
@@ -601,12 +738,9 @@ function openMaster() {
   loadMallMasterUI('zozo');
   loadMallMasterUI('rakufashion');
   initCorsProxyCodeDisplay();
-  // GitHub Token を表示（マスク済みの値を入力欄にセット）
+  // GitHub Token を表示
   const ghInput = document.getElementById('gh-token-input');
-  if (ghInput) {
-    const t = getGitHubToken();
-    ghInput.value = t;
-  }
+  if (ghInput) ghInput.value = getGitHubToken();
 }
 
 function loadMallMasterUI(mall) {
@@ -672,6 +806,15 @@ function loadMallMasterUI(mall) {
 }
 
 function closeMaster() {
+  if (_masterDirty) {
+    const choice = confirm('未保存の変更があります。GitHubに保存してから閉じますか？\n\n「OK」→ 保存して閉じる\n「キャンセル」→ 保存せず閉じる');
+    if (choice) {
+      saveToGitHub().then(() => {
+        document.getElementById('master-modal').style.display = 'none';
+      });
+      return;
+    }
+  }
   document.getElementById('master-modal').style.display = 'none';
 }
 
@@ -707,8 +850,8 @@ function saveMaster(which) {
   } else if (which === 'deleteTpl') {
     MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
   }
-  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  saveToGitHub();
+  markMasterDirty();
+  notify('変更を保持しました。「GitHubに保存」で確定してください。', 'info');
 }
 
 function saveMallMaster(mall) {
@@ -780,8 +923,8 @@ function saveMallMaster(mall) {
     m.neClientId = el('mall-rakuten-ne-client-id')?.value?.trim() || '';
     m.neClientSecret = el('mall-rakuten-ne-client-secret')?.value?.trim() || '';
   }
-  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  saveToGitHub();
+  markMasterDirty();
+  notify('変更を保持しました。「GitHubに保存」で確定してください。', 'info');
 }
 
 // 配送方法セット管理
