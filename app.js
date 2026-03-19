@@ -639,15 +639,16 @@ async function loadFromGitHub() {
     return false;
   }
   try {
-    const ghUrl = `https://raw.githubusercontent.com/${GH_REPO_OWNER}/${GH_REPO_NAME}/${GH_BRANCH}/${GH_FILE_PATH}?t=${Date.now()}`;
-    const res = await fetch(ghUrl, {
-      headers: { 'Authorization': `token ${token}` }
+    const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${GH_FILE_PATH}?ref=${GH_BRANCH}`;
+    const res = await fetch(apiUrl, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
     });
     if (!res.ok) {
       notify('GitHubから設定を取得できませんでした（ステータス: ' + res.status + '）。まだ保存されていない可能性があります。', 'warning');
       return false;
     }
-    const configData = await res.json();
+    const fileData = await res.json();
+    const configData = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
     if (configData && configData.profiles) {
       // localStorageの機密情報を保持してマージ
       const SECRET_KEYS = ['serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
