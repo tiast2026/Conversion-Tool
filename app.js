@@ -655,6 +655,18 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-service-secret')) el('mall-rakuten-service-secret').value = m.serviceSecret || '';
     if (el('mall-rakuten-license-key')) el('mall-rakuten-license-key').value = m.licenseKey || '';
     if (el('mall-rakuten-cors-proxy')) el('mall-rakuten-cors-proxy').value = m.corsProxy || '';
+    // item-cat.csv設定
+    if (el('mall-rakuten-itemcat-priority')) el('mall-rakuten-itemcat-priority').value = m.itemCatPriority || '';
+    if (el('mall-rakuten-shop-category-map')) {
+      const catMap = m.shopCategoryMap || {};
+      const lines = Object.entries(catMap).map(([key, val]) => {
+        if (typeof val === 'object') {
+          return val.priority ? `${key},${val.cat},${val.priority}` : `${key},${val.cat}`;
+        }
+        return `${key},${val}`;
+      });
+      el('mall-rakuten-shop-category-map').value = lines.join('\n');
+    }
   }
 }
 
@@ -747,6 +759,20 @@ function saveMallMaster(mall) {
     m.serviceSecret = el('mall-rakuten-service-secret')?.value?.trim() || '';
     m.licenseKey = el('mall-rakuten-license-key')?.value?.trim() || '';
     m.corsProxy = el('mall-rakuten-cors-proxy')?.value?.trim() || '';
+    // item-cat.csv設定
+    m.itemCatPriority = el('mall-rakuten-itemcat-priority')?.value?.trim() || '';
+    const catMapText = el('mall-rakuten-shop-category-map')?.value || '';
+    const catMapObj = {};
+    catMapText.split('\n').map(l => l.trim()).filter(l => l && l.includes(',')).forEach(line => {
+      const parts = line.split(',');
+      const key = parts[0].trim();
+      const cat = parts[1].trim();
+      const pri = (parts[2] || '').trim();
+      if (key && cat) {
+        catMapObj[key] = pri ? { cat, priority: pri } : cat;
+      }
+    });
+    m.shopCategoryMap = catMapObj;
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
   saveToGitHub();
@@ -3585,33 +3611,36 @@ function convertToItemCat() {
   const catHeaders = [
     'コントロールカラム',
     '商品管理番号（商品URL）',
-    '商品名',
     '表示先カテゴリ',
     '優先度',
-    '1ページ複数形式項目',
-    'カテゴリセット管理番号'
+    '1ページ複数形式'
   ];
   const rows = [];
-  // shopCategoryMap: { "Tシャツ・カットソー": "トップス\\Tシャツ・カットソー", ... }
+  // shopCategoryMap: { "Tシャツ・カットソー": { "cat": "トップス\\Tシャツ・カットソー", "priority": "100" }, ... }
+  // or simple format: { "Tシャツ・カットソー": "トップス\\Tシャツ・カットソー", ... }
   const catMap = rm.shopCategoryMap || {};
+  const defaultPriority = rm.itemCatPriority || '';
 
   products.forEach(prod => {
     const itemId = prod.number || '';
     if (!itemId) return;
-    const prodName = (sourceType === 'rakuten')
-      ? (prod.cleanName || prod.name || '')
-      : applyMallName(prod.cleanName || prod.name, 'rakuten');
-    // カテゴリパスを決定: shopCategoryMap > category直接
+    // カテゴリパスを決定: shopCategoryMap > GENRE_MAP推測 > category直接
     const rawCat = prod.category || '';
     let shopCat = '';
-    if (catMap[rawCat]) {
-      shopCat = catMap[rawCat];
+    let priority = defaultPriority;
+    const mapEntry = catMap[rawCat];
+    if (mapEntry) {
+      if (typeof mapEntry === 'object') {
+        shopCat = mapEntry.cat || '';
+        if (mapEntry.priority) priority = mapEntry.priority;
+      } else {
+        shopCat = mapEntry;
+      }
     } else if (rawCat) {
       // GENRE_MAPから推測: ジャンルIDを使ってパスを取得し、先頭セグメント（レディースファッション等）を除く
       const gid = guessGenreId(rawCat, prod.cleanName || prod.name);
       if (gid && GENRE_MAP[gid]) {
         const segments = GENRE_MAP[gid].split(' > ');
-        // 先頭（レディースファッション等）を除いた残りを \ で結合
         shopCat = segments.length > 1 ? segments.slice(1).join('\\') : segments[0];
       } else {
         shopCat = rawCat;
@@ -3622,11 +3651,9 @@ function convertToItemCat() {
     const r = new Array(catHeaders.length).fill('');
     r[0] = rm.controlCol || 'n';  // コントロールカラム
     r[1] = itemId;                 // 商品管理番号
-    r[2] = prodName;               // 商品名
-    r[3] = shopCat;                // 表示先カテゴリ
-    r[4] = '';                     // 優先度
-    r[5] = '';                     // 1ページ複数形式項目
-    r[6] = '';                     // カテゴリセット管理番号
+    r[2] = shopCat;                // 表示先カテゴリ
+    r[3] = priority;               // 優先度
+    r[4] = '';                     // 1ページ複数形式
     rows.push(r);
   });
   return { headers: catHeaders, rows };

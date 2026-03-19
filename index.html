@@ -851,6 +851,38 @@
       </div>
       </div><!-- /details内のpadding div -->
       </details><!-- /楽天CSV 出力設定 セクション -->
+
+      <!-- item-cat.csv カテゴリ紐づけ設定 -->
+      <details style="border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-top:12px;">
+        <summary style="padding:10px 16px; background:linear-gradient(135deg, #5b8dbe, #6da0cf); color:white; cursor:pointer; font-size:14px; font-weight:700; user-select:none;">
+          item-cat.csv（ショップカテゴリ紐づけ）
+        </summary>
+        <div style="padding:16px;">
+          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">商品登録後にitem-cat.csvをアップロードすると、ショップカテゴリに商品が表示されます。</p>
+          <table class="rms-form" style="margin:0;">
+            <tr>
+              <th style="width:200px;">デフォルト優先度</th>
+              <td>
+                <input type="text" id="mall-rakuten-itemcat-priority" class="rms-input" style="width:100px;" placeholder="例: 100">
+                <span style="font-size:11px; color:var(--text-light); margin-left:6px;">カテゴリ内の表示順（数値が大きいほど上位）。空欄可</span>
+              </td>
+            </tr>
+            <tr>
+              <th>表示先カテゴリ マッピング</th>
+              <td>
+                <p style="font-size:11px; color:var(--text-light); margin-bottom:6px;">
+                  「Excelカテゴリ名,ショップカテゴリパス,優先度(任意)」を1行ずつ記入。<br>
+                  階層は <code>\</code>（バックスラッシュ）で区切ります。未設定のカテゴリはジャンルIDから自動推測されます。
+                </p>
+                <textarea id="mall-rakuten-shop-category-map" style="width:100%; height:180px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="Tシャツ・カットソー,トップス\Tシャツ・カットソー&#10;パンツ,ボトムス\パンツ,100&#10;ワンピース,ワンピース"></textarea>
+                <div style="margin-top:8px;">
+                  <button class="btn btn-sm btn-primary" onclick="saveMallMaster('rakuten')">保存</button>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </details>
     </div>
 
     <div class="master-mall-panel" id="mall-shopline" style="display:none; padding-top:16px;">
