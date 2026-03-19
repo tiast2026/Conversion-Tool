@@ -537,8 +537,7 @@ function syncMasterToProfile() {
   if (!ACTIVE_PROFILE) return;
   // UIからMASTERに値を取り込み（各モール）
   ['rakuten', 'futureshop', 'zozo', 'rakufashion'].forEach(mall => {
-    const panel = document.getElementById('mall-' + mall);
-    if (panel) saveMallMasterSilent(mall);
+    readMallFormToMaster(mall);
   });
   // 変換設定
   const coEl = document.getElementById('master-color-order');
@@ -655,38 +654,6 @@ function deleteProfile() {
   notify(`プロファイルを削除しました。GitHubに保存してください。`, 'info');
 }
 
-// saveMallMasterのサイレント版（通知なし）
-function saveMallMasterSilent(mall) {
-  const m = MASTER.malls[mall];
-  const el = (id) => document.getElementById(id);
-  if (el(`mall-${mall}-price-rate`)) m.priceRate = parseInt(el(`mall-${mall}-price-rate`).value) || 100;
-  if (el(`mall-${mall}-tax`)) m.taxType = el(`mall-${mall}-tax`).value;
-  if (el(`mall-${mall}-name-prefix`)) m.namePrefix = el(`mall-${mall}-name-prefix`).value;
-  if (el(`mall-${mall}-name-suffix`)) m.nameSuffix = el(`mall-${mall}-name-suffix`).value;
-  if (mall === 'rakuten') {
-    if (el('mall-rakuten-control-col')) m.controlCol = el('mall-rakuten-control-col').value;
-    if (el('mall-rakuten-genre-id')) m.genreId = el('mall-rakuten-genre-id').value.trim();
-    if (el('mall-rakuten-catalog-reason')) m.catalogReason = el('mall-rakuten-catalog-reason').value;
-    if (el('mall-rakuten-stock-type')) m.stockType = el('mall-rakuten-stock-type').value;
-    if (el('mall-rakuten-restock-btn')) m.restockBtn = el('mall-rakuten-restock-btn').value;
-    if (el('mall-rakuten-point-rate')) m.pointRate = parseInt(el('mall-rakuten-point-rate').value) || 1;
-    if (el('mall-rakuten-point-start')) m.pointStart = el('mall-rakuten-point-start').value;
-    if (el('mall-rakuten-point-end')) m.pointEnd = el('mall-rakuten-point-end').value;
-    if (el('mall-rakuten-shipping-fee')) m.shippingFee = el('mall-rakuten-shipping-fee').value;
-    if (el('mall-rakuten-indiv-shipping')) m.indivShipping = parseInt(el('mall-rakuten-indiv-shipping').value) || 0;
-    if (el('mall-rakuten-asuraku')) m.asuraku = el('mall-rakuten-asuraku').value;
-    if (el('mall-rakuten-delivery-info')) m.deliveryInfo = el('mall-rakuten-delivery-info').value;
-    if (el('mall-rakuten-noshi')) m.noshi = el('mall-rakuten-noshi').value;
-    if (el('mall-rakuten-pc-desc-tpl')) m.pcDescTpl = el('mall-rakuten-pc-desc-tpl').value;
-    if (el('mall-rakuten-sp-desc-tpl')) m.spDescTpl = el('mall-rakuten-sp-desc-tpl').value;
-    if (el('mall-rakuten-sale-desc-tpl')) m.saleDescTpl = el('mall-rakuten-sale-desc-tpl').value;
-    if (el('mall-rakuten-img-cabinet')) m.imgCabinet = el('mall-rakuten-img-cabinet').value;
-    if (el('mall-rakuten-img-type')) m.imgType = el('mall-rakuten-img-type').value;
-    if (el('mall-rakuten-img-cabinet-base')) m.imgCabinetBase = el('mall-rakuten-img-cabinet-base').value;
-    if (el('mall-rakuten-max-product-images')) m.maxProductImages = parseInt(el('mall-rakuten-max-product-images').value) || 20;
-  }
-}
-
 // マスタ設定をJSONファイルとしてエクスポート（ローカルダウンロード用）
 function exportMasterConfig() {
   syncMasterToProfile();
@@ -800,6 +767,9 @@ function loadMallMasterUI(mall) {
 }
 
 function closeMaster() {
+  // 常にフォーム値をMASTERに同期してlocalStorageに保存
+  syncMasterToProfile();
+  localStorage.setItem('noahl_master_profiles', JSON.stringify({ activeProfile: ACTIVE_PROFILE, ghToken: GH_TOKEN_SHARED, profiles: PROFILES }));
   if (_masterDirty) {
     const choice = confirm('未保存の変更があります。GitHubに保存してから閉じますか？\n\n「OK」→ 保存して閉じる\n「キャンセル」→ 保存せず閉じる');
     if (choice) {
@@ -848,17 +818,16 @@ function saveMaster(which) {
   notify('変更を保持しました。「GitHubに保存」で確定してください。', 'info');
 }
 
-function saveMallMaster(mall) {
+// フォームからMASTERにモール設定を読み取る（共通処理）
+function readMallFormToMaster(mall) {
   const m = MASTER.malls[mall];
   const el = (id) => document.getElementById(id);
-  // 共通
   if (el(`mall-${mall}-price-rate`)) m.priceRate = parseInt(el(`mall-${mall}-price-rate`).value) || 100;
   if (el(`mall-${mall}-tax`)) m.taxType = el(`mall-${mall}-tax`).value;
   if (el(`mall-${mall}-name-prefix`)) m.namePrefix = el(`mall-${mall}-name-prefix`).value;
   if (el(`mall-${mall}-name-suffix`)) m.nameSuffix = el(`mall-${mall}-name-suffix`).value;
   if (el(`mall-${mall}-default-stock`)) m.defaultStock = parseInt(el(`mall-${mall}-default-stock`).value) || 0;
   if (el(`mall-${mall}-brand`)) m.brand = el(`mall-${mall}-brand`).value.trim();
-  // 楽天固有
   if (mall === 'rakuten') {
     m.controlCol = el('mall-rakuten-control-col')?.value || 'n';
     m.genreId = el('mall-rakuten-genre-id')?.value?.trim() || '';
@@ -874,7 +843,6 @@ function saveMallMaster(mall) {
     m.shippingCat2 = el('mall-rakuten-shipping-cat2')?.value?.trim() || '';
     m.shippingSet = el('mall-rakuten-shipping-set')?.value?.trim() || '';
     m.shippingName = el('mall-rakuten-shipping-name')?.value?.trim() || '';
-    // 配送方法セットリストの保存
     const setsText = el('mall-rakuten-shipping-sets-list')?.value || '';
     m.shippingSets = setsText.split('\n').map(l => l.trim()).filter(l => l && l.includes(',')).map(line => {
       const idx = line.indexOf(',');
@@ -896,7 +864,6 @@ function saveMallMaster(mall) {
     m.serviceSecret = el('mall-rakuten-service-secret')?.value?.trim() || '';
     m.licenseKey = el('mall-rakuten-license-key')?.value?.trim() || '';
     m.corsProxy = el('mall-rakuten-cors-proxy')?.value?.trim() || '';
-    // item-cat.csv設定
     m.itemCatPriority = el('mall-rakuten-itemcat-priority')?.value?.trim() || '';
     m.itemCatDefaultCat = el('mall-rakuten-itemcat-default-cat')?.value?.trim() || '';
     const catMapText = el('mall-rakuten-shop-category-map')?.value || '';
@@ -913,10 +880,13 @@ function saveMallMaster(mall) {
       }
     });
     m.shopCategoryMap = catMapObj;
-    // ネクストエンジンAPI
     m.neClientId = el('mall-rakuten-ne-client-id')?.value?.trim() || '';
     m.neClientSecret = el('mall-rakuten-ne-client-secret')?.value?.trim() || '';
   }
+}
+
+function saveMallMaster(mall) {
+  readMallFormToMaster(mall);
   markMasterDirty();
   notify('変更を保持しました。「GitHubに保存」で確定してください。', 'info');
 }
