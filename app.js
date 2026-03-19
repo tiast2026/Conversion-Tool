@@ -304,6 +304,58 @@ function getRepresentativeColor(colorName) {
   return '';
 }
 
+// 採寸サイズパーサー: 【M】着丈：97cm / ウエスト：32-38cm ... → サイズ別オブジェクト
+// 採寸項目名 → RMS商品属性名マッピング
+const MEASURE_TO_ATTR = {
+  '着丈': '着丈', '総丈': '総丈', '肩幅': '肩幅', '身幅': '身幅', 'そで丈': 'そで丈', '袖丈': 'そで丈',
+  'ウエスト': 'ウエスト', 'ヒップ': 'ヒップ', '股上': '股上', '股下': '股下',
+  '太もも': 'もも幅', 'もも幅': 'もも幅', '裾幅': '裾幅', 'すそ幅': '裾幅',
+  'スカート丈': 'スカート丈', 'ゆき丈': 'ゆき丈',
+};
+function parseMeasureSize(measureStr, targetSize) {
+  if (!measureStr || !targetSize) return {};
+  const result = {};
+  // 【サイズ名】で区切ってセクション分割
+  const sizePattern = /【([^】]+)】/g;
+  const sections = [];
+  let match;
+  let lastIdx = 0;
+  const matches = [];
+  while ((match = sizePattern.exec(measureStr)) !== null) {
+    matches.push({ label: match[1], start: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const end = (i + 1 < matches.length) ? matches[i + 1].start - matches[i + 1].label.length - 2 : measureStr.length;
+    sections.push({ label: matches[i].label, text: measureStr.substring(matches[i].start, end).trim() });
+  }
+  // ターゲットサイズに一致するセクションを検索
+  const normTarget = targetSize.replace(/サイズ/g, '').trim();
+  let section = sections.find(s => {
+    const normLabel = s.label.replace(/サイズ/g, '').trim();
+    return normLabel === normTarget;
+  });
+  // 完全一致がなければ部分一致
+  if (!section) {
+    section = sections.find(s => s.label.includes(normTarget) || normTarget.includes(s.label.replace(/サイズ/g, '').trim()));
+  }
+  if (!section) return result;
+  // 項目：値 をパース（/ で区切り）
+  const items = section.text.split(/\s*\/\s*/);
+  items.forEach(item => {
+    // "着丈：97cm" or "ウエスト：32-38cm" or "ヒップ(トップから25cm下)：60cm"
+    const m = item.match(/^([^：:]+?)\s*(?:\([^)]*\))?\s*[：:]\s*(.+?)(?:cm)?$/);
+    if (m) {
+      const rawName = m[1].trim();
+      const rawVal = m[2].trim().replace(/cm$/, '');
+      const attrName = MEASURE_TO_ATTR[rawName];
+      if (attrName) {
+        result[attrName] = rawVal;
+      }
+    }
+  });
+  return result;
+}
+
 const DEFAULT_NAME_CLEAN = `《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
 const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レビューを書いて-->\n<!--コンセプト-->\n<!--よくある質問-->`;
 
@@ -3064,6 +3116,19 @@ function convertToRakuten() {
           sRow[RI[`商品属性（項目）${attrIdx}`]] = 'サイズ';
           sRow[RI[`商品属性（値）${attrIdx}`]] = sku.size;
           attrIdx++;
+        }
+        // 採寸サイズから寸法属性を自動設定
+        if (prod.measureSize && sku.size) {
+          const measures = parseMeasureSize(prod.measureSize, sku.size);
+          const measureOrder = ['着丈','総丈','肩幅','身幅','そで丈','ゆき丈','ウエスト','ヒップ','股上','股下','もも幅','裾幅','スカート丈'];
+          measureOrder.forEach(attrName => {
+            if (measures[attrName] && attrIdx <= 100) {
+              sRow[RI[`商品属性（項目）${attrIdx}`]] = attrName;
+              sRow[RI[`商品属性（値）${attrIdx}`]] = measures[attrName];
+              sRow[RI[`商品属性（単位）${attrIdx}`]] = 'cm';
+              attrIdx++;
+            }
+          });
         }
 
         // 自由入力行
