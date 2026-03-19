@@ -57,7 +57,7 @@
       "shipLeadtime": "",
       "deliveryLeadtime": "",
       "okihai": "",
-      "namePrefix": "NOAHL｜",
+      "namePrefix": "",
       "nameSuffix": "",
       "priceRate": 40,
       "taxType": "0",
@@ -76,7 +76,9 @@
       "spDescTpl": "",
       "saleDescTpl": "",
       "imgCabinet": "",
-      "imgType": "0"
+      "imgType": "0",
+      "imgCabinetBase": "/shohin/",
+      "maxProductImages": 20
     },
     "shopline": {
       "priceRate": 100,
