@@ -654,21 +654,6 @@ function deleteProfile() {
   notify(`プロファイルを削除しました。GitHubに保存してください。`, 'info');
 }
 
-// マスタ設定をJSONファイルとしてエクスポート（ローカルダウンロード用）
-function exportMasterConfig() {
-  syncMasterToProfile();
-  const configData = { activeProfile: ACTIVE_PROFILE, ghToken: GH_TOKEN_SHARED, profiles: PROFILES };
-  const json = JSON.stringify(configData, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'master-config.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  notify('master-config.json をダウンロードしました。', 'success');
-}
-
 function parseColorOrderText(text) {
   const map = {};
   text.split('\n').forEach(line => {
