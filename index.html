@@ -689,6 +689,44 @@
               <br><span style="color:var(--text-light);">↑ 自社Excelの対応列の値で自動置換されます。画像URLは品番+カラーコードから自動生成されます。</span>
             </td>
           </tr>
+          <tr>
+            <th>画像URL置換タグ 詳細</th>
+            <td style="font-size:12px; line-height:1.9;">
+              <div style="background:#f8fdf8; border:1px solid #c8e6c9; border-radius:6px; padding:14px; margin-bottom:10px;">
+                <div style="font-weight:600; margin-bottom:8px; color:#2e7d32;">画像URLの自動生成ルール</div>
+                <p style="margin:0 0 8px;">品番とSKU商品番号のカラーコードから、楽天Rキャビネットの画像URLを自動生成します。</p>
+                <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:10px;">
+                  <tr style="background:#e8f5e9;"><th style="padding:6px 10px; text-align:left; border:1px solid #c8e6c9;">タグ</th><th style="padding:6px 10px; text-align:left; border:1px solid #c8e6c9;">内容</th><th style="padding:6px 10px; text-align:left; border:1px solid #c8e6c9;">URL例（品番: nlpt495-2603 / カラー2色: EC,BK）</th></tr>
+                  <tr><td style="padding:5px 10px; border:1px solid #e0e0e0;"><code>{画像URL1}</code></td><td style="padding:5px 10px; border:1px solid #e0e0e0;">メイン画像</td><td style="padding:5px 10px; border:1px solid #e0e0e0; font-family:monospace; font-size:11px; word-break:break-all;">.../2026/202603/nlpt495-1r.jpg</td></tr>
+                  <tr><td style="padding:5px 10px; border:1px solid #e0e0e0;"><code>{画像URL2}</code>〜</td><td style="padding:5px 10px; border:1px solid #e0e0e0;">1色目カラバリ</td><td style="padding:5px 10px; border:1px solid #e0e0e0; font-family:monospace; font-size:11px;">.../nlpt495-ec1.jpg, ec2, ec3 ...</td></tr>
+                  <tr><td style="padding:5px 10px; border:1px solid #e0e0e0;">〜<code>{画像URLN}</code></td><td style="padding:5px 10px; border:1px solid #e0e0e0;">2色目カラバリ</td><td style="padding:5px 10px; border:1px solid #e0e0e0; font-family:monospace; font-size:11px;">.../nlpt495-bk1.jpg, bk2, bk3 ...</td></tr>
+                  <tr><td style="padding:5px 10px; border:1px solid #e0e0e0;"><code>{画像URL19}</code></td><td style="padding:5px 10px; border:1px solid #e0e0e0;">最後から2番目（固定）</td><td style="padding:5px 10px; border:1px solid #e0e0e0; font-family:monospace; font-size:11px;">.../nlpt495-10.jpg</td></tr>
+                  <tr><td style="padding:5px 10px; border:1px solid #e0e0e0;"><code>{画像URL20}</code></td><td style="padding:5px 10px; border:1px solid #e0e0e0;">最後（固定）</td><td style="padding:5px 10px; border:1px solid #e0e0e0; font-family:monospace; font-size:11px;">.../nlpt495-11.jpg</td></tr>
+                </table>
+                <div style="font-weight:600; margin-bottom:6px; color:#333;">カラバリ枚数の配分</div>
+                <p style="margin:0 0 6px;">全体（デフォルト20枚）から固定3枚（メイン + 最後2枚）を引いた <strong>17枠</strong> を、カラー数で均等に割り当てます。</p>
+                <ul style="margin:0; padding-left:20px; color:#555;">
+                  <li>2色の場合: 各8枚 × 2色 = 16枚（1枠余り）</li>
+                  <li>3色の場合: 各5枚 × 3色 = 15枚（2枠余り）</li>
+                  <li>1色の場合: 17枚すべてその色</li>
+                </ul>
+              </div>
+              <div style="background:#fff8e1; border:1px solid #ffe082; border-radius:6px; padding:14px;">
+                <div style="font-weight:600; margin-bottom:8px; color:#f57f17;">使い方の例</div>
+                <p style="margin:0 0 6px;">テンプレートに以下のように記述すると、各商品の画像URLに自動置換されます：</p>
+<pre style="background:#fff; border:1px solid #eee; border-radius:4px; padding:10px; font-size:11px; overflow-x:auto; margin:0;">&lt;img src="{画像URL1}" alt="{商品名}" width="750"&gt;
+&lt;img src="{画像URL2}" alt="{商品名}" width="750"&gt;
+&lt;img src="{画像URL3}" alt="{商品名}" width="750"&gt;
+...
+&lt;img src="{画像URL20}" alt="{商品名}" width="750"&gt;</pre>
+                <p style="margin:8px 0 0; color:#555;">↑ これが実際の変換時に以下のように置換されます：</p>
+<pre style="background:#fff; border:1px solid #eee; border-radius:4px; padding:10px; font-size:11px; overflow-x:auto; margin:6px 0 0;">&lt;img src="https://image.rakuten.co.jp/noahl/cabinet/shohin/2026/202603/nlpt495-1r.jpg" alt="タックワイドイージーパンツ" width="750"&gt;
+&lt;img src="https://image.rakuten.co.jp/noahl/cabinet/shohin/2026/202603/nlpt495-ec1.jpg" alt="タックワイドイージーパンツ" width="750"&gt;
+...</pre>
+                <p style="margin:8px 0 0; font-size:11px; color:#888;">※ カラーコードはSKU商品番号の3番目のセグメント（例: nlpt495-2603-<strong>EC</strong>-M → ec）から自動取得されます。<br>※ フォルダは品番末尾4桁から自動構成: 2603 → 2026/202603/</p>
+              </div>
+            </td>
+          </tr>
         </table>
       </div>
 
