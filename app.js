@@ -2066,8 +2066,14 @@ function renderStep2Rms() {
     html += '<h4 style="font-size:16px; color:#333; margin:20px 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">配送設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
     const rmShip = MASTER.malls.rakuten;
-    const shipSetVal = (prod.skus[0] && prod.skus[0].shippingSet) ? prod.skus[0].shippingSet : rmShip.shippingSet || '';
-    const shipNameVal = (prod.skus[0] && prod.skus[0].shippingName) ? prod.skus[0].shippingName : rmShip.shippingName || '';
+    let shipSetVal = (prod.skus[0] && prod.skus[0].shippingSet) ? prod.skus[0].shippingSet : rmShip.shippingSet || '';
+    let shipNameVal = (prod.skus[0] && prod.skus[0].shippingName) ? prod.skus[0].shippingName : rmShip.shippingName || '';
+    // 自社Excelの配送方法から自動解決
+    if (!shipSetVal && prod.shippingMethod && rmShip.shippingSets && rmShip.shippingSets.length > 0) {
+      const method = prod.shippingMethod.trim();
+      const found = rmShip.shippingSets.find(s => s.name === method || method.includes(s.name) || s.name.includes(method));
+      if (found) { shipSetVal = found.num; shipNameVal = found.name; }
+    }
     const shipFeeVal = (prod.skus[0] && prod.skus[0].shipping) ? prod.skus[0].shipping : rmShip.shippingFee || '';
     const shipFeeLabel = shipFeeVal === '0' ? '送料込み' : shipFeeVal === '1' ? '送料別' : shipFeeVal === '2' ? '送料無料' : shipFeeVal;
     const deliveryFields = [
@@ -3057,7 +3063,14 @@ function convertToRakuten() {
         sRow[RI['在庫数']] = sku._stock || '0';
 
         // 配送
-        sRow[RI['配送方法セット管理番号']] = prod._shippingSet !== undefined ? prod._shippingSet : (rm.shippingSet || '');
+        // 自社Excelの配送方法からセット管理番号を自動解決
+        let resolvedShippingSet = prod._shippingSet !== undefined ? prod._shippingSet : (rm.shippingSet || '');
+        if (!resolvedShippingSet && prod.shippingMethod && rm.shippingSets && rm.shippingSets.length > 0) {
+          const method = prod.shippingMethod.trim();
+          const found = rm.shippingSets.find(s => s.name === method || method.includes(s.name) || s.name.includes(method));
+          if (found) resolvedShippingSet = found.num;
+        }
+        sRow[RI['配送方法セット管理番号']] = resolvedShippingSet;
         sRow[RI['送料']] = prod._shippingFee !== undefined ? prod._shippingFee : (rm.shippingFee || '0');
         sRow[RI['送料区分1']] = prod._shippingCat1 !== undefined ? prod._shippingCat1 : (rm.shippingCat1 || '');
         sRow[RI['送料区分2']] = prod._shippingCat2 !== undefined ? prod._shippingCat2 : (rm.shippingCat2 || '');
