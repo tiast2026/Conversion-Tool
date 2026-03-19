@@ -100,24 +100,17 @@
       "shopCategoryMap": {},
       "itemCatDefaultCat": "その他"
     },
-    "shopline": {
+    "futureshop": {
       "priceRate": 100,
-      "defaultStock": 0,
       "namePrefix": "",
       "nameSuffix": ""
     },
-    "yahoo": {
-      "priceRate": 40,
-      "namePrefix": "",
-      "nameSuffix": ""
-    },
-    "amazon": {
+    "zozo": {
       "priceRate": 100,
-      "brand": "",
       "namePrefix": "",
       "nameSuffix": ""
     },
-    "qoo10": {
+    "rakufashion": {
       "priceRate": 100,
       "namePrefix": "",
       "nameSuffix": ""
