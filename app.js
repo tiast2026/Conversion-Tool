@@ -1474,6 +1474,27 @@ function renderRmsPreview() {
 
     // --- ページデザイン ---
     html += '<div class="s3rms-tab-content" data-tab="design" data-gi="' + gi + '" style="padding:20px; display:none;">';
+
+    // 商品画像URL一覧
+    if (prod && sourceType === 'jisha') {
+      const imgUrls = generateRakutenImageUrls(prod);
+      if (imgUrls.length > 0) {
+        html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品画像URL（自動生成: ' + imgUrls.length + '枚）</h4>';
+        html += '<div style="background:#fafafa; border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:20px; max-height:300px; overflow-y:auto;">';
+        html += '<table style="width:100%; border-collapse:collapse; font-size:11px; font-family:monospace;">';
+        imgUrls.forEach((url, i) => {
+          const label = i === 0 ? 'メイン(-1r)' : (i === imgUrls.length - 1 ? '最後(-11)' : (i === imgUrls.length - 2 ? '最後-1(-10)' : 'カラバリ'));
+          html += '<tr style="border-bottom:1px solid #eee;">';
+          html += '<td style="padding:4px 8px; color:#888; white-space:nowrap; width:30px;">' + (i + 1) + '</td>';
+          html += '<td style="padding:4px 8px; color:#999; white-space:nowrap; width:70px; font-size:10px;">' + label + '</td>';
+          html += '<td style="padding:4px 8px; word-break:break-all;"><a href="' + esc(url) + '" target="_blank" style="color:#1565c0; text-decoration:none;">' + esc(url) + '</a></td>';
+          html += '</tr>';
+        });
+        html += '</table>';
+        html += '</div>';
+      }
+    }
+
     html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品説明文</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
     [['PC用商品説明文', 'pcDesc', v('PC用商品説明文'), bMst], ['スマートフォン用商品説明文', 'spDesc', v('スマートフォン用商品説明文'), bMst], ['PC用販売説明文', 'saleDesc', v('PC用販売説明文'), bMst]].forEach(([label, field, val, badge]) => {
@@ -2018,6 +2039,25 @@ function renderStep2Rms() {
 
     // ページデザイン（画像 + 説明文）
     html += '<div class="s2rms-tab" data-tab="s2design" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    // 自動生成画像URL一覧
+    if (sourceType === 'jisha') {
+      const imgUrls2 = generateRakutenImageUrls(prod);
+      if (imgUrls2.length > 0) {
+        html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品画像URL（自動生成: ' + imgUrls2.length + '枚）</h4>';
+        html += '<div style="background:#fafafa; border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:20px; max-height:400px; overflow-y:auto;">';
+        html += '<table style="width:100%; border-collapse:collapse; font-size:12px; font-family:monospace;">';
+        imgUrls2.forEach((url, i) => {
+          const lbl = i === 0 ? 'メイン(-1r)' : (i === imgUrls2.length - 1 ? '最後(-11)' : (i === imgUrls2.length - 2 ? '最後-1(-10)' : 'カラバリ'));
+          html += '<tr style="border-bottom:1px solid #eee;">';
+          html += '<td style="padding:5px 8px; color:#888; width:30px;">' + (i + 1) + '</td>';
+          html += '<td style="padding:5px 8px; color:#999; width:80px; font-size:11px;">' + lbl + '</td>';
+          html += '<td style="padding:5px 8px; word-break:break-all;"><a href="' + esc(url) + '" target="_blank" style="color:#1565c0; text-decoration:none;">' + esc(url) + '</a></td>';
+          html += '</tr>';
+        });
+        html += '</table>';
+        html += '</div>';
+      }
+    }
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品画像（' + prod.images.length + '件）</h4>';
     if (prod.images.length > 0) {
       html += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
