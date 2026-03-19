@@ -1298,10 +1298,12 @@ function generateRakutenImageUrls(prod) {
   // カラバリ枚数の計算: 全体 - 固定3枚(1r, -10, -11)
   const colorSlots = maxImages - 3;
   const perColor = Math.floor(colorSlots / colorCodes.length);
+  const extraSlots = colorSlots - perColor * colorCodes.length;
 
-  // カラーバリエーション画像
-  colorCodes.forEach(code => {
-    for (let i = 1; i <= perColor; i++) {
+  // カラーバリエーション画像（余り枠は先頭の色から順に1枚ずつ追加）
+  colorCodes.forEach((code, idx) => {
+    const count = perColor + (idx < extraSlots ? 1 : 0);
+    for (let i = 1; i <= count; i++) {
       urls.push(`${urlBase}-${code}${i}.jpg`);
     }
   });
