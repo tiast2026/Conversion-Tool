@@ -254,6 +254,31 @@ Lサイズ,3
 クリームイエロー,6
 ダークブラウン,21`;
 
+// 代表カラーマッピング（カラー名 → 楽天RMS代表カラー）
+const REPRESENTATIVE_COLOR_MAP = {
+  'ホワイト': 'ホワイト', 'オフホワイト': 'ホワイト', 'アイボリー': 'ホワイト', 'クリーム': 'ホワイト',
+  'オートミール': 'ベージュ', 'ベージュ': 'ベージュ', 'ライトベージュ': 'ベージュ', 'サンドベージュ': 'ベージュ',
+  'グレージュ': 'ベージュ', 'クリームイエロー': 'イエロー', 'クリーム×イエロー': 'イエロー',
+  'イエロー': 'イエロー', 'バターイエロー': 'イエロー',
+  'ピンク': 'ピンク', 'グレージュ×ピンク': 'ピンク',
+  'ライトブルー': 'ブルー', 'ブルー': 'ブルー', 'グレー×ブルー': 'ブルー',
+  'ミント': 'グリーン', 'ミントグレー': 'グリーン', 'カーキ': 'グリーン', 'オリーブ': 'グリーン',
+  'グレー': 'グレー', 'チャコール': 'グレー', 'チャコールMIX': 'グレー',
+  'ブラウン': 'ブラウン', 'ブラウンMIX': 'ブラウン', 'ダークブラウン': 'ブラウン', 'モカ': 'ブラウン', 'キャメル': 'ブラウン',
+  'ベージュ×ブラック': 'ブラック', 'ブラック': 'ブラック', 'スミクロ': 'ブラック',
+  'ネイビー': 'ネイビー', 'レッド': 'レッド', 'ワインレッド': 'レッド', 'ボルドー': 'レッド',
+  'パープル': 'パープル', 'ラベンダー': 'パープル', 'オレンジ': 'オレンジ'
+};
+function getRepresentativeColor(colorName) {
+  if (!colorName) return '';
+  if (REPRESENTATIVE_COLOR_MAP[colorName]) return REPRESENTATIVE_COLOR_MAP[colorName];
+  // 部分一致フォールバック
+  for (const [key, rep] of Object.entries(REPRESENTATIVE_COLOR_MAP)) {
+    if (colorName.includes(key)) return rep;
+  }
+  return '';
+}
+
 const DEFAULT_NAME_CLEAN = `《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
 const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レビューを書いて-->\n<!--コンセプト-->\n<!--よくある質問-->`;
 
@@ -2982,7 +3007,7 @@ function convertToRakuten() {
           }
         }
 
-        // 商品属性（カラー、ブランド名、メーカー型番、素材）
+        // 商品属性（カラー、ブランド名、メーカー型番、素材、代表カラー、サイズ）
         let attrIdx = 1;
         if (sku.color) {
           sRow[RI[`商品属性（項目）${attrIdx}`]] = 'カラー';
@@ -3002,6 +3027,17 @@ function convertToRakuten() {
         if (prod.material) {
           sRow[RI[`商品属性（項目）${attrIdx}`]] = '素材（生地・毛糸）';
           sRow[RI[`商品属性（値）${attrIdx}`]] = prod.material;
+          attrIdx++;
+        }
+        const repColor = getRepresentativeColor(sku.color);
+        if (repColor) {
+          sRow[RI[`商品属性（項目）${attrIdx}`]] = '代表カラー';
+          sRow[RI[`商品属性（値）${attrIdx}`]] = repColor;
+          attrIdx++;
+        }
+        if (sku.size) {
+          sRow[RI[`商品属性（項目）${attrIdx}`]] = 'サイズ';
+          sRow[RI[`商品属性（値）${attrIdx}`]] = sku.size;
           attrIdx++;
         }
 
