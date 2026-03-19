@@ -55,6 +55,9 @@
           "catalogReason": "3",
           "stockType": "1",
           "restockBtn": "0",
+          "serviceSecret": "SP338335_Edxkqfo18oXXre1k",
+          "licenseKey": "SL338335_WNBmGp3R1N0Aolvl",
+          "corsProxy": "https://restless-block-e526.shusuke-tiast.workers.dev/",
           "shippingCat1": "",
           "shippingCat2": "",
           "shipLeadtime": "",
@@ -102,7 +105,9 @@
           "rakutenAppId": "feb7b7ce-bd14-47f7-be51-82fc8375e35f",
           "itemCatPriority": "9999",
           "shopCategoryMap": {},
-          "itemCatDefaultCat": "その他"
+          "itemCatDefaultCat": "その他",
+          "neClientId": "",
+          "neClientSecret": ""
         },
         "futureshop": {
           "priceRate": 100,
