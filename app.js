@@ -3138,12 +3138,37 @@ function renderStep4Download() {
     }
     html += `</div>`;
   });
-  // API登録の進捗表示エリア
+
+  // ネクストエンジンAPI直接登録カード
+  if (sourceType === 'jisha') {
+    const hasNeCreds = MASTER.malls.rakuten.corsProxy && MASTER.malls.rakuten.neAccessToken && MASTER.malls.rakuten.neRefreshToken;
+    html += `<div class="download-card" style="border-color:#f39c12;">`;
+    html += `<div class="mall-name" style="color:#e67e22;">ネクストエンジン</div>`;
+    html += `<div class="mall-desc">NE APIで商品マスタを直接登録</div>`;
+    if (hasNeCreds) {
+      html += `<button class="btn btn-primary" onclick="registerToNextEngineApi()" style="background:#e67e22; border-color:#e67e22;">🔗 NE APIで直接登録</button>`;
+    } else {
+      html += `<button class="btn btn-outline" disabled style="opacity:0.5; cursor:not-allowed;">🔗 NE APIで直接登録</button>`;
+      html += `<div style="font-size:11px; color:#999; margin-top:4px;">マスタ設定でNE API認証情報を設定してください</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // 楽天API登録の進捗表示エリア
   if (sourceType === 'jisha') {
     html += `<div id="api-register-status" style="display:none; grid-column:1/-1; border:1px solid var(--border); border-radius:10px; padding:16px;">`;
     html += `<div style="font-weight:600; margin-bottom:8px; color:var(--primary-dark);">楽天API登録 進捗</div>`;
     html += `<div id="api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>`;
     html += `<div id="api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>`;
+    html += `</div>`;
+  }
+
+  // NE API登録の進捗表示エリア
+  if (sourceType === 'jisha') {
+    html += `<div id="ne-api-register-status" style="display:none; grid-column:1/-1; border:1px solid #f39c12; border-radius:10px; padding:16px;">`;
+    html += `<div style="font-weight:600; margin-bottom:8px; color:#e67e22;">ネクストエンジンAPI登録 進捗</div>`;
+    html += `<div id="ne-api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>`;
+    html += `<div id="ne-api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>`;
     html += `</div>`;
   }
   document.getElementById('download-grid').innerHTML = html;
@@ -4375,6 +4400,160 @@ function appendApiLog(logEl, type, msg) {
   const icons = { success: '✓', warning: '⚠', error: '✕' };
   logEl.innerHTML += `<div style="padding:3px 0; font-size:12px; color:${colors[type] || '#333'};">${icons[type] || ''} ${esc(msg)}</div>`;
   logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ============================================================
+// ネクストエンジンAPI 商品登録
+// ============================================================
+async function neApiFetch(endpoint, extraParams = {}) {
+  const m = MASTER.malls.rakuten;
+  const proxy = m.corsProxy;
+  if (!proxy) throw new Error('CORSプロキシURLが未設定です');
+  if (!m.neAccessToken || !m.neRefreshToken) throw new Error('NE APIトークンが未設定です');
+
+  const proxyBase = proxy.replace(/\/$/, '');
+  const params = new URLSearchParams();
+  params.append('access_token', m.neAccessToken);
+  params.append('refresh_token', m.neRefreshToken);
+  for (const [k, v] of Object.entries(extraParams)) {
+    params.append(k, v);
+  }
+
+  const res = await fetch(proxyBase + endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Target-Host': 'api.next-engine.org'
+    },
+    body: params.toString()
+  });
+
+  const data = await res.json();
+
+  // トークンが更新された場合は保存
+  if (data.access_token && data.access_token !== m.neAccessToken) {
+    m.neAccessToken = data.access_token;
+    const el = document.getElementById('mall-rakuten-ne-access-token');
+    if (el) el.value = data.access_token;
+  }
+  if (data.refresh_token && data.refresh_token !== m.neRefreshToken) {
+    m.neRefreshToken = data.refresh_token;
+    const el = document.getElementById('mall-rakuten-ne-refresh-token');
+    if (el) el.value = data.refresh_token;
+  }
+
+  return data;
+}
+
+function buildNeGoodsCsv(products) {
+  // NE商品マスタCSVヘッダー
+  const headers = [
+    'syohin_code',          // 商品コード（SKU単位）
+    'daihyo_syohin_code',   // 代表商品コード（親）
+    'syohin_name',          // 商品名
+    'syohin_kbn',           // 商品区分（0:通常）
+    'toriatukai_kbn',       // 取扱区分（0:通常）
+    'jan_code',             // JANコード
+    'baika_tnk',            // 販売価格
+    'genka_tnk',            // 原価
+    'iro',                  // 色
+    'size'                  // サイズ
+  ];
+
+  const rows = [];
+  for (const prod of products) {
+    const parentCode = prod.number || '';
+    const name = prod.cleanName || prod.name || '';
+    const costPrice = prod.costPrice || '';
+
+    for (const sku of prod.skus) {
+      const skuCode = sku.skuMgmtNo || parentCode;
+      const row = [
+        skuCode,                                          // syohin_code
+        parentCode,                                       // daihyo_syohin_code
+        name,                                             // syohin_name
+        '0',                                              // syohin_kbn（通常）
+        '0',                                              // toriatukai_kbn（通常）
+        sku.jan || '',                                    // jan_code
+        sku.price || prod.sellPrice || '',                // baika_tnk
+        costPrice,                                        // genka_tnk
+        sku.color || '',                                  // iro
+        sku.size || ''                                    // size
+      ];
+      rows.push(row);
+    }
+  }
+
+  // CSV文字列を構築
+  const escCSV = (v) => {
+    if (v == null) return '';
+    const s = String(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+  let csv = headers.join(',') + '\n';
+  for (const row of rows) {
+    csv += row.map(escCSV).join(',') + '\n';
+  }
+  return csv;
+}
+
+async function registerToNextEngineApi() {
+  const m = MASTER.malls.rakuten;
+  if (!m.corsProxy || !m.neAccessToken || !m.neRefreshToken) {
+    notify('NE API認証情報が未設定です。マスタ設定から設定してください。', 'warning');
+    return;
+  }
+  if (!products || products.length === 0) {
+    notify('登録する商品がありません', 'warning');
+    return;
+  }
+
+  const cnt = products.length;
+  const skuCnt = products.reduce((s, p) => s + p.skus.length, 0);
+  if (!confirm(`ネクストエンジンAPIで ${cnt}商品（${skuCnt} SKU）を新規登録します。\n\n※ 処理は非同期で行われます。結果はNE管理画面のアップロードキューで確認してください。\n\n続行しますか？`)) return;
+
+  // 進捗表示
+  const statusEl = document.getElementById('ne-api-register-status');
+  if (statusEl) statusEl.style.display = 'block';
+  const progressEl = document.getElementById('ne-api-register-progress');
+  const logEl = document.getElementById('ne-api-register-log');
+  if (logEl) logEl.innerHTML = '';
+
+  if (progressEl) progressEl.textContent = 'CSV データを構築中...';
+
+  try {
+    const csvData = buildNeGoodsCsv(products);
+    appendApiLog(logEl, 'success', `CSV生成完了: ${cnt}商品, ${skuCnt} SKU行`);
+
+    if (progressEl) progressEl.textContent = 'ネクストエンジンAPIにアップロード中...';
+
+    const result = await neApiFetch('/api_v1_master_goods/upload', {
+      data_type: 'csv',
+      data: csvData,
+      wait_flag: '1'
+    });
+
+    if (result.result === 'success') {
+      const queId = result.que_id || '';
+      appendApiLog(logEl, 'success', `アップロード成功！ キューID: ${queId}`);
+      appendApiLog(logEl, 'success', 'NE管理画面 → 設定 → アップロードキュー で処理状況を確認してください');
+      if (progressEl) progressEl.textContent = `完了: アップロード成功（キューID: ${queId}）`;
+      notify('ネクストエンジンへのアップロードが完了しました', 'success');
+      markMasterDirty();
+    } else {
+      const errMsg = result.message || result.code || JSON.stringify(result);
+      appendApiLog(logEl, 'error', `APIエラー: ${errMsg}`);
+      if (progressEl) progressEl.textContent = 'エラーが発生しました';
+      notify('NE APIエラー: ' + errMsg, 'warning');
+    }
+  } catch(e) {
+    appendApiLog(logEl, 'error', `通信エラー: ${e.message}`);
+    if (progressEl) progressEl.textContent = 'エラーが発生しました';
+    notify('NE API通信エラー: ' + e.message, 'warning');
+  }
 }
 
 // ============================================================
