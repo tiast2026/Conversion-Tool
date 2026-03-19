@@ -142,16 +142,16 @@
     </div>
     <!-- モール選択タブ（横ナビ） -->
     <div id="master-mall-tabs" style="display:flex; background:var(--primary); padding:0 16px;">
-      <div class="mall-tab active" onclick="switchMasterMall('common', this)">共通</div>
-      <div class="mall-tab" onclick="switchMasterMall('rakuten', this)">楽天</div>
+      <div class="mall-tab active" onclick="switchMasterMall('rakuten', this)">楽天</div>
       <div class="mall-tab" onclick="switchMasterMall('futureshop', this)">FutureShop</div>
       <div class="mall-tab" onclick="switchMasterMall('zozo', this)">ZOZO</div>
-      <div class="mall-tab" onclick="switchMasterMall('rakufashion', this)">楽天ファッション</div>
+      <div class="mall-tab" onclick="switchMasterMall('rakufashion', this)">Rakuten Fashion</div>
+      <div class="mall-tab" onclick="switchMasterMall('common', this)">共通</div>
     </div>
 
     <div style="padding:20px 24px; flex:1; overflow-y:auto;">
     <!-- 共通設定 -->
-    <div class="master-mall-panel active" id="mall-common">
+    <div class="master-mall-panel" id="mall-common" style="display:none;">
       <div id="master-tabs-common" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
         <div class="sub-tab active" onclick="switchMasterTab('github', this)">GitHub連携</div>
         <div class="sub-tab" onclick="switchMasterTab('convert-settings', this)">変換設定</div>
@@ -189,7 +189,7 @@
     </div>
 
     <!-- 楽天 固有設定（RMS風レイアウト） -->
-    <div class="master-mall-panel" id="mall-rakuten" style="display:none;">
+    <div class="master-mall-panel active" id="mall-rakuten">
 
       <!-- 楽天 共通設定 -->
       <div style="margin-bottom:20px; padding:16px; background:#fafafa; border:1px solid #e0e0e0; border-radius:8px;">
