@@ -597,6 +597,49 @@ async function saveToGitHub() {
   }
 }
 
+// GitHubからマスタ設定を取得
+async function loadFromGitHub() {
+  const token = getGitHubToken();
+  if (!token) {
+    notify('GitHub Tokenが未設定です。上のフィールドにTokenを入力してください。', 'warning');
+    return false;
+  }
+  try {
+    const ghUrl = `https://raw.githubusercontent.com/${GH_REPO_OWNER}/${GH_REPO_NAME}/${GH_BRANCH}/${GH_FILE_PATH}?t=${Date.now()}`;
+    const res = await fetch(ghUrl, {
+      headers: { 'Authorization': `token ${token}` }
+    });
+    if (!res.ok) {
+      notify('GitHubから設定を取得できませんでした（ステータス: ' + res.status + '）。まだ保存されていない可能性があります。', 'warning');
+      return false;
+    }
+    const configData = await res.json();
+    if (configData && configData.profiles) {
+      PROFILES = configData.profiles;
+      ACTIVE_PROFILE = configData.activeProfile || Object.keys(PROFILES)[0] || '';
+      if (configData.ghToken) {
+        GH_TOKEN_SHARED = configData.ghToken;
+        saveGitHubToken(GH_TOKEN_SHARED);
+      }
+      if (ACTIVE_PROFILE && PROFILES[ACTIVE_PROFILE]) {
+        applyMasterData(PROFILES[ACTIVE_PROFILE]);
+      }
+      localStorage.setItem('noahl_master_profiles', JSON.stringify({ activeProfile: ACTIVE_PROFILE, ghToken: GH_TOKEN_SHARED, profiles: PROFILES }));
+      updateProfileSelector();
+      loadMallMasterUI('rakuten');
+      _masterDirty = false;
+      notify('GitHubからマスタ設定を取得しました', 'success');
+      return true;
+    } else {
+      notify('設定ファイルの形式が正しくありません。', 'warning');
+      return false;
+    }
+  } catch(e) {
+    notify('GitHub通信エラー: ' + e.message, 'warning');
+    return false;
+  }
+}
+
 // プロファイル管理
 function updateProfileSelector() {
   const sel = document.getElementById('profile-selector');
