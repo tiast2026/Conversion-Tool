@@ -1314,6 +1314,47 @@ function generateRakutenImageUrls(prod) {
   return urls;
 }
 
+// 色番号別の画像URLマップを生成: { 1: [url1, url2, ...], 2: [...], ... }
+function generateColorImageMap(prod) {
+  const rm = MASTER.malls.rakuten;
+  const maxImages = rm.maxProductImages || 20;
+  const number = prod.number || '';
+  if (!number) return {};
+
+  const parts = number.split('-');
+  if (parts.length < 2) return {};
+  const base = parts[0];
+  const ymCode = parts[1];
+  const yy = ymCode.substring(0, 2);
+  const folder = `20${yy}/20${ymCode}/`;
+  const cabinetBase = rm.imgCabinetBase || '/shohin/';
+  const urlBase = `https://image.rakuten.co.jp/noahl/cabinet${cabinetBase}${folder}${base}`;
+
+  const colorCodes = [];
+  const seen = new Set();
+  prod.skus.forEach(sku => {
+    const code = sku.colorCode || '';
+    if (code && !seen.has(code)) {
+      seen.add(code);
+      colorCodes.push(code.toLowerCase());
+    }
+  });
+
+  if (colorCodes.length === 0) return {};
+
+  const colorSlots = maxImages - 3;
+  const perColor = Math.floor(colorSlots / colorCodes.length);
+  const map = {};
+  colorCodes.forEach((code, idx) => {
+    const urls = [];
+    for (let i = 1; i <= perColor; i++) {
+      urls.push(`${urlBase}-${code}${i}.jpg`);
+    }
+    map[idx + 1] = urls;
+  });
+  return map;
+}
+
 // ============================================================
 // STEP 3: RMS商品編集画面風プレビュー
 // ============================================================
@@ -2917,6 +2958,13 @@ function applyDescTemplate(tpl, prod) {
   for (let i = 1; i <= 20; i++) {
     result = result.replace(new RegExp(`\\{画像URL${i}\\}`, 'g'), imageUrls[i - 1] || '');
   }
+  // {1色目画像1}〜{N色目画像M} を置換
+  const colorImageMap = generateColorImageMap(prod);
+  result = result.replace(/\{(\d+)色目画像(\d+)\}/g, (match, colorNum, imgNum) => {
+    const urls = colorImageMap[parseInt(colorNum)];
+    if (!urls) return '';
+    return urls[parseInt(imgNum) - 1] || '';
+  });
   return result;
 }
 
