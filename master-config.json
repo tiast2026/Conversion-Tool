@@ -57,18 +57,35 @@
       "shipLeadtime": "",
       "deliveryLeadtime": "",
       "okihai": "",
-      "namePrefix": "",
+      "namePrefix": "NOAHL｜",
       "nameSuffix": "",
       "priceRate": 40,
       "taxType": "0",
       "pointRate": 1,
       "pointStart": "",
       "pointEnd": "",
-      "shippingFee": "1",
+      "shippingFee": "0",
       "indivShipping": 0,
       "shippingSet": "",
       "shippingName": "",
-      "shippingSets": [],
+      "shippingSets": [
+        {
+          "num": "1",
+          "name": "宅急便(ヤマト運輸)"
+        },
+        {
+          "num": "2",
+          "name": "ネコポス(ヤマト運輸)"
+        },
+        {
+          "num": "3",
+          "name": "ゆうパック(日本郵政)"
+        },
+        {
+          "num": "4",
+          "name": "ゆうパケット(日本郵政)"
+        }
+      ],
       "asuraku": "",
       "deliveryInfo": "",
       "noshi": "0",
