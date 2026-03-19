@@ -3629,7 +3629,7 @@ function convertToItemCat() {
   products.forEach(prod => {
     const itemId = prod.number || '';
     if (!itemId) return;
-    // カテゴリパスを決定: shopCategoryMap > GENRE_MAP推測 > category直接 > デフォルト
+    // カテゴリパスを決定: shopCategoryMap > デフォルト
     const rawCat = prod.category || '';
     let shopCat = '';
     let priority = defaultPriority;
@@ -3640,15 +3640,6 @@ function convertToItemCat() {
         if (mapEntry.priority) priority = mapEntry.priority;
       } else {
         shopCat = mapEntry;
-      }
-    } else if (rawCat) {
-      // GENRE_MAPから推測: ジャンルIDを使ってパスを取得し、先頭セグメント（レディースファッション等）を除く
-      const gid = guessGenreId(rawCat, prod.cleanName || prod.name);
-      if (gid && GENRE_MAP[gid]) {
-        const segments = GENRE_MAP[gid].split(' > ');
-        shopCat = segments.length > 1 ? segments.slice(1).join('\\') : segments[0];
-      } else {
-        shopCat = rawCat;
       }
     }
     if (!shopCat) shopCat = defaultCat;
