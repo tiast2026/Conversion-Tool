@@ -2958,8 +2958,25 @@ function applyDescTemplate(tpl, prod) {
   for (let i = 1; i <= 20; i++) {
     result = result.replace(new RegExp(`\\{画像URL${i}\\}`, 'g'), imageUrls[i - 1] || '');
   }
-  // {1色目画像1}〜{N色目画像M} を置換
+  // {カラバリ繰返し}...{/カラバリ繰返し} を色の数だけ展開
   const colorImageMap = generateColorImageMap(prod);
+  const colorCount = Object.keys(colorImageMap).length;
+  result = result.replace(/\{カラバリ繰返し\}([\s\S]*?)\{\/カラバリ繰返し\}/g, (match, inner) => {
+    const blocks = [];
+    for (let c = 1; c <= colorCount; c++) {
+      // {色画像N} → そのカラーのN枚目URL
+      let block = inner.replace(/\{色画像(\d+)\}/g, (m, imgNum) => {
+        const urls = colorImageMap[c];
+        if (!urls) return '';
+        return urls[parseInt(imgNum) - 1] || '';
+      });
+      // {色番号} → 1, 2, 3...
+      block = block.replace(/\{色番号\}/g, String(c));
+      blocks.push(block);
+    }
+    return blocks.join('');
+  });
+  // {1色目画像1}〜{N色目画像M} を置換（個別指定も引き続き対応）
   result = result.replace(/\{(\d+)色目画像(\d+)\}/g, (match, colorNum, imgNum) => {
     const urls = colorImageMap[parseInt(colorNum)];
     if (!urls) return '';
