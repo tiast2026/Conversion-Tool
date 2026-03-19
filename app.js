@@ -3119,10 +3119,10 @@ function renderStep4Download() {
     html += `<div class="mall-name">${mall.name}</div>`;
     html += `<div class="mall-desc">${mall.desc}</div>`;
     if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
-    html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ CSVダウンロード</button>`;
+    html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ ${key === 'rakuten' ? 'normal-item.csv' : 'CSVダウンロード'}</button>`;
     // 楽天の場合: item-cat.csvダウンロードボタン
     if (key === 'rakuten') {
-      html += `<button class="btn btn-outline" onclick="downloadItemCat()" style="margin-top:6px; font-size:12px;">⬇ item-cat.csv（カテゴリ）</button>`;
+      html += `<button class="btn btn-outline" onclick="downloadItemCat()" style="margin-top:6px; font-size:12px;">⬇ item-cat.csv</button>`;
     }
     // 楽天 + 自社Excelの場合: API直接登録ボタンを追加
     if (key === 'rakuten' && sourceType === 'jisha') {
