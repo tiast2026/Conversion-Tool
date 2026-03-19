@@ -202,7 +202,7 @@ let MASTER = {
   colorOrder: {}, nameCleanPatterns: [], deleteTemplates: [],
   malls: {
     rakuten:  {
-      controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0', rakutenAppId: 'feb7b7ce-bd14-47f7-be51-82fc8375e35f',
+      controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0',
       serviceSecret: '', licenseKey: '', corsProxy: '',
       shippingCat1: '', shippingCat2: '', shipLeadtime: '', deliveryLeadtime: '', okihai: '',
       namePrefix: 'NOAHL｜', nameSuffix: '',
@@ -590,11 +590,6 @@ function parseColorOrderText(text) {
 // ============================================================
 function openMaster() {
   document.getElementById('master-modal').style.display = 'block';
-  // 共通設定を読み込み
-  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
-  document.getElementById('master-color-order').value = co;
-  document.getElementById('master-name-clean').value = MASTER.nameCleanPatterns.join('\n');
-  document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
   // モール別設定を読み込み
   loadMallMasterUI('rakuten');
   loadMallMasterUI('futureshop');
@@ -621,7 +616,6 @@ function loadMallMasterUI(mall) {
   if (el(`mall-${mall}-brand`)) el(`mall-${mall}-brand`).value = m.brand || '';
   // 楽天固有
   if (mall === 'rakuten') {
-    if (el('mall-rakuten-app-id')) el('mall-rakuten-app-id').value = m.rakutenAppId || '';
     if (el('mall-rakuten-control-col')) el('mall-rakuten-control-col').value = m.controlCol || 'n';
     if (el('mall-rakuten-genre-id')) el('mall-rakuten-genre-id').value = m.genreId || '';
     if (el('mall-rakuten-catalog-reason')) el('mall-rakuten-catalog-reason').value = m.catalogReason || '3';
@@ -701,13 +695,6 @@ function switchRakutenTab(id, el) {
 }
 
 function saveMaster(which) {
-  if (which === 'colorOrder') {
-    MASTER.colorOrder = parseColorOrderText(document.getElementById('master-color-order').value);
-  } else if (which === 'nameClean') {
-    MASTER.nameCleanPatterns = document.getElementById('master-name-clean').value.split('\n').filter(l => l.trim());
-  } else if (which === 'deleteTpl') {
-    MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
-  }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
   saveToGitHub();
 }
@@ -724,7 +711,6 @@ function saveMallMaster(mall) {
   if (el(`mall-${mall}-brand`)) m.brand = el(`mall-${mall}-brand`).value.trim();
   // 楽天固有
   if (mall === 'rakuten') {
-    m.rakutenAppId = el('mall-rakuten-app-id')?.value?.trim() || '';
     m.controlCol = el('mall-rakuten-control-col')?.value || 'n';
     m.genreId = el('mall-rakuten-genre-id')?.value?.trim() || '';
     m.catalogReason = el('mall-rakuten-catalog-reason')?.value || '3';
@@ -886,7 +872,9 @@ function catalogReasonLabel(code) {
 }
 
 function loadDefaultColorOrder() {
-  document.getElementById('master-color-order').value = DEFAULT_COLOR_ORDER;
+  MASTER.colorOrder = parseColorOrderText(DEFAULT_COLOR_ORDER);
+  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
+  saveToGitHub();
   notify('デフォルトのカラー表示順を読み込みました', 'info');
 }
 
