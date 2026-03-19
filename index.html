@@ -149,7 +149,11 @@
     <div style="padding:20px 24px; flex:1; overflow-y:auto;">
     <!-- 共通設定 -->
     <div class="master-mall-panel active" id="mall-common">
-      <div class="master-form-card" id="tab-github">
+      <div id="master-tabs-common" style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap;">
+        <div class="sub-tab active" onclick="switchMasterTab('github', this)">GitHub連携</div>
+        <div class="sub-tab" onclick="switchMasterTab('convert-settings', this)">変換設定</div>
+      </div>
+      <div class="tab-panel active master-form-card" id="tab-github">
         <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">マスタ設定をGitHubリポジトリに直接保存します。保存ボタンを押すとGitHubにコミットされ、次回以降はどの端末でも最新の設定が読み込まれます。</p>
         <div style="margin-bottom:16px;">
           <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">GitHub Personal Access Token</label>
@@ -162,6 +166,29 @@
           <button class="btn btn-sm btn-outline" onclick="saveToGitHub()">接続テスト（GitHubに保存）</button>
         </div>
         <div id="gh-status" style="margin-top:12px; font-size:12px; color:var(--text-light);"></div>
+      </div>
+      <div class="tab-panel master-form-card" id="tab-convert-settings">
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">カラー表示順</h4>
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
+        <textarea id="master-color-order" style="width:100%; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999"></textarea>
+        <div style="margin-top:8px; display:flex; gap:8px; margin-bottom:20px;">
+          <button class="btn btn-sm btn-primary" onclick="saveMaster('colorOrder')">保存</button>
+          <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
+        </div>
+
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">商品名クリーニング</h4>
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
+        <textarea id="master-name-clean" style="width:100%; height:160px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="《[^》]*》&#10;【メール便】"></textarea>
+        <div style="margin-top:8px; margin-bottom:20px;">
+          <button class="btn btn-sm btn-primary" onclick="saveMaster('nameClean')">保存</button>
+        </div>
+
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">削除テンプレート</h4>
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">PC用販売説明文から削除するHTMLブロック（コメントタグ基準）を1行ずつ記入してください。</p>
+        <textarea id="master-delete-tpl" style="width:100%; height:160px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="&lt;!--配送について--&gt;&#10;&lt;!--ご注意--&gt;&#10;&lt;!--レビューを書いて--&gt;"></textarea>
+        <div style="margin-top:8px;">
+          <button class="btn btn-sm btn-primary" onclick="saveMaster('deleteTpl')">保存</button>
+        </div>
       </div>
     </div>
 

@@ -590,6 +590,11 @@ function parseColorOrderText(text) {
 // ============================================================
 function openMaster() {
   document.getElementById('master-modal').style.display = 'block';
+  // 共通 変換設定を読み込み
+  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
+  if (document.getElementById('master-color-order')) document.getElementById('master-color-order').value = co;
+  if (document.getElementById('master-name-clean')) document.getElementById('master-name-clean').value = MASTER.nameCleanPatterns.join('\n');
+  if (document.getElementById('master-delete-tpl')) document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
   // モール別設定を読み込み
   loadMallMasterUI('rakuten');
   loadMallMasterUI('futureshop');
@@ -695,6 +700,13 @@ function switchRakutenTab(id, el) {
 }
 
 function saveMaster(which) {
+  if (which === 'colorOrder') {
+    MASTER.colorOrder = parseColorOrderText(document.getElementById('master-color-order').value);
+  } else if (which === 'nameClean') {
+    MASTER.nameCleanPatterns = document.getElementById('master-name-clean').value.split('\n').filter(l => l.trim());
+  } else if (which === 'deleteTpl') {
+    MASTER.deleteTemplates = document.getElementById('master-delete-tpl').value.split('\n').filter(l => l.trim());
+  }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
   saveToGitHub();
 }
