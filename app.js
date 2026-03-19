@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '' },
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', groupName: '全てのアイテム', priceBeforeText: '定価のところ', salePriceBeforeText: '当店特別価格', keywords: '0,NOAHL,ノアル,レディース', priority: '20', descLargeTpl: '', descSmallTpl: '' },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -3096,7 +3096,7 @@ function goToStep(n) {
 // ============================================================
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
-  futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV' },
+  futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV（4ファイル）' },
   zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
   rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
 };
@@ -3183,17 +3183,38 @@ function downloadMall(mallKey) {
     case 'rakufashion': result = convertToRakufashion(); break;
     default: return;
   }
-  const csvStr = buildCSV(result.headers, result.rows);
+
   const bom = '\uFEFF';
-  const blob = new Blob([bom + csvStr], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const mallFileNames = { rakuten: 'normal-item', futureshop: 'futureshop', zozo: 'zozo', rakufashion: 'rakuten-fashion' };
-  a.download = `${mallFileNames[mallKey] || mallKey}_${dateTimeStr()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  notify(`${MALLS[mallKey].name}のCSVをダウンロードしました`, 'success');
+  const ts = dateTimeStr();
+
+  if (result.sheets) {
+    // 複数CSV出力（FutureShop等）
+    result.sheets.forEach((sheet, i) => {
+      setTimeout(() => {
+        const csvStr = buildCSV(sheet.headers, sheet.rows);
+        const blob = new Blob([bom + csvStr], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${sheet.name}${ts}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, i * 500);
+    });
+    notify(`${MALLS[mallKey].name}の${result.sheets.length}つのCSVをダウンロードしました`, 'success');
+  } else {
+    // 単一CSV出力
+    const csvStr = buildCSV(result.headers, result.rows);
+    const blob = new Blob([bom + csvStr], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const mallFileNames = { rakuten: 'normal-item', futureshop: 'futureshop', zozo: 'zozo', rakufashion: 'rakuten-fashion' };
+    a.download = `${mallFileNames[mallKey] || mallKey}_${ts}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify(`${MALLS[mallKey].name}のCSVをダウンロードしました`, 'success');
+  }
 }
 
 // ============================================================
@@ -3642,30 +3663,316 @@ function convertToRakuten() {
 }
 
 // ============================================================
-// CONVERSION: フューチャーショップ (stub)
+// CONVERSION: FutureShop (4 CSV files)
 // ============================================================
+
+// Helper: サイズ名からサイズコードを抽出 (Sサイズ → S, F(M)フリー → F)
+function getFsSizeCode(sizeName) {
+  if (!sizeName) return '';
+  const s = sizeName.replace(/サイズ$/, '').replace(/フリー$/, '').trim();
+  return s || sizeName;
+}
+
+// Helper: SKUからカラー名/コード/サイズ名/コードを取得
+function getFsSkuInfo(sku, prod) {
+  let color = '', colorCode = '', size = '', sizeCode = '';
+  if (sourceType === 'rakuten') {
+    color = sku.variants?.[0]?.value || '';
+    size = sku.variants?.[1]?.value || '';
+    // SKU管理番号からカラーコード抽出 (nltp485-2602-WH-S → WH)
+    const parts = (sku.skuMgmtNo || '').split('-');
+    const prodParts = (prod.id || '').split('-');
+    if (parts.length > prodParts.length) colorCode = parts[prodParts.length] || '';
+    if (parts.length > prodParts.length + 1) sizeCode = parts[prodParts.length + 1] || '';
+  } else {
+    color = sku.color || '';
+    colorCode = sku.colorCode || '';
+    size = sku.size || '';
+    sizeCode = getFsSizeCode(size);
+  }
+  return { color, colorCode, size, sizeCode };
+}
+
 function convertToFutureshop() {
-  // TODO: フューチャーショップCSVフォーマットの実装
-  const fsH = ['商品コード','商品名','販売価格','カラー','サイズ'];
-  const rows = [];
-  products.forEach(prod => {
-    const name = prod.cleanName || prod.name;
+  const fm = MASTER.malls.futureshop || {};
+  const sheets = [];
+
+  // ========== 各商品のカラー/サイズ情報を事前計算 ==========
+  const prodInfos = products.map(prod => {
+    const colorMap = new Map(); // color → colorCode
+    const sizeMap = new Map();  // size → sizeCode
     prod.skus.forEach(sku => {
-      const r = new Array(fsH.length).fill('');
-      r[0] = prod.id || prod.number || '';
-      r[1] = applyMallName(name, 'futureshop');
-      r[2] = sku.price || '';
-      if (sourceType === 'rakuten') {
-        r[3] = sku.variants?.[0]?.value || '';
-        r[4] = sku.variants?.[1]?.value || '';
-      } else {
-        r[3] = sku.color || '';
-        r[4] = sku.size || '';
-      }
-      rows.push(r);
+      const info = getFsSkuInfo(sku, prod);
+      if (info.color && !colorMap.has(info.color)) colorMap.set(info.color, info.colorCode);
+      if (info.size && !sizeMap.has(info.size)) sizeMap.set(info.size, info.sizeCode);
+    });
+    // カラー表示順でソート
+    const sortedColors = [...colorMap.keys()].sort((a, b) =>
+      (MASTER.colorOrder[a] || 9999) - (MASTER.colorOrder[b] || 9999)
+    );
+    // サイズ順でソート
+    const sizeOrder = {'S':1,'M':2,'L':3,'XL':4,'XXL':5,'F':0,'F(M)':0,'フリー':0,'FREE':0,'F(M)フリー':0};
+    const sortedSizes = [...sizeMap.keys()].sort((a, b) =>
+      (sizeOrder[getFsSizeCode(a)] || sizeOrder[a] || 99) - (sizeOrder[getFsSizeCode(b)] || sizeOrder[b] || 99)
+    );
+    return { prod, colorMap, sizeMap, sortedColors, sortedSizes };
+  });
+
+  // ========== 1. ccGoods_ (商品基本情報 113列) ==========
+  const ccH = [
+    'コントロールカラム','商品URLコード','ステータス','商品番号','商品名',
+    'メイングループ','優先度','本体価格','定価','消費税',
+    '販売期間(From)','販売期間(to)','販売期間表示','クール便指定',
+    '送料','送料パターン','送料パターン表示','送料個別金額','個別送料表示',
+    'オススメ商品商品ページ内表示','オススメ商品リスト','オススメ商品表示方法',
+    '商品価格上部コメントHTMLタグ','商品価格上部コメント',
+    '定価価格前文字','定価価格後文字','販売価格前文字','取消線定価表示方法',
+    '在庫管理','在庫数表示設定','在庫数表示設定方法','在庫僅少表示閾値',
+    '在庫なし表示テキスト','在庫なし表示テキスト表示方法',
+    '現在在庫数','調整在庫数','在庫数切れメール閾値',
+    'バリエーション横軸名','バリエーション縦軸名',
+    '会員価格設定','会員価格','アクセス制限',
+    'ポイント付与率設定','ポイント付与率',
+    'ステータス（他社サービス）','サンプル商品設定','サンプル商品同梱設定',
+    '最大購入制限個数','入荷お知らせメールボタン表示',
+    'JANコード','キャッチコピー',
+    'レコメンド２：行動履歴収集タグ出力フラグ','レコメンド２：レコメンド商品出力フラグ',
+    'レコメンド２：レコメンド表示フラグ','レコメンド２：レコメンド使用タグ優先設定',
+    'レコメンド２：商品ページ上部コメントの上','レコメンド２：商品ページ上部コメントの下',
+    'レコメンド２：商品ページ下部コメントの上','レコメンド２：商品ページ下部コメントの下',
+    'レコメンド２：商品ページおすすめ商品の上','レコメンド２：商品ページおすすめ商品の下',
+    'お気に入り登録数','メール便指定','メール便同梱数',
+    'バンドル販売','外部連携任意項目',
+    'おすすめ商品表示パターン設定','おすすめ商品表示パターン(コマースクリエイター)',
+    '外部連携商品名','外部連携商品説明',
+    'レイアウト割当名',
+    'ページ名(コマースクリエイター)','ページ名表示方法(コマースクリエイター)',
+    'キーワード(コマースクリエイター)','キーワード表示方法(コマースクリエイター)',
+    'Description(コマースクリエイター)','Description表示方法(コマースクリエイター)',
+    '商品一言説明(コマースクリエイター)',
+    '商品説明（大）','商品説明（小）',
+    '独自コメント（1）','独自コメント（2）','独自コメント（3）','独自コメント（4）',
+    '独自コメント（5）','独自コメント（6）','独自コメント（7）','独自コメント（8）',
+    '独自コメント（9）','独自コメント（10）','独自コメント（11）','独自コメント（12）',
+    '独自コメント（13）','独自コメント（14）','独自コメント（15）','独自コメント（16）',
+    '独自コメント（17）','独自コメント（18）','独自コメント（19）','独自コメント（20）',
+    'レコメンド２：レコメンド表示フラグ(コマースクリエイター)',
+    'レコメンド２：レコメンド使用タグ優先設定(コマースクリエイター)',
+    'レコメンド２：出力タグ１','レコメンド２：出力タグ２','レコメンド２：出力タグ３',
+    'レコメンド２：出力タグ４','レコメンド２：出力タグ５','レコメンド２：出力タグ６',
+    '配送種別','メール便同梱可能数（upgrade）','商品リードタイム',
+    '登録日時','最終更新日時'
+  ];
+  const ccI = {};
+  ccH.forEach((h, i) => ccI[h] = i);
+  const ccRows = [];
+
+  // 楽天用テンプレートを流用（FutureShop専用テンプレがあれば優先）
+  const rm = MASTER.malls.rakuten || {};
+
+  prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
+    const name = applyMallName(prod.cleanName || prod.name, 'futureshop');
+    const price = calcMallPrice(prod.sellPrice || '', 'futureshop');
+    const hasColor = sortedColors.length > 0;
+    const hasSize = sortedSizes.length > 0;
+
+    const row = new Array(ccH.length).fill('');
+    row[ccI['コントロールカラム']] = 'n';
+    row[ccI['商品URLコード']] = prod.id || prod.number || '';
+    row[ccI['商品番号']] = prod.id || prod.number || '';
+    row[ccI['商品名']] = name;
+    row[ccI['メイングループ']] = fm.groupName || '全てのアイテム';
+    row[ccI['本体価格']] = price;
+    row[ccI['消費税']] = '1';
+    row[ccI['販売期間表示']] = '0';
+    row[ccI['クール便指定']] = '0';
+    row[ccI['送料']] = '0';
+    row[ccI['送料パターン表示']] = '0';
+    row[ccI['個別送料表示']] = '';
+    row[ccI['オススメ商品商品ページ内表示']] = '0';
+    row[ccI['オススメ商品表示方法']] = '0';
+    row[ccI['定価価格前文字']] = fm.priceBeforeText || '定価のところ';
+    row[ccI['販売価格前文字']] = fm.salePriceBeforeText || '当店特別価格';
+    row[ccI['取消線定価表示方法']] = '1';
+    row[ccI['在庫管理']] = '0';
+    row[ccI['在庫数表示設定']] = '1';
+    row[ccI['在庫数表示設定方法']] = '0';
+    row[ccI['在庫僅少表示閾値']] = '0';
+    row[ccI['在庫なし表示テキスト表示方法']] = '0';
+    row[ccI['現在在庫数']] = '0';
+    row[ccI['調整在庫数']] = '0';
+    if (hasColor) row[ccI['バリエーション横軸名']] = 'カラー';
+    if (hasSize) row[ccI['バリエーション縦軸名']] = 'サイズ';
+    row[ccI['会員価格設定']] = '0';
+    row[ccI['アクセス制限']] = '0';
+    row[ccI['ポイント付与率設定']] = '0';
+    row[ccI['ポイント付与率']] = '0';
+    row[ccI['サンプル商品設定']] = '0';
+    row[ccI['サンプル商品同梱設定']] = '0';
+    row[ccI['入荷お知らせメールボタン表示']] = '0';
+    row[ccI['レコメンド２：行動履歴収集タグ出力フラグ']] = '1';
+    row[ccI['レコメンド２：レコメンド商品出力フラグ']] = '0';
+    row[ccI['レコメンド２：レコメンド表示フラグ']] = '0';
+    row[ccI['キャッチコピー']] = prod.productPoint || '';
+
+    // 外部連携商品名・説明
+    row[ccI['外部連携商品名']] = prod.cleanName || prod.name || '';
+    // 商品一言説明
+    row[ccI['商品一言説明(コマースクリエイター)']] = '{% product.name %}';
+    // キーワード（コマースクリエイター）
+    const keywords = fm.keywords || '0,NOAHL,ノアル,レディース';
+    row[ccI['キーワード(コマースクリエイター)']] = keywords;
+    // 優先度（コマースクリエイター用）
+    row[ccI['優先度']] = fm.priority || '20';
+
+    // 商品説明（大）= HTML説明文（楽天のsaleDescTplを流用）
+    const descLarge = fm.descLargeTpl
+      ? applyDescTemplate(fm.descLargeTpl, prod)
+      : applyDescTemplate(rm.saleDescTpl, prod);
+    row[ccI['商品説明（大）']] = descLarge;
+
+    // 商品説明（小）= テキスト説明文（楽天のpcDescTplを流用）
+    const descSmall = fm.descSmallTpl
+      ? applyDescTemplate(fm.descSmallTpl, prod)
+      : applyDescTemplate(rm.pcDescTpl, prod);
+    row[ccI['商品説明（小）']] = descSmall;
+
+    // メール便指定（配送方法から判定）
+    const shipping = prod.shippingMethod || '';
+    if (shipping.includes('メール便') || shipping.includes('ネコポス') || shipping.includes('ゆうパケット')) {
+      row[ccI['メール便指定']] = '1';
+      row[ccI['メール便同梱数']] = '0';
+    }
+
+    ccRows.push(row);
+  });
+  sheets.push({ name: 'ccGoods_', headers: ccH, rows: ccRows });
+
+  // ========== 2. goodsVariationConfirm_ (バリエーション定義) ==========
+  const vcH = [
+    'コントロールカラム','商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '表示順','商品番号','商品名','最終更新日時'
+  ];
+  const vcI = {};
+  vcH.forEach((h, i) => vcI[h] = i);
+  const vcRows = [];
+
+  prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
+    const name = prod.cleanName || prod.name || '';
+    const urlCode = prod.id || prod.number || '';
+
+    // カラー行（バリエーション1=カラー名, バリエーション2=カラーコード）
+    sortedColors.forEach(color => {
+      const code = colorMap.get(color) || '';
+      const order = MASTER.colorOrder[color] || '';
+      const row = new Array(vcH.length).fill('');
+      row[vcI['コントロールカラム']] = 'n';
+      row[vcI['商品URLコード']] = urlCode;
+      row[vcI['バリエーション1']] = color;
+      row[vcI['バリエーション2']] = code ? '-' + code : '';
+      row[vcI['表示順']] = String(order);
+      row[vcI['商品番号']] = urlCode;
+      row[vcI['商品名']] = name;
+      vcRows.push(row);
+    });
+
+    // サイズ行（バリエーション3=サイズ名, バリエーション4=サイズコード）
+    sortedSizes.forEach((size, idx) => {
+      const code = sizeMap.get(size) || getFsSizeCode(size);
+      const row = new Array(vcH.length).fill('');
+      row[vcI['コントロールカラム']] = 'n';
+      row[vcI['商品URLコード']] = urlCode;
+      row[vcI['バリエーション3']] = size;
+      row[vcI['バリエーション4']] = code ? '-' + code : '';
+      row[vcI['表示順']] = String(idx + 1);
+      row[vcI['商品番号']] = urlCode;
+      row[vcI['商品名']] = name;
+      vcRows.push(row);
     });
   });
-  return { headers: fsH, rows };
+  sheets.push({ name: 'goodsVariationConfirm_', headers: vcH, rows: vcRows });
+
+  // ========== 3. goodsVariationDetail_ (SKU明細: 色×サイズ全組合せ) ==========
+  const vdH = [
+    '商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '代表バリエーション','在庫閾値','在庫切れメール',
+    '商品番号','商品管理番号','商品名','JANコード','最終更新日付'
+  ];
+  const vdI = {};
+  vdH.forEach((h, i) => vdI[h] = i);
+  const vdRows = [];
+
+  prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
+    const name = prod.cleanName || prod.name || '';
+    const urlCode = prod.id || prod.number || '';
+
+    // 全色×全サイズの組み合わせを生成
+    sortedColors.forEach(color => {
+      const cCode = colorMap.get(color) || '';
+      sortedSizes.forEach(size => {
+        const sCode = sizeMap.get(size) || getFsSizeCode(size);
+        // 対応するSKUを探してJANコードを取得
+        const matchSku = prod.skus.find(sku => {
+          const info = getFsSkuInfo(sku, prod);
+          return info.color === color && info.size === size;
+        });
+        const jan = matchSku ? (matchSku.jan || matchSku.systemSku || '') : '';
+        const mgmtNo = urlCode + (cCode ? '-' + cCode : '');
+
+        const row = new Array(vdH.length).fill('');
+        row[vdI['商品URLコード']] = urlCode;
+        row[vdI['バリエーション1']] = color;
+        row[vdI['バリエーション2']] = cCode ? '-' + cCode : '';
+        row[vdI['バリエーション3']] = size;
+        row[vdI['バリエーション4']] = sCode ? '-' + sCode : '';
+        row[vdI['商品番号']] = urlCode;
+        row[vdI['商品管理番号']] = mgmtNo;
+        row[vdI['商品名']] = name;
+        row[vdI['JANコード']] = jan;
+        vdRows.push(row);
+      });
+    });
+  });
+  sheets.push({ name: 'goodsVariationDetail_', headers: vdH, rows: vdRows });
+
+  // ========== 4. goodsSelection_ (選択肢項目) ==========
+  const gsH = [
+    'コントロールカラム','商品URLコード','選択肢タイプ',
+    'セレクト／ラジオ','セレクト／ラジオ','項目選択肢前改行',
+    '項目名位置','項目選択肢表示','テキスト幅','最終更新日時'
+  ];
+  const gsI = {};
+  gsH.forEach((h, i) => gsI[h] = i);
+  const gsRows = [];
+
+  // 商品オプション（レビュー投稿特典など）がある場合のみ生成
+  prodInfos.forEach(({ prod }) => {
+    const urlCode = prod.id || prod.number || '';
+    if (prod._options && prod._options.length > 0) {
+      prod._options.forEach(opt => {
+        if (opt.choices) {
+          opt.choices.forEach(choice => {
+            const row = new Array(gsH.length).fill('');
+            row[gsI['コントロールカラム']] = 'n';
+            row[gsI['商品URLコード']] = urlCode;
+            row[gsI['選択肢タイプ']] = 's';
+            row[gsI['セレクト／ラジオ']] = opt.name || '';
+            row[4] = choice;
+            row[gsI['項目選択肢前改行']] = '0';
+            row[gsI['項目名位置']] = '0';
+            row[gsI['項目選択肢表示']] = '0';
+            gsRows.push(row);
+          });
+        }
+      });
+    }
+  });
+  // オプションがなくてもシートは出力（空データ）
+  sheets.push({ name: 'goodsSelection_', headers: gsH, rows: gsRows });
+
+  return { sheets };
 }
 
 // ============================================================
