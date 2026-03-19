@@ -212,10 +212,9 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    shopline: { priceRate: 100, defaultStock: 0, namePrefix: '', nameSuffix: '' },
-    yahoo:    { priceRate: 40, namePrefix: '', nameSuffix: '' },
-    amazon:   { priceRate: 100, brand: '', namePrefix: '', nameSuffix: '' },
-    qoo10:    { priceRate: 100, namePrefix: '', nameSuffix: '' }
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '' },
+    zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
+    rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
 };
 
@@ -598,10 +597,9 @@ function openMaster() {
   document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
   // モール別設定を読み込み
   loadMallMasterUI('rakuten');
-  loadMallMasterUI('shopline');
-  loadMallMasterUI('yahoo');
-  loadMallMasterUI('amazon');
-  loadMallMasterUI('qoo10');
+  loadMallMasterUI('futureshop');
+  loadMallMasterUI('zozo');
+  loadMallMasterUI('rakufashion');
   initCorsProxyCodeDisplay();
   // GitHub Token を表示（マスク済みの値を入力欄にセット）
   const ghInput = document.getElementById('gh-token-input');
@@ -668,6 +666,9 @@ function loadMallMasterUI(mall) {
       });
       el('mall-rakuten-shop-category-map').value = lines.join('\n');
     }
+    // ネクストエンジンAPI
+    if (el('mall-rakuten-ne-client-id')) el('mall-rakuten-ne-client-id').value = m.neClientId || '';
+    if (el('mall-rakuten-ne-client-secret')) el('mall-rakuten-ne-client-secret').value = m.neClientSecret || '';
   }
 }
 
@@ -777,6 +778,9 @@ function saveMallMaster(mall) {
       }
     });
     m.shopCategoryMap = catMapObj;
+    // ネクストエンジンAPI
+    m.neClientId = el('mall-rakuten-ne-client-id')?.value?.trim() || '';
+    m.neClientSecret = el('mall-rakuten-ne-client-secret')?.value?.trim() || '';
   }
   localStorage.setItem('noahl_master', JSON.stringify(MASTER));
   saveToGitHub();
@@ -2893,10 +2897,9 @@ function goToStep(n) {
 // ============================================================
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
-  shopline: { name: 'SHOPLINE（自社）', desc: 'SHOPLINE商品インポートCSV' },
-  yahoo: { name: 'Yahoo!ショッピング', desc: 'Yahoo!ストアクリエイター CSV' },
-  amazon: { name: 'Amazon', desc: 'Amazon フラットファイル（簡易版）' },
-  qoo10: { name: 'Qoo10', desc: 'Qoo10 商品一括登録CSV' },
+  futureshop: { name: 'フューチャーショップ', desc: 'フューチャーショップ商品CSV' },
+  zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
+  rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
 };
 
 function renderStep4Download() {
@@ -2951,10 +2954,9 @@ function downloadMall(mallKey) {
   let result;
   switch(mallKey) {
     case 'rakuten': result = convertToRakuten(); break;
-    case 'shopline': result = convertToShopline(); break;
-    case 'yahoo': result = convertToYahoo(); break;
-    case 'amazon': result = convertToAmazon(); break;
-    case 'qoo10': result = convertToQoo10(); break;
+    case 'futureshop': result = convertToFutureshop(); break;
+    case 'zozo': result = convertToZozo(); break;
+    case 'rakufashion': result = convertToRakufashion(); break;
     default: return;
   }
   const csvStr = buildCSV(result.headers, result.rows);
@@ -2963,7 +2965,7 @@ function downloadMall(mallKey) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const mallFileNames = { rakuten: 'normal-item', shopline: 'shopline', yahoo: 'yahoo', amazon: 'amazon', qoo10: 'qoo10' };
+  const mallFileNames = { rakuten: 'normal-item', futureshop: 'futureshop', zozo: 'zozo', rakufashion: 'rakuten-fashion' };
   a.download = `${mallFileNames[mallKey] || mallKey}_${dateTimeStr()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
@@ -3416,7 +3418,88 @@ function convertToRakuten() {
 }
 
 // ============================================================
-// CONVERSION: Shopline
+// CONVERSION: フューチャーショップ (stub)
+// ============================================================
+function convertToFutureshop() {
+  // TODO: フューチャーショップCSVフォーマットの実装
+  const fsH = ['商品コード','商品名','販売価格','カラー','サイズ'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = prod.cleanName || prod.name;
+    prod.skus.forEach(sku => {
+      const r = new Array(fsH.length).fill('');
+      r[0] = prod.id || prod.number || '';
+      r[1] = applyMallName(name, 'futureshop');
+      r[2] = sku.price || '';
+      if (sourceType === 'rakuten') {
+        r[3] = sku.variants?.[0]?.value || '';
+        r[4] = sku.variants?.[1]?.value || '';
+      } else {
+        r[3] = sku.color || '';
+        r[4] = sku.size || '';
+      }
+      rows.push(r);
+    });
+  });
+  return { headers: fsH, rows };
+}
+
+// ============================================================
+// CONVERSION: ZOZO (stub)
+// ============================================================
+function convertToZozo() {
+  // TODO: ZOZO用Excelフォーマットの実装
+  const zH = ['商品コード','商品名','販売価格','カラー','サイズ'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = prod.cleanName || prod.name;
+    prod.skus.forEach(sku => {
+      const r = new Array(zH.length).fill('');
+      r[0] = prod.id || prod.number || '';
+      r[1] = applyMallName(name, 'zozo');
+      r[2] = sku.price || '';
+      if (sourceType === 'rakuten') {
+        r[3] = sku.variants?.[0]?.value || '';
+        r[4] = sku.variants?.[1]?.value || '';
+      } else {
+        r[3] = sku.color || '';
+        r[4] = sku.size || '';
+      }
+      rows.push(r);
+    });
+  });
+  return { headers: zH, rows };
+}
+
+// ============================================================
+// CONVERSION: 楽天ファッション (stub)
+// ============================================================
+function convertToRakufashion() {
+  // TODO: 楽天ファッションCSVフォーマットの実装
+  const rfH = ['商品コード','商品名','販売価格','カラー','サイズ'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = prod.cleanName || prod.name;
+    prod.skus.forEach(sku => {
+      const r = new Array(rfH.length).fill('');
+      r[0] = prod.id || prod.number || '';
+      r[1] = applyMallName(name, 'rakufashion');
+      r[2] = sku.price || '';
+      if (sourceType === 'rakuten') {
+        r[3] = sku.variants?.[0]?.value || '';
+        r[4] = sku.variants?.[1]?.value || '';
+      } else {
+        r[3] = sku.color || '';
+        r[4] = sku.size || '';
+      }
+      rows.push(r);
+    });
+  });
+  return { headers: rfH, rows };
+}
+
+// ============================================================
+// LEGACY: Shopline (deprecated)
 // ============================================================
 function convertToShopline() {
   if (sourceType === 'shopline') return { headers, rows: rawRows };
