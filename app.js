@@ -2845,6 +2845,7 @@ function convertToRakuten() {
       pRow[RI['販売期間指定']] = (spStartVal && spEndVal) ? `${spStartVal}/${spEndVal}` : '';
       pRow[RI['注文受付数']] = prod._orderLimit || '';
       pRow[RI['カタログID']] = prod._catalogId || '';
+      pRow[RI['カタログIDなしの理由']] = prod._catalogReason || rm.catalogReason || '3';
       // バリエーション定義
       const keyParts = [];
       const nameParts = [];
