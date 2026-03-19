@@ -96,6 +96,7 @@
       "imgType": "0",
       "imgCabinetBase": "/shohin/",
       "maxProductImages": 20,
+      "itemCatPriority": "9999",
       "shopCategoryMap": {}
     },
     "shopline": {
