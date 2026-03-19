@@ -1,4 +1,125 @@
 {
-  "activeProfile": "",
-  "profiles": {}
+  "activeProfile": "NOAHL",
+  "profiles": {
+    "NOAHL": {
+      "colorOrder": {
+        "F(M)フリー": 1,
+        "Sサイズ": 1,
+        "Mサイズ": 2,
+        "Lサイズ": 3,
+        "ホワイト": 1,
+        "オフホワイト": 2,
+        "オートミール": 3,
+        "アイボリー": 4,
+        "クリーム": 5,
+        "クリーム×イエロー": 6,
+        "ライトベージュ": 7,
+        "ベージュ": 8,
+        "ライトブルー": 9,
+        "ピンク": 10,
+        "イエロー": 11,
+        "バターイエロー": 12,
+        "ブルー": 13,
+        "ミント": 14,
+        "ミントグレー": 15,
+        "ベージュ×ブラック": 16,
+        "グレー×ブルー": 17,
+        "グレージュ": 18,
+        "グレージュ×ピンク": 19,
+        "ブラウン": 20,
+        "ブラウンMIX": 21,
+        "チャコール": 22,
+        "チャコールMIX": 23,
+        "ブラック": 9999,
+        "スミクロ": 9999,
+        "クリームイエロー": 6,
+        "ダークブラウン": 21
+      },
+      "nameCleanPatterns": [
+        "《[^》]*》",
+        "【メール便】",
+        "\\s*\\d{6}$"
+      ],
+      "deleteTemplates": [
+        "<!--配送について-->",
+        "<!--ご注意-->",
+        "<!--レビューを書いて-->",
+        "<!--コンセプト-->",
+        "<!--よくある質問-->"
+      ],
+      "malls": {
+        "rakuten": {
+          "controlCol": "n",
+          "genreId": "",
+          "catalogReason": "3",
+          "stockType": "1",
+          "restockBtn": "0",
+          "corsProxy": "https://restless-block-e526.shusuke-tiast.workers.dev/",
+          "shippingCat1": "",
+          "shippingCat2": "",
+          "shipLeadtime": "",
+          "deliveryLeadtime": "",
+          "okihai": "",
+          "namePrefix": "NOAHL｜",
+          "nameSuffix": "",
+          "priceRate": 40,
+          "taxType": "0",
+          "pointRate": 1,
+          "pointStart": "",
+          "pointEnd": "",
+          "shippingFee": "0",
+          "indivShipping": 0,
+          "shippingSet": "1",
+          "shippingName": "宅急便(ヤマト運輸)",
+          "shippingSets": [
+            {
+              "num": "1",
+              "name": "宅急便(ヤマト運輸)"
+            },
+            {
+              "num": "2",
+              "name": "ネコポス(ヤマト運輸)"
+            },
+            {
+              "num": "3",
+              "name": "ゆうパック(日本郵政)"
+            },
+            {
+              "num": "4",
+              "name": "ゆうパケット(日本郵政)"
+            }
+          ],
+          "asuraku": "",
+          "deliveryInfo": "",
+          "noshi": "0",
+          "pcDescTpl": "【商品紹介】<br>\n\n【サイズ】{採寸サイズ整形}<br><br>\n\n【モデル着用サイズ / 身長】<br><br>\n\n\n【素材】<br>\n{素材}<br><br>\n\n【カラー】<br>\n{カラー一覧}<br><br>\n\n【備考】<br>\n {仕様整形}<br><br>\n ※ご利用の端末環境により、商品画像と実物では多少色合いが異なって見える場合がございます。<br>\n ※お洗濯、アイロンの際は内タグの品質表示を必ずご確認ください。<br>\n ※商品にはたたみシワ等のシワがついている場合がございます。<br>\n ※染料による匂いが抜けきれず、特有の匂いがする場合がございます。<br>",
+          "spDescTpl": "<center>\n<!-- メイン -->\n<img src=\"{画像URL1}\" alt=\"{商品名}\" width=\"100%\"><br><br>\n\n<!-- 商品紹介 -->\n<img src=\"{img画像}\" alt=\"{商品名}\" width=\"100%\"><br><br>\n\n<!-- カラバリ（色の数だけ自動展開） -->\n{カラバリ繰返し}\n<img src=\"{色画像1}\" alt=\"{商品名}\" width=\"100%\"><br><br>\n{/カラバリ繰返し}\n\n<!-- 固定末尾 -->\n<img src=\"{画像URL19}\" alt=\"{商品名}\" width=\"100%\"><br><br>\n<img src=\"{画像URL20}\" alt=\"{商品名}\" width=\"100%\"><br><br>\n\n\n<!-- メール便 -->\n<IMG src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/06559841/mailbin-1.jpg\" width=\"100%\"><br><br>\n\n</center>\n\n<hr><br>【商品紹介】{採寸サイズ整形}<br><br>\n\n【モデル着用サイズ / 身長】<br><br>\n\n【素材】<br>\n{素材}<br><br>\n\n【カラー】<br>\n{カラー一覧}<br><br>\n\n【備考】<br>\n{仕様}<br><br>\n ※ご利用の端末環境により、商品画像と実物では多少色合いが異なって見える場合がございます。<br>\n ※お洗濯、アイロンの際は内タグの品質表示を必ずご確認ください。<br>\n ※商品にはたたみシワ等のシワがついている場合がございます。<br>\n ※染料による匂いが抜けきれず、特有の匂いがする場合がございます。<br><br><hr>\n\n<!--配送について-->\n<IMG src=\"https://www.rakuten.ne.jp/gold/noahl/image/shouhin/haisou.jpg\" width=\"100%\">\n<br><br>\n\n<!--ご注意-->\n<IMG src=\"https://image.rakuten.co.jp/noahl/cabinet/shohin/attention.jpg\" width=\"100%\">\n<br><br>\n\n<!--コンセプト-->\n<img src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/concept.jpg\" width=\"100%\"><br><br>\n\n<!--よくある質問-->\n<a href=\"https://item.rakuten.co.jp/noahl/c/0000000282/?l-id=shoptop_shopmenu_shopcategory_10\"><img src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/bnr_fqa.jpg\" width=\"100%\"></a><br><br>\n\n<font size=\"2\" color=\"#97887d\">検索ワード： noahl ノアル</font>",
+          "saleDescTpl": "<center>\n<!-- 1 -->\n<img src=\"{画像URL1}\" alt=\"{商品名}\" width=\"700px\"><br><br>\n\n<!-- img -->\n<IMG src=\"{img画像}\" width=\"700px\"><br><br>\n\n{カラバリ繰返し}\n<!-- カラー{色番号} -->\n<img src=\"{色画像1}\" width=\"700px\"><br><br>\n<img src=\"{色画像2}\" width=\"700px\"><br><br>\n<img src=\"{色画像3}\" width=\"700px\"><br><br>\n<img src=\"{色画像4}\" width=\"700px\"><br><br>\n<img src=\"{色画像5}\" width=\"700px\"><br><br>\n<img src=\"{色画像6}\" width=\"700px\"><br><br>\n<img src=\"{色画像7}\" width=\"700px\"><br><br>\n<img src=\"{色画像8}\" width=\"700px\"><br><br>\n<img src=\"{色画像9}\" width=\"700px\"><br><br>\n<img src=\"{色画像10}\" width=\"700px\"><br><br>\n{/カラバリ繰返し}\n\n<!-- 固定末尾 -->\n<img src=\"{画像URL19}\" width=\"700px\"><br><br>\n<img src=\"{画像URL20}\" width=\"700px\"><br><br>\n\n<!-- メール便 -->\n<IMG src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/06559841/mailbin-1.jpg\"><br><br>\n\n\n<!--配送について-->\n<IMG src=\"https://www.rakuten.ne.jp/gold/noahl/image/shouhin/haisou.jpg\">\n<br><br>\n\n<!--ご注意-->\n<IMG src=\"https://image.rakuten.co.jp/noahl/cabinet/shohin/attention.jpg\">\n<br><br>\n\n<!--コンセプト-->\n<img src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/concept.jpg\" width=\"700px\"><br><br>\n\n<!--よくある質問-->\n<a href=\"https://item.rakuten.co.jp/noahl/c/0000000282/?l-id=shoptop_shopmenu_shopcategory_10\"><img src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/bnr_fqa.jpg\"></a><br><br>\n\n<font size=\"2\" color=\"#97887d\">検索ワード：noahl ノアル</font></center>",
+          "imgCabinet": "",
+          "imgType": "0",
+          "imgCabinetBase": "/shohin/",
+          "maxProductImages": 20,
+          "rakutenAppId": "feb7b7ce-bd14-47f7-be51-82fc8375e35f",
+          "itemCatPriority": "9999",
+          "shopCategoryMap": {},
+          "itemCatDefaultCat": "その他"
+        },
+        "futureshop": {
+          "priceRate": 100,
+          "namePrefix": "",
+          "nameSuffix": ""
+        },
+        "zozo": {
+          "priceRate": 100,
+          "namePrefix": "",
+          "nameSuffix": ""
+        },
+        "rakufashion": {
+          "priceRate": 100,
+          "namePrefix": "",
+          "nameSuffix": ""
+        }
+      }
+    }
+  }
 }
