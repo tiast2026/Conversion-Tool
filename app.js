@@ -3413,8 +3413,8 @@ function convertToRakuten() {
       // バリエーション定義
       const keyParts = [];
       const nameParts = [];
-      if (hasColor) { keyParts.push('horizontal-key'); nameParts.push('カラー'); }
-      if (hasSize) { keyParts.push('vertical-key'); nameParts.push('サイズ'); }
+      if (hasColor) { keyParts.push('カラー'); nameParts.push('カラー'); }
+      if (hasSize) { keyParts.push('サイズ'); nameParts.push('サイズ'); }
       pRow[RI['バリエーション項目キー定義']] = keyParts.join('|');
       pRow[RI['バリエーション項目名定義']] = nameParts.join('|');
       if (hasColor) {
@@ -3478,10 +3478,10 @@ function convertToRakuten() {
         sRow[RI['システム連携用SKU番号']] = sku._systemSkuOverride !== undefined ? sku._systemSkuOverride : (sku.skuMgmtNo || (prod.number + sRow[RI['SKU管理番号']]));
 
         // バリエーション項目キー/選択肢
-        if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'horizontal-key'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
+        if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'カラー'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
         if (hasSize) {
           const sizeKeyIdx = hasColor ? 2 : 1;
-          sRow[RI[`バリエーション項目キー${sizeKeyIdx}`]] = 'vertical-key';
+          sRow[RI[`バリエーション項目キー${sizeKeyIdx}`]] = 'サイズ';
           sRow[RI[`バリエーション項目選択肢${sizeKeyIdx}`]] = sku.size;
         }
 
@@ -4217,7 +4217,7 @@ function buildRakutenApiItem(prod) {
     });
   }
   if (hasSize) {
-    const sizeOrder = {'S':1, 'M':2, 'L':3, 'XL':4, 'XXL':5, 'F':0, 'F(M)':0, 'フリー':0, 'FREE':0};
+    const sizeOrder = {'S':1, 'M':2, 'L':3, 'XL':4, 'XXL':5, 'F':0, 'F(M)':0, 'フリー':0, 'FREE':0, 'F(M)フリー':0};
     const sortedSizes = [...sizeSet].sort((a, b) => (sizeOrder[a] || 99) - (sizeOrder[b] || 99));
     variants.push({
       key: 'サイズ',
