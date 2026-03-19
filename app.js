@@ -205,7 +205,7 @@ let MASTER = {
       controlCol: 'n', genreId: '', catalogReason: '3', stockType: '1', restockBtn: '0', rakutenAppId: 'feb7b7ce-bd14-47f7-be51-82fc8375e35f',
       serviceSecret: '', licenseKey: '', corsProxy: '',
       shippingCat1: '', shippingCat2: '', shipLeadtime: '', deliveryLeadtime: '', okihai: '',
-      namePrefix: '', nameSuffix: '',
+      namePrefix: 'NOAHL｜', nameSuffix: '',
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
       shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', shippingSets: [], asuraku: '', deliveryInfo: '', noshi: '0',
       pcDescTpl: '', spDescTpl: '', saleDescTpl: '',
@@ -2817,7 +2817,8 @@ function convertToRakuten() {
       pRow[RI['コントロールカラム']] = prod._controlCol || rm.controlCol || 'n';
       pRow[RI['商品管理番号（商品URL）']] = prod.number;
       pRow[RI['商品番号']] = prod._productNo || prod.number;
-      pRow[RI['商品名']] = applyMallName(prod.cleanName || prod.name, 'rakuten');
+      const rakutenName = applyMallName(prod.cleanName || prod.name, 'rakuten');
+      pRow[RI['商品名']] = rakutenName;
       pRow[RI['販売価格']] = prod.sellPrice;
       pRow[RI['表示価格']] = prod._displayPrice || prod.sellPrice || '';
       pRow[RI['ジャンルID']] = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
@@ -2832,7 +2833,7 @@ function convertToRakuten() {
       pRow[RI['のし対応']] = prod._noshi !== undefined ? prod._noshi : (rm.noshi || '0');
       pRow[RI['在庫タイプ']] = prod._stockType !== undefined ? prod._stockType : (rm.stockType || '1');
       pRow[RI['再入荷お知らせボタン']] = prod._restockBtn !== undefined ? prod._restockBtn : (rm.restockBtn || '0');
-      pRow[RI['キャッチコピー']] = prod._catchCopy || prod.productPoint || '';
+      pRow[RI['キャッチコピー']] = prod._catchCopy || prod.productPoint || rakutenName;
       pRow[RI['PC用商品説明文']] = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
       pRow[RI['スマートフォン用商品説明文']] = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
       pRow[RI['PC用販売説明文']] = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
