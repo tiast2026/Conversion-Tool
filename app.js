@@ -1329,6 +1329,37 @@ function generateImgUrl(prod) {
   return `https://image.rakuten.co.jp/noahl/cabinet${cabinetBase}${folder}${base}img.jpg`;
 }
 
+// 色別img画像URLマップ生成: { 1: "...nltp497imgbe.jpg", 2: "...nltp497imggy.jpg", ... }
+function generateColorImgUrlMap(prod) {
+  const rm = MASTER.malls.rakuten;
+  const number = prod.number || '';
+  if (!number) return {};
+  const parts = number.split('-');
+  if (parts.length < 2) return {};
+  const base = parts[0];
+  const ymCode = parts[1];
+  const yy = ymCode.substring(0, 2);
+  const folder = `20${yy}/20${ymCode}/`;
+  const cabinetBase = rm.imgCabinetBase || '/shohin/';
+  const urlBase = `https://image.rakuten.co.jp/noahl/cabinet${cabinetBase}${folder}${base}`;
+
+  const colorCodes = [];
+  const seen = new Set();
+  prod.skus.forEach(sku => {
+    const code = sku.colorCode || '';
+    if (code && !seen.has(code)) {
+      seen.add(code);
+      colorCodes.push(code.toLowerCase());
+    }
+  });
+
+  const map = {};
+  colorCodes.forEach((code, idx) => {
+    map[idx + 1] = `${urlBase}img${code}.jpg`;
+  });
+  return map;
+}
+
 // 色番号別の画像URLマップを生成: { 1: [url1, url2, ...], 2: [...], ... }
 function generateColorImageMap(prod) {
   const rm = MASTER.malls.rakuten;
@@ -2977,6 +3008,7 @@ function applyDescTemplate(tpl, prod) {
   }
   // {カラバリ繰返し}...{/カラバリ繰返し} を色の数だけ展開
   const colorImageMap = generateColorImageMap(prod);
+  const colorImgUrlMap = generateColorImgUrlMap(prod);
   const colorCount = Object.keys(colorImageMap).length;
   result = result.replace(/\{カラバリ繰返し\}([\s\S]*?)\{\/カラバリ繰返し\}/g, (match, inner) => {
     const blocks = [];
@@ -2987,6 +3019,8 @@ function applyDescTemplate(tpl, prod) {
         if (!urls) return '';
         return urls[parseInt(imgNum) - 1] || '';
       });
+      // {色img画像} → そのカラーのimg画像URL
+      block = block.replace(/\{色img画像\}/g, colorImgUrlMap[c] || '');
       // {色番号} → 1, 2, 3...
       block = block.replace(/\{色番号\}/g, String(c));
       blocks.push(block);
@@ -2998,6 +3032,10 @@ function applyDescTemplate(tpl, prod) {
     const urls = colorImageMap[parseInt(colorNum)];
     if (!urls) return '';
     return urls[parseInt(imgNum) - 1] || '';
+  });
+  // {1色目img画像}〜{N色目img画像} を置換
+  result = result.replace(/\{(\d+)色目img画像\}/g, (match, colorNum) => {
+    return colorImgUrlMap[parseInt(colorNum)] || '';
   });
   return result;
 }
