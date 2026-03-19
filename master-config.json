@@ -66,8 +66,8 @@
       "pointEnd": "",
       "shippingFee": "0",
       "indivShipping": 0,
-      "shippingSet": "",
-      "shippingName": "",
+      "shippingSet": "1",
+      "shippingName": "宅急便(ヤマト運輸)",
       "shippingSets": [
         {
           "num": "1",
