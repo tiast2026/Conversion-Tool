@@ -72,10 +72,22 @@
           "shippingSet": "1",
           "shippingName": "宅急便(ヤマト運輸)",
           "shippingSets": [
-            {"num": "1", "name": "宅急便(ヤマト運輸)"},
-            {"num": "2", "name": "ネコポス(ヤマト運輸)"},
-            {"num": "3", "name": "ゆうパック(日本郵政)"},
-            {"num": "4", "name": "ゆうパケット(日本郵政)"}
+            {
+              "num": "1",
+              "name": "宅急便(ヤマト運輸)"
+            },
+            {
+              "num": "2",
+              "name": "ネコポス(ヤマト運輸)"
+            },
+            {
+              "num": "3",
+              "name": "ゆうパック(日本郵政)"
+            },
+            {
+              "num": "4",
+              "name": "ゆうパケット(日本郵政)"
+            }
           ],
           "asuraku": "",
           "deliveryInfo": "",
@@ -87,7 +99,10 @@
           "imgType": "0",
           "imgCabinetBase": "/shohin/",
           "maxProductImages": 20,
-          "shopCategoryMap": {}
+          "rakutenAppId": "feb7b7ce-bd14-47f7-be51-82fc8375e35f",
+          "itemCatPriority": "9999",
+          "shopCategoryMap": {},
+          "itemCatDefaultCat": "その他"
         },
         "futureshop": {
           "priceRate": 100,
