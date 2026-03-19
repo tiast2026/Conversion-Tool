@@ -2897,7 +2897,7 @@ function goToStep(n) {
 // ============================================================
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
-  futureshop: { name: 'フューチャーショップ', desc: 'フューチャーショップ商品CSV' },
+  futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV' },
   zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
   rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
 };
