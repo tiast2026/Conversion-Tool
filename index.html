@@ -699,7 +699,10 @@
               <br>
               <code style="background:#e8f5e9; padding:2px 6px; border-radius:3px;">{1色目画像1}</code>〜<code style="background:#e8f5e9; padding:2px 6px; border-radius:3px;">{N色目画像M}</code>
               <span style="color:#666; font-size:11px;">色番号+連番で指定（1色目=SKU出現順1番目のカラー）</span>
-              <br><span style="color:var(--text-light);">↑ 品番+カラーコードから画像URLを自動生成。両方のタグを混在利用可。</span>
+              <br>
+              <code style="background:#e8f5e9; padding:2px 6px; border-radius:3px;">{カラバリ繰返し}</code>...<code style="background:#e8f5e9; padding:2px 6px; border-radius:3px;">{/カラバリ繰返し}</code>
+              <span style="color:#666; font-size:11px;">ブロック内を色の数だけ自動繰返し。中で<code>{色画像1}</code>〜<code>{色画像N}</code>, <code>{色番号}</code>が使えます</span>
+              <br><span style="color:var(--text-light);">↑ 品番+カラーコードから画像URLを自動生成。すべてのタグを混在利用可。</span>
             </td>
           </tr>
           <tr>
@@ -752,25 +755,32 @@
 &lt;img src="{画像URL20}" alt="{商品名}" width="100%"&gt; ← 固定(-11)</pre>
               </div>
               <div style="background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:14px; margin-bottom:10px;">
-                <div style="font-weight:600; margin-bottom:8px; color:#2e7d32;">使い方② カラバリタグ {N色目画像M}（おすすめ）</div>
-                <p style="margin:0 0 6px;">色ごとに分けて指定できるので、色数が変わってもテンプレートを変更不要：</p>
-<pre style="background:#fff; border:1px solid #eee; border-radius:4px; padding:10px; font-size:11px; overflow-x:auto; margin:0;">&lt;!-- メイン画像 --&gt;
-&lt;img src="{画像URL1}" alt="{商品名}" width="100%"&gt;
+                <div style="font-weight:600; margin-bottom:8px; color:#2e7d32;">使い方② カラバリ繰返しタグ（おすすめ）</div>
+                <p style="margin:0 0 6px;">ブロック内が色の数だけ自動展開されるので、何色でもテンプレート1つでOK：</p>
+<pre style="background:#fff; border:1px solid #eee; border-radius:4px; padding:10px; font-size:11px; overflow-x:auto; margin:0;">&lt;img src="{画像URL1}" alt="{商品名}" width="100%"&gt;&lt;br&gt;&lt;br&gt;
 
-&lt;!-- 1色目の画像 --&gt;
-&lt;img src="{1色目画像1}" alt="{商品名}" width="100%"&gt;
-&lt;img src="{1色目画像2}" alt="{商品名}" width="100%"&gt;
-&lt;img src="{1色目画像3}" alt="{商品名}" width="100%"&gt;
+{カラバリ繰返し}
+&lt;img src="{色画像1}" alt="{商品名}" width="100%"&gt;&lt;br&gt;&lt;br&gt;
+{/カラバリ繰返し}
 
-&lt;!-- 2色目の画像 --&gt;
-&lt;img src="{2色目画像1}" alt="{商品名}" width="100%"&gt;
-&lt;img src="{2色目画像2}" alt="{商品名}" width="100%"&gt;
-&lt;img src="{2色目画像3}" alt="{商品名}" width="100%"&gt;
+&lt;img src="{画像URL19}" alt="{商品名}" width="100%"&gt;&lt;br&gt;&lt;br&gt;
+&lt;img src="{画像URL20}" alt="{商品名}" width="100%"&gt;&lt;br&gt;&lt;br&gt;</pre>
+                <p style="margin:8px 0 4px; color:#555;">↑ 2色(EC,BK)の場合、以下のように展開されます：</p>
+<pre style="background:#fff; border:1px solid #eee; border-radius:4px; padding:10px; font-size:11px; overflow-x:auto; margin:0; color:#666;">&lt;img src="...nlpt495-1r.jpg" ...&gt;  ← メイン
 
-&lt;!-- 固定末尾 --&gt;
-&lt;img src="{画像URL19}" alt="{商品名}" width="100%"&gt;
-&lt;img src="{画像URL20}" alt="{商品名}" width="100%"&gt;</pre>
-                <p style="margin:8px 0 0; font-size:11px; color:#555;">※ 両方のタグを混在利用できます。メイン({画像URL1})と固定末尾({画像URL19},{画像URL20})は通し番号タグを使い、カラバリ部分だけ色別タグを使うのがおすすめです。</p>
+&lt;img src="...nlpt495-ec1.jpg" ...&gt; ← 1色目（自動展開）
+
+&lt;img src="...nlpt495-bk1.jpg" ...&gt; ← 2色目（自動展開）
+
+&lt;img src="...nlpt495-10.jpg" ...&gt;  ← 固定
+&lt;img src="...nlpt495-11.jpg" ...&gt;  ← 固定</pre>
+                <p style="margin:10px 0 4px; font-size:12px; font-weight:600; color:#333;">ブロック内で使えるタグ</p>
+                <table style="width:100%; border-collapse:collapse; font-size:11px; margin-bottom:6px;">
+                  <tr style="background:#e8f5e9;"><th style="padding:5px 8px; border:1px solid #c8e6c9; text-align:left;">タグ</th><th style="padding:5px 8px; border:1px solid #c8e6c9; text-align:left;">内容</th></tr>
+                  <tr><td style="padding:4px 8px; border:1px solid #e0e0e0;"><code>{色画像1}</code>〜<code>{色画像N}</code></td><td style="padding:4px 8px; border:1px solid #e0e0e0;">現在の色のN枚目の画像URL</td></tr>
+                  <tr><td style="padding:4px 8px; border:1px solid #e0e0e0;"><code>{色番号}</code></td><td style="padding:4px 8px; border:1px solid #e0e0e0;">現在の色の番号（1, 2, 3...）</td></tr>
+                </table>
+                <p style="margin:6px 0 0; font-size:11px; color:#555;">※ 個別指定の <code>{1色目画像1}</code>〜<code>{N色目画像M}</code> も引き続き使えます。混在利用も可能です。</p>
               </div>
               <div style="background:#f5f5f5; border:1px solid #e0e0e0; border-radius:6px; padding:14px;">
                 <p style="margin:0; font-size:11px; color:#888;">※ カラーコードはSKU商品番号の3番目のセグメント（例: nlpt495-2603-<strong>EC</strong>-M → ec）から自動取得されます。<br>※ フォルダは品番末尾4桁から自動構成: 2603 → 2026/202603/<br>※ 「1色目」「2色目」はSKUの出現順（Excel上の並び順）で決まります。</p>
