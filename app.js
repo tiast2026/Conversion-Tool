@@ -477,11 +477,32 @@ function applyMasterData(d) {
       } catch(e3) {}
     }
   }
+  // GitHubから取得した場合、localStorageの機密情報をマージ
+  if (loaded && configData) {
+    const SECRET_KEYS = ['serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
+    try {
+      const localData = JSON.parse(localStorage.getItem('noahl_master_profiles') || '{}');
+      if (localData.profiles && configData.profiles) {
+        Object.entries(localData.profiles).forEach(([pName, profile]) => {
+          if (profile.malls && configData.profiles[pName]?.malls) {
+            Object.entries(profile.malls).forEach(([mName, mall]) => {
+              if (configData.profiles[pName].malls[mName]) {
+                SECRET_KEYS.forEach(key => {
+                  if (mall[key]) configData.profiles[pName].malls[mName][key] = mall[key];
+                });
+              }
+            });
+          }
+        });
+      }
+      if (localData.ghToken) configData.ghToken = localData.ghToken;
+    } catch(e) {}
+  }
   // プロファイル構造を適用
   if (configData && configData.profiles) {
     PROFILES = configData.profiles;
     ACTIVE_PROFILE = configData.activeProfile || Object.keys(PROFILES)[0] || '';
-    GH_TOKEN_SHARED = configData.ghToken || '';
+    GH_TOKEN_SHARED = configData.ghToken || localStorage.getItem('noahl_gh_token') || '';
     if (GH_TOKEN_SHARED) saveGitHubToken(GH_TOKEN_SHARED);
     if (ACTIVE_PROFILE && PROFILES[ACTIVE_PROFILE]) {
       applyMasterData(PROFILES[ACTIVE_PROFILE]);
@@ -564,7 +585,20 @@ async function saveToGitHub() {
     profiles: PROFILES
   };
   localStorage.setItem('noahl_master_profiles', JSON.stringify(configData));
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(configData, null, 2))));
+  // GitHub保存用: 機密情報を除外したコピーを作成
+  const SECRET_KEYS = ['ghToken', 'serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
+  const safeData = JSON.parse(JSON.stringify(configData));
+  delete safeData.ghToken;
+  if (safeData.profiles) {
+    Object.values(safeData.profiles).forEach(profile => {
+      if (profile.malls) {
+        Object.values(profile.malls).forEach(mall => {
+          SECRET_KEYS.forEach(key => { if (key in mall) delete mall[key]; });
+        });
+      }
+    });
+  }
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(safeData, null, 2))));
   const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${GH_FILE_PATH}`;
   try {
     let sha = '';
@@ -615,12 +649,35 @@ async function loadFromGitHub() {
     }
     const configData = await res.json();
     if (configData && configData.profiles) {
+      // localStorageの機密情報を保持してマージ
+      const SECRET_KEYS = ['serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
+      let localSecrets = {};
+      try {
+        const localData = JSON.parse(localStorage.getItem('noahl_master_profiles') || '{}');
+        if (localData.profiles) {
+          Object.entries(localData.profiles).forEach(([pName, profile]) => {
+            if (profile.malls) {
+              localSecrets[pName] = {};
+              Object.entries(profile.malls).forEach(([mName, mall]) => {
+                localSecrets[pName][mName] = {};
+                SECRET_KEYS.forEach(key => { if (mall[key]) localSecrets[pName][mName][key] = mall[key]; });
+              });
+            }
+          });
+        }
+      } catch(e) {}
       PROFILES = configData.profiles;
+      // 機密情報をマージ
+      Object.entries(localSecrets).forEach(([pName, malls]) => {
+        if (PROFILES[pName]?.malls) {
+          Object.entries(malls).forEach(([mName, secrets]) => {
+            if (PROFILES[pName].malls[mName]) {
+              Object.assign(PROFILES[pName].malls[mName], secrets);
+            }
+          });
+        }
+      });
       ACTIVE_PROFILE = configData.activeProfile || Object.keys(PROFILES)[0] || '';
-      if (configData.ghToken) {
-        GH_TOKEN_SHARED = configData.ghToken;
-        saveGitHubToken(GH_TOKEN_SHARED);
-      }
       if (ACTIVE_PROFILE && PROFILES[ACTIVE_PROFILE]) {
         applyMasterData(PROFILES[ACTIVE_PROFILE]);
       }
@@ -791,6 +848,9 @@ function loadMallMasterUI(mall) {
     // ネクストエンジンAPI
     if (el('mall-rakuten-ne-client-id')) el('mall-rakuten-ne-client-id').value = m.neClientId || '';
     if (el('mall-rakuten-ne-client-secret')) el('mall-rakuten-ne-client-secret').value = m.neClientSecret || '';
+    if (el('mall-rakuten-ne-access-token')) el('mall-rakuten-ne-access-token').value = m.neAccessToken || '';
+    if (el('mall-rakuten-ne-refresh-token')) el('mall-rakuten-ne-refresh-token').value = m.neRefreshToken || '';
+    if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
 }
 
@@ -910,6 +970,9 @@ function readMallFormToMaster(mall) {
     m.shopCategoryMap = catMapObj;
     m.neClientId = el('mall-rakuten-ne-client-id')?.value?.trim() || '';
     m.neClientSecret = el('mall-rakuten-ne-client-secret')?.value?.trim() || '';
+    m.neAccessToken = el('mall-rakuten-ne-access-token')?.value?.trim() || '';
+    m.neRefreshToken = el('mall-rakuten-ne-refresh-token')?.value?.trim() || '';
+    m.neUid = el('mall-rakuten-ne-uid')?.value?.trim() || '';
   }
 }
 
@@ -3895,13 +3958,18 @@ function downloadItemCat() {
 // ============================================================
 // CORS PROXY CODE DISPLAY
 // ============================================================
-const CORS_PROXY_CODE = `// Cloudflare Workers - 楽天RMS APIプロキシ
+const CORS_PROXY_CODE = `// Cloudflare Workers - APIプロキシ（楽天RMS / ネクストエンジン対応）
 // ※ ALLOWED_ORIGINS のURLを自分のGitHub PagesのURLに変更してください
 
 const ALLOWED_ORIGINS = [
   'https://tiast2026.github.io',
   'http://localhost:3000'
 ];
+
+const ALLOWED_HOSTS = {
+  'api.rms.rakuten.co.jp': 'https://api.rms.rakuten.co.jp',
+  'api.next-engine.org': 'https://api.next-engine.org'
+};
 
 export default {
   async fetch(request) {
@@ -3913,10 +3981,17 @@ export default {
       return new Response('Forbidden', { status: 403 });
     }
     const url = new URL(request.url);
-    const target = 'https://api.rms.rakuten.co.jp' + url.pathname + url.search;
+    const targetHost = request.headers.get('X-Target-Host') || 'api.rms.rakuten.co.jp';
+    const targetBase = ALLOWED_HOSTS[targetHost];
+    if (!targetBase) {
+      return corsResponse(request, new Response(JSON.stringify({error:'Host not allowed'}), {
+        status: 403, headers: {'Content-Type':'application/json'}
+      }));
+    }
+    const target = targetBase + url.pathname + url.search;
     const headers = new Headers();
     for (const [k, v] of request.headers.entries()) {
-      if (!['host','origin','referer'].includes(k.toLowerCase())) headers.set(k, v);
+      if (!['host','origin','referer','x-target-host'].includes(k.toLowerCase())) headers.set(k, v);
     }
     try {
       const res = await fetch(target, {
@@ -3939,7 +4014,7 @@ function corsResponse(req, res) {
   const r = new Response(res.body, res);
   r.headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
   r.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  r.headers.set('Access-Control-Allow-Headers', 'Authorization,Content-Type');
+  r.headers.set('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Target-Host');
   r.headers.set('Access-Control-Max-Age', '86400');
   return r;
 }`;
@@ -3962,6 +4037,71 @@ function copyCorsProxyCode() {
     document.body.removeChild(ta);
     notify('コードをコピーしました！', 'success');
   });
+}
+
+// ============================================================
+// ネクストエンジンAPI連携
+// ============================================================
+async function testNextEngineApi() {
+  const resultEl = document.getElementById('ne-test-result');
+  if (resultEl) resultEl.textContent = '接続テスト中...';
+
+  // フォームから最新値を読み取り
+  readMallFormToMaster('rakuten');
+  const m = MASTER.malls.rakuten;
+  const proxy = m.corsProxy;
+  const accessToken = m.neAccessToken;
+  const refreshToken = m.neRefreshToken;
+
+  if (!proxy) {
+    if (resultEl) resultEl.innerHTML = '<span style="color:red;">CORSプロキシURLが未設定です。楽天タブのRMS API設定で設定してください。</span>';
+    return;
+  }
+  if (!accessToken || !refreshToken) {
+    if (resultEl) resultEl.innerHTML = '<span style="color:red;">アクセストークンとリフレッシュトークンを入力してください。</span>';
+    return;
+  }
+
+  try {
+    // ネクストエンジンの /api_v1_login_company/info でログイン企業情報を取得（テスト用）
+    const proxyBase = proxy.replace(/\/$/, '');
+    const params = new URLSearchParams();
+    params.append('access_token', accessToken);
+    params.append('refresh_token', refreshToken);
+
+    const res = await fetch(proxyBase + '/api_v1_login_company/info', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Target-Host': 'api.next-engine.org'
+      },
+      body: params.toString()
+    });
+
+    const data = await res.json();
+
+    if (data.result === 'success') {
+      // トークンが更新された場合は保存
+      if (data.access_token && data.access_token !== accessToken) {
+        m.neAccessToken = data.access_token;
+        document.getElementById('mall-rakuten-ne-access-token').value = data.access_token;
+      }
+      if (data.refresh_token && data.refresh_token !== refreshToken) {
+        m.neRefreshToken = data.refresh_token;
+        document.getElementById('mall-rakuten-ne-refresh-token').value = data.refresh_token;
+      }
+      const companyName = data.company_name || '(取得成功)';
+      if (resultEl) resultEl.innerHTML = `<span style="color:green;">接続成功！ 企業名: ${companyName}</span>`;
+      markMasterDirty();
+      notify('ネクストエンジンAPI接続テスト成功', 'success');
+    } else if (data.result === 'error') {
+      if (resultEl) resultEl.innerHTML = `<span style="color:red;">エラー: ${data.message || data.code || 'unknown'}</span>`;
+    } else {
+      if (resultEl) resultEl.innerHTML = `<span style="color:orange;">応答: ${JSON.stringify(data).substring(0, 200)}</span>`;
+    }
+  } catch(e) {
+    if (resultEl) resultEl.innerHTML = `<span style="color:red;">通信エラー: ${e.message}</span>`;
+  }
 }
 
 // ============================================================

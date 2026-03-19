@@ -1,4 +1,4 @@
-// Cloudflare Workers - 楽天RMS APIプロキシ
+// Cloudflare Workers - API プロキシ（楽天RMS / ネクストエンジン対応）
 //
 // 使い方:
 // 1. https://workers.cloudflare.com でアカウント作成（無料）
@@ -9,7 +9,7 @@
 //
 // セキュリティ:
 // - ALLOWED_ORIGINS にあなたのGitHub PagesのURLを設定してください
-// - 楽天RMS API (api.rms.rakuten.co.jp) 以外へのリクエストは拒否します
+// - 許可されたAPI以外へのリクエストは拒否します
 
 const ALLOWED_ORIGINS = [
   'https://tiast2026.github.io',  // ← あなたのGitHub PagesのURLに変更
@@ -17,7 +17,11 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5500'         // VS Code Live Server用
 ];
 
-const TARGET_HOST = 'https://api.rms.rakuten.co.jp';
+// 許可するAPIホスト
+const ALLOWED_HOSTS = {
+  'api.rms.rakuten.co.jp': 'https://api.rms.rakuten.co.jp',
+  'api.next-engine.org': 'https://api.next-engine.org'
+};
 
 export default {
   async fetch(request) {
@@ -35,17 +39,29 @@ export default {
 
     // リクエストURLからパスを取得
     const url = new URL(request.url);
-    const targetUrl = TARGET_HOST + url.pathname + url.search;
 
-    // リクエストヘッダーをコピー（Hostは除外）
+    // X-Target-Host ヘッダーでターゲットを指定（デフォルト: 楽天RMS）
+    const targetHost = request.headers.get('X-Target-Host') || 'api.rms.rakuten.co.jp';
+    const targetBase = ALLOWED_HOSTS[targetHost];
+
+    if (!targetBase) {
+      return handleCORS(request, new Response(
+        JSON.stringify({ error: 'Target host not allowed: ' + targetHost }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      ));
+    }
+
+    const targetUrl = targetBase + url.pathname + url.search;
+
+    // リクエストヘッダーをコピー（不要なヘッダーは除外）
     const headers = new Headers();
     for (const [key, value] of request.headers.entries()) {
-      if (['host', 'origin', 'referer'].includes(key.toLowerCase())) continue;
+      if (['host', 'origin', 'referer', 'x-target-host'].includes(key.toLowerCase())) continue;
       headers.set(key, value);
     }
 
     try {
-      // 楽天APIにリクエストを転送
+      // APIにリクエストを転送
       const response = await fetch(targetUrl, {
         method: request.method,
         headers: headers,
@@ -78,7 +94,7 @@ function handleCORS(request, response) {
   }
 
   resp.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  resp.headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  resp.headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Target-Host');
   resp.headers.set('Access-Control-Max-Age', '86400');
 
   return resp;

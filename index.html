@@ -878,7 +878,7 @@
           ネクストエンジンAPI 連携
         </summary>
         <div style="padding:16px;">
-          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">ネクストエンジンAPIと連携して商品データを同期します。（準備中）</p>
+          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">ネクストエンジンAPIと連携して商品データを同期します。<br>※ 認証情報はlocalStorageのみに保存され、GitHubには保存されません。</p>
           <table class="rms-form" style="margin:0;">
             <tr>
               <th style="width:200px;">クライアントID</th>
@@ -893,9 +893,31 @@
                 <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
               </td>
             </tr>
+            <tr>
+              <th>アクセストークン</th>
+              <td>
+                <input type="password" id="mall-rakuten-ne-access-token" class="rms-input" style="width:500px;" placeholder="ネクストエンジンのアクセストークン">
+                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
+              </td>
+            </tr>
+            <tr>
+              <th>リフレッシュトークン</th>
+              <td>
+                <input type="password" id="mall-rakuten-ne-refresh-token" class="rms-input" style="width:500px;" placeholder="ネクストエンジンのリフレッシュトークン">
+                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
+              </td>
+            </tr>
+            <tr>
+              <th>UID</th>
+              <td>
+                <input type="password" id="mall-rakuten-ne-uid" class="rms-input" style="width:500px;" placeholder="ネクストエンジンのユーザーID">
+                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
+              </td>
+            </tr>
           </table>
           <div style="margin-top:12px;">
-                        <span style="margin-left:12px; font-size:11px; color:#999;">※ 連携機能は今後実装予定です</span>
+            <button class="btn btn-primary" onclick="testNextEngineApi()">接続テスト</button>
+            <span id="ne-test-result" style="margin-left:12px; font-size:12px;"></span>
           </div>
         </div>
       </details>
