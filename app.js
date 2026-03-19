@@ -479,7 +479,7 @@ function applyMasterData(d) {
   }
   // GitHubから取得した場合、localStorageの機密情報をマージ
   if (loaded && configData) {
-    const SECRET_KEYS = ['serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
+    const SECRET_KEYS = ['ghToken'];
     try {
       const localData = JSON.parse(localStorage.getItem('noahl_master_profiles') || '{}');
       if (localData.profiles && configData.profiles) {
@@ -586,7 +586,7 @@ async function saveToGitHub() {
   };
   localStorage.setItem('noahl_master_profiles', JSON.stringify(configData));
   // GitHub保存用: 機密情報を除外したコピーを作成
-  const SECRET_KEYS = ['ghToken', 'serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
+  const SECRET_KEYS = ['ghToken'];
   const safeData = JSON.parse(JSON.stringify(configData));
   delete safeData.ghToken;
   if (safeData.profiles) {
@@ -651,7 +651,7 @@ async function loadFromGitHub() {
     const configData = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
     if (configData && configData.profiles) {
       // localStorageの機密情報を保持してマージ
-      const SECRET_KEYS = ['serviceSecret', 'licenseKey', 'neClientId', 'neClientSecret', 'neAccessToken', 'neRefreshToken', 'neUid'];
+      const SECRET_KEYS = ['ghToken'];
       let localSecrets = {};
       try {
         const localData = JSON.parse(localStorage.getItem('noahl_master_profiles') || '{}');
