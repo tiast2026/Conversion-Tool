@@ -408,16 +408,19 @@ const DEFAULT_SP_DESC_TPL = `<div style="width:100%; max-width:640px; margin:0 a
 <img src="{画像URL20}" alt="{商品名}" width="100%">
 </div>`;
 
-const DEFAULT_SALE_DESC_TPL = `<div style="font-size:14px; line-height:1.8;">
-<h3 style="border-bottom:2px solid #333; padding-bottom:6px;">{商品名}</h3>
-<p>{商品ポイント}</p>
-<table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse; width:100%; max-width:600px; font-size:13px;">
-<tr><th style="background:#f5f5f5; width:120px;">素材</th><td>{素材}</td></tr>
-<tr><th style="background:#f5f5f5;">サイズ</th><td>{採寸サイズ}</td></tr>
-<tr><th style="background:#f5f5f5;">仕様</th><td>{仕様}</td></tr>
-<tr><th style="background:#f5f5f5;">洗濯表記</th><td>{洗濯表記}</td></tr>
-</table>
-</div>`;
+const DEFAULT_SALE_DESC_TPL = `【商品紹介】<br>
+<br>
+{採寸サイズ整形}<br>
+【素材】<br>
+{素材}<br><br>
+【カラー】<br>
+{カラー一覧}<br><br>
+【備考】<br>
+{仕様整形}<br>
+※ご利用の端末環境により、商品画像と実物では多少色合いが異なって見える場合がございます。<br>
+※お洗濯、アイロンの際は内タグの品質表示を必ずご確認ください。<br>
+※商品にはたたみシワ等のシワがついている場合がございます。<br>
+※染料による匂いが抜けされず、特有の匂いがする場合がございます。<br>`;
 
 function loadDefaultPcDescTpl() {
   document.getElementById('mall-rakuten-pc-desc-tpl').value = DEFAULT_PC_DESC_TPL;
@@ -2848,6 +2851,49 @@ function downloadMall(mallKey) {
 // ============================================================
 // CONVERSION: Rakuten
 // ============================================================
+// 採寸サイズを整形: 【M】着丈：97cm / ウエスト：32-38cm... → サイズ別テキスト
+function formatMeasureSize(measureStr) {
+  if (!measureStr) return '';
+  const sizePattern = /【([^】]+)】/g;
+  const matches = [];
+  let match;
+  while ((match = sizePattern.exec(measureStr)) !== null) {
+    matches.push({ label: match[1], start: match.index + match[0].length });
+  }
+  if (matches.length === 0) return measureStr;
+  // サイズグループ名（M/Lなど）をスキップして各サイズセクションを整形
+  const lines = [];
+  for (let i = 0; i < matches.length; i++) {
+    const label = matches[i].label;
+    // M/L, フリー等のグループ名はスキップ
+    if (label.includes('/') || label.includes('フリー') || label.includes('ワンサイズ')) continue;
+    const end = (i + 1 < matches.length) ? matches[i + 1].start - matches[i + 1].label.length - 2 : measureStr.length;
+    const text = measureStr.substring(matches[i].start, end).trim();
+    const items = text.split(/\s*\/\s*/);
+    lines.push('【サイズ】' + label + '<br>');
+    items.forEach(item => {
+      const m = item.match(/^([^：:]+?)\s*(?:\([^)]*\))?\s*[：:]\s*(.+)$/);
+      if (m) {
+        lines.push(m[1].trim() + '：' + m[2].trim() + '<br>');
+      }
+    });
+  }
+  return lines.join('\n');
+}
+
+// カラー一覧をSKUから生成
+function formatColorList(prod) {
+  if (!prod.skus || prod.skus.length === 0) return '';
+  const colors = [...new Set(prod.skus.map(s => s.color).filter(Boolean))];
+  return colors.join(' / ');
+}
+
+// 仕様を改行形式に整形: "透け感あり / 伸縮性なし / ..." → "・透け感あり<br>・伸縮性なし<br>..."
+function formatSpec(spec) {
+  if (!spec) return '';
+  return spec.split(/\s*[\/／]\s*/).map(s => '・' + s.trim()).join('<br>');
+}
+
 // テンプレート置換: {商品名} {素材} 等を実データに置換
 function applyDescTemplate(tpl, prod) {
   if (!tpl) return '';
@@ -2863,7 +2909,10 @@ function applyDescTemplate(tpl, prod) {
     .replace(/\{販売金額\}/g, prod.sellPrice || '')
     .replace(/\{商品番号\}/g, prod.number || '')
     .replace(/\{カテゴリ\}/g, prod.category || '')
-    .replace(/\{仕入金額\}/g, prod.costPrice || '');
+    .replace(/\{仕入金額\}/g, prod.costPrice || '')
+    .replace(/\{採寸サイズ整形\}/g, formatMeasureSize(prod.measureSize))
+    .replace(/\{カラー一覧\}/g, formatColorList(prod))
+    .replace(/\{仕様整形\}/g, formatSpec(prod.spec));
   // {画像URL1}〜{画像URL20} を置換
   for (let i = 1; i <= 20; i++) {
     result = result.replace(new RegExp(`\\{画像URL${i}\\}`, 'g'), imageUrls[i - 1] || '');
