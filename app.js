@@ -1752,12 +1752,21 @@ function renderRmsPreview() {
       {label:'ZOZO', tab:'mall_zozo', isMall: true},
       {label:'楽天ファッション', tab:'mall_rakufashion', isMall: true},
     ];
-    html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2;">';
+    html += '<div style="display:flex; align-items:end; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2; flex-wrap:wrap;">';
+    let prevIsMall = false;
     s3tabs.forEach((item, idx) => {
       const isActive = idx === 0;
-      const mallStyle = item.isMall ? ' border-top:2px solid #1565c0;' : '';
-      const mallColor = item.isMall && !isActive ? '#1565c0' : '';
-      html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px ' + (item.isMall ? '14px' : '20px') + '; cursor:pointer; font-size:' + (item.isMall ? '12px' : '13px') + '; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : (mallColor || '#888')) + ';' + mallStyle + '">' + item.label + '</div>';
+      // モールタブの手前にセパレーターを入れる
+      if (item.isMall && !prevIsMall) {
+        html += '<div style="width:1px; height:24px; background:#ccc; margin:0 8px 6px;"></div>';
+        html += '<div style="font-size:9px; color:#888; margin-right:4px; margin-bottom:8px; writing-mode:horizontal-tb;">CSV出力▼</div>';
+      }
+      prevIsMall = !!item.isMall;
+      if (item.isMall) {
+        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:6px 12px; cursor:pointer; font-size:11px; font-weight:600; border:1px solid ' + (isActive ? '#1565c0' : '#c5cae9') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#e8eaf6' : '#f5f6ff') + '; color:' + (isActive ? '#1565c0' : '#5c6bc0') + '; margin-left:2px;">' + item.label + '</div>';
+      } else {
+        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
+      }
     });
     html += '</div>';
 
@@ -2008,10 +2017,17 @@ function switchS3RmsTab(tabId, gi) {
   document.querySelectorAll('.s3rms-side[data-gi="' + gi + '"]').forEach(el => {
     const active = el.dataset.tab === tabId;
     const isMall = mallTabs.includes(el.dataset.tab);
-    el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
-    el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
-    el.style.background = active ? '#fff' : 'transparent';
-    el.style.color = active ? '#333' : (isMall ? '#1565c0' : '#888');
+    if (isMall) {
+      el.style.border = active ? '1px solid #1565c0' : '1px solid #c5cae9';
+      el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
+      el.style.background = active ? '#e8eaf6' : '#f5f6ff';
+      el.style.color = active ? '#1565c0' : '#5c6bc0';
+    } else {
+      el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
+      el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
+      el.style.background = active ? '#fff' : 'transparent';
+      el.style.color = active ? '#333' : '#888';
+    }
   });
   // モール別CSVプレビュー自動生成
   if (tabId.startsWith('mall_')) {
@@ -2308,7 +2324,7 @@ function renderStep2Rms() {
     html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">' + srcLabel + ' &gt; 商品確認 &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
 
     // 基本情報エリア（タブの上、スクロールで消える）— RMS準拠
-    const warehouse = prod.warehouse || '';
+    const warehouse = prod.warehouse || '0';
     html += '<div style="padding:16px 24px;">';
     // 商品画像 + 基本フィールド
     html += '<div style="display:flex; gap:16px; align-items:flex-start;">';
