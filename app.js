@@ -3096,7 +3096,7 @@ function goToStep(n) {
 // ============================================================
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
-  futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV（3ファイル）' },
+  futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV（4ファイル）' },
   zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
   rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
 };
@@ -3725,117 +3725,7 @@ function convertToFutureshop() {
     return { prod, colorMap, sizeMap, sortedColors, sortedSizes };
   });
 
-  // ========== 1. dl-normal-item (楽天normal-item形式 85列) ==========
-  const niH = ['商品管理番号（商品URL）','商品番号','商品名','ジャンルID','キャッチコピー',
-    'PC用商品説明文','スマートフォン用商品説明文','PC用販売説明文'];
-  for (let i = 1; i <= 20; i++) { niH.push(`商品画像タイプ${i}`, `商品画像パス${i}`); }
-  niH.push('バリエーション項目キー定義','バリエーション項目名定義');
-  for (let i = 1; i <= 6; i++) { niH.push(`バリエーション${i}選択肢定義`); }
-  niH.push('SKU管理番号','システム連携用SKU番号');
-  for (let i = 1; i <= 6; i++) { niH.push(`バリエーション項目キー${i}`, `バリエーション項目選択肢${i}`); }
-  niH.push('通常購入販売価格','カタログID','カタログIDなしの理由','SKU画像タイプ','SKU画像パス');
-  for (let i = 1; i <= 5; i++) { niH.push(`自由入力行（項目）${i}`, `自由入力行（値）${i}`); }
-  const NI = {};
-  niH.forEach((h, i) => NI[h] = i);
-  const niRows = [];
-  const cabinetPrefix = 'https://image.rakuten.co.jp/noahl/cabinet';
-  const toCabinetPath = (url) => url && url.startsWith(cabinetPrefix) ? url.substring(cabinetPrefix.length) : url;
-
-  prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
-    const hasColor = sortedColors.length > 0;
-    const hasSize = sortedSizes.length > 0;
-    const urlCode = prod.id || prod.number || '';
-
-    // === 商品行 ===
-    const pRow = new Array(niH.length).fill('');
-    pRow[NI['商品管理番号（商品URL）']] = urlCode;
-    pRow[NI['商品番号']] = prod.number || urlCode;
-
-    if (sourceType === 'rakuten') {
-      pRow[NI['商品名']] = prod.name || '';
-      pRow[NI['ジャンルID']] = prod.genreId || '';
-      pRow[NI['キャッチコピー']] = prod.catchCopy || '';
-      pRow[NI['PC用商品説明文']] = prod.pcDesc || '';
-      pRow[NI['スマートフォン用商品説明文']] = prod.spDesc || '';
-      pRow[NI['PC用販売説明文']] = prod.pcSaleDesc || '';
-      (prod.images || []).forEach((img, i) => {
-        if (i < 20) {
-          pRow[NI[`商品画像タイプ${i + 1}`]] = img.type || 'CABINET';
-          pRow[NI[`商品画像パス${i + 1}`]] = img.path || '';
-        }
-      });
-      pRow[NI['バリエーション項目キー定義']] = prod.varDef?.keys || '';
-      pRow[NI['バリエーション項目名定義']] = prod.varDef?.names || '';
-      (prod.varDef?.options || []).forEach((opt, i) => {
-        if (i < 6) pRow[NI[`バリエーション${i + 1}選択肢定義`]] = opt;
-      });
-    } else {
-      const name = applyMallName(prod.cleanName || prod.name, 'futureshop');
-      pRow[NI['商品名']] = name;
-      pRow[NI['キャッチコピー']] = prod.name || '';
-      const imageUrls = typeof generateRakutenImageUrls === 'function' ? generateRakutenImageUrls(prod) : [];
-      imageUrls.forEach((url, i) => {
-        if (i < 20) {
-          pRow[NI[`商品画像タイプ${i + 1}`]] = 'CABINET';
-          pRow[NI[`商品画像パス${i + 1}`]] = toCabinetPath(url);
-        }
-      });
-      const keyParts = [], nameParts = [];
-      if (hasColor) { keyParts.push('horizontal-key'); nameParts.push('カラー'); }
-      if (hasSize) { keyParts.push('vertical-key'); nameParts.push('サイズ'); }
-      pRow[NI['バリエーション項目キー定義']] = keyParts.join('|');
-      pRow[NI['バリエーション項目名定義']] = nameParts.join('|');
-      if (hasColor) pRow[NI['バリエーション1選択肢定義']] = sortedColors.join('|');
-      if (hasSize) {
-        const sizeIdx = hasColor ? 2 : 1;
-        pRow[NI[`バリエーション${sizeIdx}選択肢定義`]] = sortedSizes.join('|');
-      }
-    }
-    niRows.push(pRow);
-
-    // === SKU行 ===
-    prod.skus.forEach(sku => {
-      const sRow = new Array(niH.length).fill('');
-      sRow[NI['商品管理番号（商品URL）']] = urlCode;
-      const info = getFsSkuInfo(sku, prod);
-
-      if (sourceType === 'rakuten') {
-        sRow[NI['SKU管理番号']] = info.colorCode ? '-' + info.colorCode : (sku.skuMgmtNo || '');
-        sRow[NI['システム連携用SKU番号']] = sku.systemSku || '';
-        (sku.variants || []).forEach((v, i) => {
-          if (i < 6) {
-            sRow[NI[`バリエーション項目キー${i + 1}`]] = v.key || '';
-            sRow[NI[`バリエーション項目選択肢${i + 1}`]] = v.value || '';
-          }
-        });
-      } else {
-        sRow[NI['SKU管理番号']] = info.colorCode ? '-' + info.colorCode : '';
-        sRow[NI['システム連携用SKU番号']] = sku.skuMgmtNo || (urlCode + (info.colorCode ? '-' + info.colorCode : '') + (info.sizeCode ? '-' + info.sizeCode : ''));
-        let vIdx = 1;
-        if (info.color) { sRow[NI[`バリエーション項目キー${vIdx}`]] = 'horizontal-key'; sRow[NI[`バリエーション項目選択肢${vIdx}`]] = info.color; vIdx++; }
-        if (info.size) { sRow[NI[`バリエーション項目キー${vIdx}`]] = 'vertical-key'; sRow[NI[`バリエーション項目選択肢${vIdx}`]] = info.size; }
-      }
-
-      sRow[NI['通常購入販売価格']] = calcMallPrice(sku.price || prod.sellPrice || '', 'futureshop');
-      sRow[NI['カタログIDなしの理由']] = sku.catalogNoReason || '3';
-      sRow[NI['SKU画像タイプ']] = sku.skuImgType || '';
-      sRow[NI['SKU画像パス']] = sku.skuImgPath || '';
-      (sku.customFields || []).forEach((cf, i) => {
-        if (i < 5) {
-          sRow[NI[`自由入力行（項目）${i + 1}`]] = cf.label || '';
-          sRow[NI[`自由入力行（値）${i + 1}`]] = cf.value || '';
-        }
-      });
-      if (sourceType !== 'rakuten' && (!sku.customFields || sku.customFields.length === 0)) {
-        sRow[NI['自由入力行（項目）1']] = '型番';
-        sRow[NI['自由入力行（値）1']] = sku.jan || sku.skuMgmtNo || '';
-      }
-      niRows.push(sRow);
-    });
-  });
-  sheets.push({ name: 'dl-normal-item', headers: niH, rows: niRows });
-
-  // ========== 2. ccGoods_ (商品基本情報 113列) ==========
+  // ========== 1. ccGoods_ (商品基本情報 113列) ==========
   const ccH = [
     'コントロールカラム','商品URLコード','ステータス','商品番号','商品名',
     'メイングループ','優先度','本体価格','定価','消費税',
@@ -3971,7 +3861,97 @@ function convertToFutureshop() {
   });
   sheets.push({ name: 'ccGoods_', headers: ccH, rows: ccRows });
 
-  // ========== 3. goodsSelection_ (選択肢項目) ==========
+  // ========== 2. goodsVariationConfirm_ (バリエーション定義) ==========
+  const vcH = [
+    'コントロールカラム','商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '表示順','商品番号','商品名','最終更新日時'
+  ];
+  const vcI = {};
+  vcH.forEach((h, i) => vcI[h] = i);
+  const vcRows = [];
+
+  prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
+    const fsCatchCopy2 = prod.catchCopy || prod.productPoint || '';
+    const name = cleanProductName(fsCatchCopy2) || prod.cleanName || prod.name || '';
+    const urlCode = prod.id || prod.number || '';
+
+    // カラー行（バリエーション1=カラー名, バリエーション2=カラーコード）
+    sortedColors.forEach(color => {
+      const code = colorMap.get(color) || '';
+      const order = MASTER.colorOrder[color] || '';
+      const row = new Array(vcH.length).fill('');
+      row[vcI['コントロールカラム']] = 'n';
+      row[vcI['商品URLコード']] = urlCode;
+      row[vcI['バリエーション1']] = color;
+      row[vcI['バリエーション2']] = code ? '-' + code : '';
+      row[vcI['表示順']] = String(order);
+      row[vcI['商品番号']] = urlCode;
+      row[vcI['商品名']] = name;
+      vcRows.push(row);
+    });
+
+    // サイズ行（バリエーション3=サイズ名, バリエーション4=サイズコード）
+    sortedSizes.forEach((size, idx) => {
+      const code = sizeMap.get(size) || getFsSizeCode(size);
+      const row = new Array(vcH.length).fill('');
+      row[vcI['コントロールカラム']] = 'n';
+      row[vcI['商品URLコード']] = urlCode;
+      row[vcI['バリエーション3']] = size;
+      row[vcI['バリエーション4']] = code ? '-' + code : '';
+      row[vcI['表示順']] = String(idx + 1);
+      row[vcI['商品番号']] = urlCode;
+      row[vcI['商品名']] = name;
+      vcRows.push(row);
+    });
+  });
+  sheets.push({ name: 'goodsVariationConfirm_', headers: vcH, rows: vcRows });
+
+  // ========== 3. goodsVariationDetail_ (SKU明細: 色×サイズ全組合せ) ==========
+  const vdH = [
+    '商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '代表バリエーション','在庫閾値','在庫切れメール',
+    '商品番号','商品管理番号','商品名','JANコード','最終更新日付'
+  ];
+  const vdI = {};
+  vdH.forEach((h, i) => vdI[h] = i);
+  const vdRows = [];
+
+  prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
+    const fsCatchCopy3 = prod.catchCopy || prod.productPoint || '';
+    const name = cleanProductName(fsCatchCopy3) || prod.cleanName || prod.name || '';
+    const urlCode = prod.id || prod.number || '';
+
+    // 全色×全サイズの組み合わせを生成
+    sortedColors.forEach(color => {
+      const cCode = colorMap.get(color) || '';
+      sortedSizes.forEach(size => {
+        const sCode = sizeMap.get(size) || getFsSizeCode(size);
+        const matchSku = prod.skus.find(sku => {
+          const info = getFsSkuInfo(sku, prod);
+          return info.color === color && info.size === size;
+        });
+        const jan = matchSku ? (matchSku.jan || matchSku.systemSku || '') : '';
+        const mgmtNo = urlCode + (cCode ? '-' + cCode : '');
+
+        const row = new Array(vdH.length).fill('');
+        row[vdI['商品URLコード']] = urlCode;
+        row[vdI['バリエーション1']] = color;
+        row[vdI['バリエーション2']] = cCode ? '-' + cCode : '';
+        row[vdI['バリエーション3']] = size;
+        row[vdI['バリエーション4']] = sCode ? '-' + sCode : '';
+        row[vdI['商品番号']] = urlCode;
+        row[vdI['商品管理番号']] = mgmtNo;
+        row[vdI['商品名']] = name;
+        row[vdI['JANコード']] = jan;
+        vdRows.push(row);
+      });
+    });
+  });
+  sheets.push({ name: 'goodsVariationDetail_', headers: vdH, rows: vdRows });
+
+  // ========== 4. goodsSelection_ (選択肢項目) ==========
   const gsH = [
     'コントロールカラム','商品URLコード','選択肢タイプ',
     'セレクト／ラジオボタン用項目名','セレクト／ラジオボタン用選択肢','項目選択肢前改行',
