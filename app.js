@@ -866,15 +866,19 @@ function loadMallMasterUI(mall) {
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
     if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
-    // 変更ルール（シート別）
+    // 変更ルール（シート別）& 列名ドロップダウン構築
     const rawCR = migrateChangeRules(m.changeRules);
+    const skToPrefix = { ccGoods: 'fs-cc', vc: 'fs-vc', vd: 'fs-vd', gs: 'fs-gs' };
     ['ccGoods','vc','vd','gs'].forEach(sk => {
       _fsChangeRules[sk] = (rawCR[sk] || []).map(r => Object.assign({}, r));
-      // 列名ドロップダウンを構築
       const headers = FS_SHEET_HEADERS[sk] || [];
       const opts = '<option value="">-- 列名 --</option>' + headers.map(h => '<option value="' + h + '">' + h + '</option>').join('');
+      // 変更ルール列名ドロップダウン
       const changeColSel = document.getElementById('fs-change-col-' + sk);
       if (changeColSel) changeColSel.innerHTML = opts;
+      // デフォルト値列名ドロップダウン
+      const defaultColSel = document.getElementById(skToPrefix[sk] + '-new-key');
+      if (defaultColSel) defaultColSel.innerHTML = opts;
       renderFsChangeRules(sk);
     });
   }
@@ -973,7 +977,7 @@ function addFsDefault(defaultsKey, prefix) {
   if (!keyInput || !valInput) return;
   const key = keyInput.value.trim();
   const val = valInput.value.trim();
-  if (!key) { notify('列名を入力してください', 'error'); return; }
+  if (!key) { notify('列名を選択してください', 'error'); return; }
   _fsDefaults[defaultsKey][key] = val;
   keyInput.value = '';
   valInput.value = '';
