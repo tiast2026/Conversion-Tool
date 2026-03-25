@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {}, changeRules: { ccGoods: [], vc: [], vd: [], gs: [] }, deleteColumns: { ccGoods: [], vc: [], vd: [], gs: [] } },
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {}, changeRules: { ccGoods: [], vc: [], vd: [], gs: [] } },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -866,21 +866,16 @@ function loadMallMasterUI(mall) {
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
     if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
-    // 変更ルール・削除列（シート別）
+    // 変更ルール（シート別）
     const rawCR = migrateChangeRules(m.changeRules);
-    const rawDC = migrateDeleteColumns(m.deleteColumns);
     ['ccGoods','vc','vd','gs'].forEach(sk => {
       _fsChangeRules[sk] = (rawCR[sk] || []).map(r => Object.assign({}, r));
-      _fsDeleteCols[sk] = (rawDC[sk] || []).slice();
       // 列名ドロップダウンを構築
       const headers = FS_SHEET_HEADERS[sk] || [];
       const opts = '<option value="">-- 列名 --</option>' + headers.map(h => '<option value="' + h + '">' + h + '</option>').join('');
       const changeColSel = document.getElementById('fs-change-col-' + sk);
       if (changeColSel) changeColSel.innerHTML = opts;
-      const deleteColSel = document.getElementById('fs-delete-col-' + sk);
-      if (deleteColSel) deleteColSel.innerHTML = opts;
       renderFsChangeRules(sk);
-      renderFsDeleteCols(sk);
     });
   }
 }
@@ -1001,7 +996,6 @@ function updateFsDefault(inputEl) {
 
 // --- FutureShop per-sheet change rules & delete columns ---
 let _fsChangeRules = { ccGoods: [], vc: [], vd: [], gs: [] };
-let _fsDeleteCols = { ccGoods: [], vc: [], vd: [], gs: [] };
 
 // 各シートのヘッダー定義（列名選択用）
 const FS_SHEET_HEADERS = {
@@ -1096,45 +1090,8 @@ function deleteFsChangeRule(sheetKey, index) {
   markMasterDirty();
 }
 
-function renderFsDeleteCols(sheetKey) {
-  const container = document.getElementById('mall-fs-delete-cols-' + sheetKey);
-  if (!container) return;
-  const cols = _fsDeleteCols[sheetKey] || [];
-  if (cols.length === 0) {
-    container.innerHTML = '<p style="font-size:11px; color:#aaa; margin:4px 0;">設定なし</p>';
-    return;
-  }
-  let html = '<div style="display:flex; flex-wrap:wrap; gap:4px;">';
-  cols.forEach((col, i) => {
-    html += '<span style="display:inline-flex; align-items:center; gap:3px; background:#ffebee; border:1px solid #ef9a9a; border-radius:4px; padding:2px 6px; font-size:11px; font-family:monospace;">' + col + '<button onclick="deleteFsDeleteCol(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#c62828; cursor:pointer; font-size:11px; padding:0 2px;" title="削除">✕</button></span>';
-  });
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function addFsDeleteCol(sheetKey) {
-  const col = document.getElementById('fs-delete-col-' + sheetKey)?.value?.trim();
-  if (!col) { notify('列名を選択してください', 'error'); return; }
-  if (!_fsDeleteCols[sheetKey]) _fsDeleteCols[sheetKey] = [];
-  if (_fsDeleteCols[sheetKey].includes(col)) { notify('既に追加されています', 'error'); return; }
-  _fsDeleteCols[sheetKey].push(col);
-  document.getElementById('fs-delete-col-' + sheetKey).value = '';
-  renderFsDeleteCols(sheetKey);
-  markMasterDirty();
-}
-
-function deleteFsDeleteCol(sheetKey, index) {
-  _fsDeleteCols[sheetKey].splice(index, 1);
-  renderFsDeleteCols(sheetKey);
-  markMasterDirty();
-}
-
 // 旧フォーマット（配列）から新フォーマット（シート別オブジェクト）への互換変換
 function migrateChangeRules(raw) {
-  if (Array.isArray(raw)) return { ccGoods: raw, vc: [], vd: [], gs: [] };
-  return { ccGoods: raw?.ccGoods || [], vc: raw?.vc || [], vd: raw?.vd || [], gs: raw?.gs || [] };
-}
-function migrateDeleteColumns(raw) {
   if (Array.isArray(raw)) return { ccGoods: raw, vc: [], vd: [], gs: [] };
   return { ccGoods: raw?.ccGoods || [], vc: raw?.vc || [], vd: raw?.vd || [], gs: raw?.gs || [] };
 }
@@ -1231,10 +1188,8 @@ function readMallFormToMaster(mall) {
     if (choicesText) m.selectionChoices = choicesText.split(',').map(s => s.trim()).filter(Boolean);
     // 変更ルール・削除列（シート別）
     m.changeRules = {};
-    m.deleteColumns = {};
     ['ccGoods','vc','vd','gs'].forEach(sk => {
       m.changeRules[sk] = (_fsChangeRules[sk] || []).map(r => Object.assign({}, r));
-      m.deleteColumns[sk] = (_fsDeleteCols[sk] || []).slice();
     });
   }
 }
@@ -4209,11 +4164,6 @@ function convertToFutureshop() {
       else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
       else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
-    // 削除列適用（ccGoods_）
-    const ccDeleteCols = migrateDeleteColumns(fm.deleteColumns);
-    (ccDeleteCols.ccGoods || []).forEach(col => {
-      if (ccI[col] !== undefined) row[ccI[col]] = '';
-    });
 
     ccRows.push(row);
   });
@@ -4265,9 +4215,8 @@ function convertToFutureshop() {
       vcRows.push(row);
     });
   });
-  // 変更ルール・削除列適用（goodsVariationConfirm_）
+  // 変更ルール適用（goodsVariationConfirm_）
   const vcCR = migrateChangeRules(fm.changeRules);
-  const vcDC = migrateDeleteColumns(fm.deleteColumns);
   vcRows.forEach(row => {
     (vcCR.vc || []).forEach(rule => {
       const ci = vcI[rule.column]; if (ci === undefined) return;
@@ -4275,7 +4224,6 @@ function convertToFutureshop() {
       else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
       else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
-    (vcDC.vc || []).forEach(col => { if (vcI[col] !== undefined) row[vcI[col]] = ''; });
   });
   sheets.push({ name: 'goodsVariationConfirm_', headers: vcH, rows: vcRows });
 
@@ -4323,9 +4271,8 @@ function convertToFutureshop() {
       });
     });
   });
-  // 変更ルール・削除列適用（goodsVariationDetail_）
+  // 変更ルール適用（goodsVariationDetail_）
   const vdCR = migrateChangeRules(fm.changeRules);
-  const vdDC = migrateDeleteColumns(fm.deleteColumns);
   vdRows.forEach(row => {
     (vdCR.vd || []).forEach(rule => {
       const ci = vdI[rule.column]; if (ci === undefined) return;
@@ -4333,7 +4280,6 @@ function convertToFutureshop() {
       else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
       else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
-    (vdDC.vd || []).forEach(col => { if (vdI[col] !== undefined) row[vdI[col]] = ''; });
   });
   sheets.push({ name: 'goodsVariationDetail_', headers: vdH, rows: vdRows });
 
@@ -4378,9 +4324,8 @@ function convertToFutureshop() {
       });
     });
   });
-  // 変更ルール・削除列適用（goodsSelection_）
+  // 変更ルール適用（goodsSelection_）
   const gsCR = migrateChangeRules(fm.changeRules);
-  const gsDC = migrateDeleteColumns(fm.deleteColumns);
   gsRows.forEach(row => {
     (gsCR.gs || []).forEach(rule => {
       const ci = gsI[rule.column]; if (ci === undefined) return;
@@ -4388,7 +4333,6 @@ function convertToFutureshop() {
       else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
       else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
-    (gsDC.gs || []).forEach(col => { if (gsI[col] !== undefined) row[gsI[col]] = ''; });
   });
   sheets.push({ name: 'goodsSelection_', headers: gsH, rows: gsRows });
 
