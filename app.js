@@ -358,7 +358,7 @@ function parseMeasureSize(measureStr, targetSize) {
   return result;
 }
 
-const DEFAULT_NAME_CLEAN = `《[^》]*》\n【メール便】\n\\s*\\d{6}$`;
+const DEFAULT_NAME_CLEAN = `《[^》]*》\n（[^）]*(?:クーポン|%OFF|P×|倍)[^）]*）\n【メール便】\n\\s*\\d{6}$`;
 const DEFAULT_DELETE_TPL = `<!--配送について-->\n<!--ご注意-->\n<!--レビューを書いて-->\n<!--コンセプト-->\n<!--よくある質問-->`;
 
 // デフォルト説明文テンプレート
