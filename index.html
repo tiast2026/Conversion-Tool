@@ -939,6 +939,11 @@
         <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-futureshop-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">goodsVariationConfirm_ カラー表示順マスタ</p>
+      <div style="background:#f8f6f4; border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:14px; max-width:600px;">
+        <p style="font-size:12px; color:#666; margin-bottom:8px;">goodsVariationConfirm_ の表示順はこのマスタから自動設定されます。<br>編集は <a href="#" onclick="switchMasterMall('common', document.querySelector('.mall-tab:last-child')); setTimeout(()=>switchMasterTab('convert-settings', document.querySelector('#master-tabs-common .sub-tab:nth-child(2)')), 100); return false;" style="color:#1565c0; font-weight:600;">共通 → 変換設定 → カラー表示順</a> で行えます。</p>
+        <div id="fs-color-order-preview" style="max-height:180px; overflow-y:auto; font-size:11px; font-family:monospace; color:#555;"></div>
+      </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">ccGoods_ 固定値マスタ</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:6px; align-items:center; max-width:600px;">
         <label style="font-size:13px; font-weight:600;">メイングループ：</label>

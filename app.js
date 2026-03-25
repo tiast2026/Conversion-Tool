@@ -872,6 +872,25 @@ function loadMallMasterUI(mall) {
   }
 }
 
+function updateFsColorOrderPreview() {
+  const el = document.getElementById('fs-color-order-preview');
+  if (!el) return;
+  const entries = Object.entries(MASTER.colorOrder || {});
+  if (entries.length === 0) {
+    el.innerHTML = '<span style="color:#999;">カラー表示順が未設定です。</span>';
+    return;
+  }
+  entries.sort((a, b) => a[1] - b[1]);
+  let html = '<table style="width:100%; border-collapse:collapse;">';
+  html += '<tr><th style="text-align:left; padding:2px 8px; border-bottom:1px solid #ddd; font-size:10px; color:#888;">カラー名</th><th style="text-align:right; padding:2px 8px; border-bottom:1px solid #ddd; font-size:10px; color:#888;">表示順</th></tr>';
+  entries.forEach(([name, order]) => {
+    html += '<tr><td style="padding:2px 8px; border-bottom:1px solid #eee;">' + name + '</td><td style="padding:2px 8px; text-align:right; border-bottom:1px solid #eee; color:#1565c0; font-weight:600;">' + order + '</td></tr>';
+  });
+  html += '</table>';
+  html += '<div style="font-size:10px; color:#999; margin-top:4px;">' + entries.length + '件登録</div>';
+  el.innerHTML = html;
+}
+
 function closeMaster() {
   // 常にフォーム値をMASTERに同期してlocalStorageに保存
   syncMasterToProfile();
@@ -894,6 +913,8 @@ function switchMasterMall(mallId, el) {
   document.querySelectorAll('.master-mall-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   const panel = document.getElementById('mall-' + mallId);
   if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
+  // FutureShopタブ: カラー表示順プレビューを更新
+  if (mallId === 'futureshop') updateFsColorOrderPreview();
 }
 
 function switchMasterTab(id, el) {
