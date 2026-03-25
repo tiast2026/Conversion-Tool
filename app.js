@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', groupName: '全てのアイテム', priceBeforeText: '定価のところ', salePriceBeforeText: '当店特別価格', keywords: '0,NOAHL,ノアル,レディース', priority: '20', descLargeTpl: '', descSmallTpl: '' },
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', groupName: '全てのアイテム', priceBeforeText: '定価のところ', salePriceBeforeText: '当店特別価格', keywords: '0,NOAHL,ノアル,レディース', priority: '10000', descLargeTpl: '', descSmallTpl: '', ccGoodsDefaults: {} },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -853,6 +853,23 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-ne-refresh-token')) el('mall-rakuten-ne-refresh-token').value = m.neRefreshToken || '';
     if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
+  if (mall === 'futureshop') {
+    if (el('mall-fs-groupName')) el('mall-fs-groupName').value = m.groupName || '';
+    if (el('mall-fs-priority')) el('mall-fs-priority').value = m.priority || '';
+    if (el('mall-fs-priceBeforeText')) el('mall-fs-priceBeforeText').value = m.priceBeforeText || '';
+    if (el('mall-fs-salePriceBeforeText')) el('mall-fs-salePriceBeforeText').value = m.salePriceBeforeText || '';
+    if (el('mall-fs-keywords')) el('mall-fs-keywords').value = m.keywords || '';
+    if (el('mall-fs-deliveryType')) el('mall-fs-deliveryType').value = (m.ccGoodsDefaults || {})['配送種別'] || '0100';
+    // ccGoodsDefaults をテキストエリアに展開（個別フィールドに対応するキーは除外）
+    if (el('mall-fs-ccGoodsDefaults')) {
+      const skipKeys = ['メイングループ','優先度','定価価格前文字','販売価格前文字','キーワード(コマースクリエイター)','配送種別'];
+      const defaults = m.ccGoodsDefaults || {};
+      const lines = Object.entries(defaults)
+        .filter(([k]) => !skipKeys.includes(k))
+        .map(([k, v]) => `${k}=${v}`);
+      el('mall-fs-ccGoodsDefaults').value = lines.join('\n');
+    }
+  }
 }
 
 function closeMaster() {
@@ -974,6 +991,31 @@ function readMallFormToMaster(mall) {
     m.neAccessToken = el('mall-rakuten-ne-access-token')?.value?.trim() || '';
     m.neRefreshToken = el('mall-rakuten-ne-refresh-token')?.value?.trim() || '';
     m.neUid = el('mall-rakuten-ne-uid')?.value?.trim() || '';
+  }
+  if (mall === 'futureshop') {
+    m.groupName = el('mall-fs-groupName')?.value?.trim() || '';
+    m.priority = el('mall-fs-priority')?.value?.trim() || '';
+    m.priceBeforeText = el('mall-fs-priceBeforeText')?.value?.trim() || '';
+    m.salePriceBeforeText = el('mall-fs-salePriceBeforeText')?.value?.trim() || '';
+    m.keywords = el('mall-fs-keywords')?.value?.trim() || '';
+    const deliveryType = el('mall-fs-deliveryType')?.value?.trim() || '';
+    // ccGoodsDefaults テキストエリアをパース
+    const defaultsText = el('mall-fs-ccGoodsDefaults')?.value || '';
+    const defaults = {};
+    defaultsText.split('\n').map(l => l.trim()).filter(l => l && l.includes('=')).forEach(line => {
+      const idx = line.indexOf('=');
+      const key = line.substring(0, idx).trim();
+      const val = line.substring(idx + 1).trim();
+      if (key) defaults[key] = val;
+    });
+    // 個別フィールドもdefaultsにマージ
+    if (m.groupName) defaults['メイングループ'] = m.groupName;
+    if (m.priority) defaults['優先度'] = m.priority;
+    if (m.priceBeforeText) defaults['定価価格前文字'] = m.priceBeforeText;
+    if (m.salePriceBeforeText) defaults['販売価格前文字'] = m.salePriceBeforeText;
+    if (m.keywords) defaults['キーワード(コマースクリエイター)'] = m.keywords;
+    if (deliveryType) defaults['配送種別'] = deliveryType;
+    m.ccGoodsDefaults = defaults;
   }
 }
 
@@ -3888,6 +3930,9 @@ function convertToFutureshop() {
   ccH.forEach((h, i) => ccI[h] = i);
   const ccRows = [];
 
+  // ccGoodsDefaults: マスタで定義された固定値を全商品に一括適用
+  const ccDefaults = fm.ccGoodsDefaults || {};
+
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     // 商品名: 楽天ソースではキャッチコピーをクリーンして使用
     const fsCatchCopy = prod.catchCopy || prod.productPoint || '';
@@ -3899,54 +3944,26 @@ function convertToFutureshop() {
     const hasSize = sortedSizes.length > 0;
 
     const row = new Array(ccH.length).fill('');
-    row[ccI['コントロールカラム']] = 'n';
+
+    // マスタのデフォルト値を一括適用
+    Object.entries(ccDefaults).forEach(([col, val]) => {
+      if (ccI[col] !== undefined) row[ccI[col]] = val;
+    });
+
+    // 商品個別の値（デフォルトを上書き）
     row[ccI['商品URLコード']] = prod.id || prod.number || '';
-    row[ccI['ステータス']] = '1';
     row[ccI['商品番号']] = prod.id || prod.number || '';
     row[ccI['商品名']] = name;
-    row[ccI['メイングループ']] = fm.groupName || '全てのアイテム';
-    row[ccI['優先度']] = fm.priority || '10000';
+    row[ccI['メイングループ']] = fm.groupName || ccDefaults['メイングループ'] || '全てのアイテム';
+    row[ccI['優先度']] = fm.priority || ccDefaults['優先度'] || '10000';
     row[ccI['本体価格']] = price;
-    row[ccI['消費税']] = '1';
-    row[ccI['販売期間表示']] = '0';
-    row[ccI['クール便指定']] = '0';
-    row[ccI['送料']] = '0';
-    row[ccI['送料パターン表示']] = '0';
-    row[ccI['個別送料表示']] = '0';
-    row[ccI['オススメ商品商品ページ内表示']] = '0';
-    row[ccI['オススメ商品表示方法']] = '1';
-    row[ccI['商品価格上部コメントHTMLタグ']] = '0';
-    row[ccI['定価価格前文字']] = fm.priceBeforeText || '定価のところ';
-    row[ccI['販売価格前文字']] = fm.salePriceBeforeText || '当店特別価格';
-    row[ccI['取消線定価表示方法']] = '1';
-    row[ccI['在庫管理']] = '0';
-    row[ccI['在庫数表示設定']] = '1';
-    row[ccI['在庫数表示設定方法']] = '0';
-    row[ccI['在庫僅少表示閾値']] = '0';
-    row[ccI['在庫なし表示テキスト表示方法']] = '0';
-    row[ccI['現在在庫数']] = '0';
-    row[ccI['調整在庫数']] = '0';
+    row[ccI['定価価格前文字']] = fm.priceBeforeText || ccDefaults['定価価格前文字'] || '定価のところ';
+    row[ccI['販売価格前文字']] = fm.salePriceBeforeText || ccDefaults['販売価格前文字'] || '当店特別価格';
     if (hasColor) row[ccI['バリエーション横軸名']] = 'カラー';
     if (hasSize) row[ccI['バリエーション縦軸名']] = 'サイズ';
-    row[ccI['会員価格設定']] = '0';
-    row[ccI['アクセス制限']] = '0';
-    row[ccI['ポイント付与率設定']] = '0';
-    row[ccI['ポイント付与率']] = '0';
-    row[ccI['サンプル商品設定']] = '0';
-    row[ccI['サンプル商品同梱設定']] = '0';
-    row[ccI['入荷お知らせメールボタン表示']] = '0';
     row[ccI['キャッチコピー']] = fsCleanName;
-    row[ccI['レコメンド２：行動履歴収集タグ出力フラグ']] = '1';
-    row[ccI['レコメンド２：レコメンド商品出力フラグ']] = '0';
-    row[ccI['レコメンド２：レコメンド表示フラグ']] = '0';
-
-    // 外部連携商品名
     row[ccI['外部連携商品名']] = fsCleanName;
-    // 商品一言説明
-    row[ccI['商品一言説明(コマースクリエイター)']] = '{% product.name %}';
-    // キーワード
-    row[ccI['キーワード(コマースクリエイター)']] = fm.keywords || '0,NOAHL,ノアル,レディース';
-    row[ccI['キーワード表示方法(コマースクリエイター)']] = '2';
+    row[ccI['キーワード(コマースクリエイター)']] = fm.keywords || ccDefaults['キーワード(コマースクリエイター)'] || '';
 
     // 商品説明（大）・（小）: 楽天ソースでは実データを直接使用
     if (sourceType === 'rakuten') {
@@ -3967,9 +3984,6 @@ function convertToFutureshop() {
       row[ccI['メール便指定']] = '1';
       row[ccI['メール便同梱数']] = '0';
     }
-
-    // 配送種別
-    row[ccI['配送種別']] = '0100';
 
     ccRows.push(row);
   });
