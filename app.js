@@ -1747,11 +1747,17 @@ function renderRmsPreview() {
       {label:'製品情報', tab:'product'},
       {label:'ページデザイン', tab:'design'},
       {label:'ポイント', tab:'point'},
+      {label:'FutureShop', tab:'mall_futureshop', isMall: true},
+      {label:'TikTok', tab:'mall_tiktok', isMall: true},
+      {label:'ZOZO', tab:'mall_zozo', isMall: true},
+      {label:'楽天ファッション', tab:'mall_rakufashion', isMall: true},
     ];
     html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2;">';
     s3tabs.forEach((item, idx) => {
       const isActive = idx === 0;
-      html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
+      const mallStyle = item.isMall ? ' border-top:2px solid #1565c0;' : '';
+      const mallColor = item.isMall && !isActive ? '#1565c0' : '';
+      html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px ' + (item.isMall ? '14px' : '20px') + '; cursor:pointer; font-size:' + (item.isMall ? '12px' : '13px') + '; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : (mallColor || '#888')) + ';' + mallStyle + '">' + item.label + '</div>';
     });
     html += '</div>';
 
@@ -1938,6 +1944,25 @@ function renderRmsPreview() {
     html += '</table>';
     html += '</div>'; // point tab
 
+    // --- モール別CSVプレビュータブ ---
+    const mallPreviews = [
+      { tab: 'mall_futureshop', label: 'FutureShop', convertFn: 'futureshop' },
+      { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
+      { tab: 'mall_zozo', label: 'ZOZO', convertFn: 'zozo' },
+      { tab: 'mall_rakufashion', label: '楽天ファッション', convertFn: 'rakufashion' },
+    ];
+    mallPreviews.forEach(mp => {
+      html += '<div class="s3rms-tab-content" data-tab="' + mp.tab + '" data-gi="' + gi + '" style="padding:20px; display:none;">';
+      html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">';
+      html += '<h4 style="font-size:14px; color:#333; margin:0;">' + mp.label + ' CSV出力プレビュー</h4>';
+      html += '<button onclick="refreshMallPreview(\'' + mp.tab + '\',' + gi + ',\'' + mp.convertFn + '\')" style="font-size:11px; padding:4px 12px; border:1px solid #ccc; border-radius:4px; background:#fff; cursor:pointer;">更新</button>';
+      html += '</div>';
+      html += '<div class="mall-preview-area" data-mall="' + mp.tab + '" data-gi="' + gi + '" style="font-size:12px;">';
+      html += '<p style="color:#999;">タブを選択すると自動的にプレビューを生成します。</p>';
+      html += '</div>';
+      html += '</div>';
+    });
+
     html += '</div>'; // padding
     html += '</div>'; // s3rms-tab-area
     html += '</div>'; // white card wrapper
@@ -1979,13 +2004,84 @@ function switchS3RmsTab(tabId, gi) {
     el.style.display = el.dataset.tab === tabId ? '' : 'none';
   });
   // Step3 タブヘッダー切替
+  const mallTabs = ['mall_futureshop','mall_tiktok','mall_zozo','mall_rakufashion'];
   document.querySelectorAll('.s3rms-side[data-gi="' + gi + '"]').forEach(el => {
     const active = el.dataset.tab === tabId;
+    const isMall = mallTabs.includes(el.dataset.tab);
     el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
     el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
     el.style.background = active ? '#fff' : 'transparent';
-    el.style.color = active ? '#333' : '#888';
+    el.style.color = active ? '#333' : (isMall ? '#1565c0' : '#888');
   });
+  // モール別CSVプレビュー自動生成
+  if (tabId.startsWith('mall_')) {
+    const mallKey = tabId.replace('mall_', '');
+    refreshMallPreview(tabId, gi, mallKey);
+  }
+}
+
+function refreshMallPreview(tabId, gi, mallKey) {
+  const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"][data-gi="' + gi + '"]');
+  if (!area) return;
+  let result;
+  try {
+    switch (mallKey) {
+      case 'futureshop': result = convertToFutureshop(); break;
+      case 'tiktok': result = convertToTiktok(); break;
+      case 'zozo': result = convertToZozo(); break;
+      case 'rakufashion': result = convertToRakufashion(); break;
+      default: area.innerHTML = '<p style="color:#999;">未対応のモールです。</p>'; return;
+    }
+  } catch (e) {
+    area.innerHTML = '<p style="color:#c00;">変換エラー: ' + esc(e.message) + '</p>';
+    return;
+  }
+  if (!result) { area.innerHTML = '<p style="color:#999;">変換データがありません。</p>'; return; }
+
+  // FutureShopは複数シートを返す
+  if (result.sheets) {
+    let html = '';
+    result.sheets.forEach((file, fi) => {
+      html += '<div style="margin-bottom:20px;">';
+      html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
+      html += '<h5 style="font-size:13px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
+      html += '<span style="font-size:11px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
+      html += '</div>';
+      html += buildCsvPreviewTable(file.headers, file.rows, gi);
+      html += '</div>';
+    });
+    area.innerHTML = html;
+  } else if (result.headers && result.rows) {
+    let html = '<div style="margin-bottom:8px;">';
+    html += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
+    html += '</div>';
+    html += buildCsvPreviewTable(result.headers, result.rows, gi);
+    area.innerHTML = html;
+  } else {
+    area.innerHTML = '<p style="color:#999;">データなし</p>';
+  }
+}
+
+function buildCsvPreviewTable(headers, rows, gi) {
+  let html = '<div style="overflow-x:auto; max-height:500px; overflow-y:auto; border:1px solid #ddd; border-radius:4px;">';
+  html += '<table style="width:100%; border-collapse:collapse; font-size:11px; white-space:nowrap;">';
+  html += '<thead><tr>';
+  headers.forEach(h => {
+    html += '<th style="background:#f0f0f0; padding:6px 8px; border:1px solid #ddd; font-weight:600; position:sticky; top:0; z-index:1; font-size:10px;">' + esc(h) + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  rows.forEach((row, ri) => {
+    const bg = ri % 2 === 0 ? '#fff' : '#fafafa';
+    html += '<tr style="background:' + bg + ';">';
+    headers.forEach((h, ci) => {
+      const val = row[ci] || '';
+      const truncVal = val.length > 60 ? val.substring(0, 60) + '…' : val;
+      html += '<td style="padding:4px 8px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
 }
 
 function switchStep3RmsProduct(idx) {
@@ -2197,7 +2293,7 @@ function renderStep2Rms() {
 
   products.forEach((prod, gi) => {
     const imgUrl = prod.imageUrl || (prod.images.length > 0 ? (prod.images[0].url || buildRakutenImgUrl(prod.images[0].path)) : '');
-    const E = 'contenteditable="true" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;" onfocus="onRmsFocus(this)" onblur="this.style.borderColor=\'#ccc\';onRmsEdit(this,' + gi + ')"';
+    const E = 'style="padding:6px 10px; border:1px solid #eee; border-radius:4px; background:#fafafa; font-size:13px;"';
 
     html += '<div class="step2-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden;">';
 
@@ -2227,17 +2323,17 @@ function renderStep2Rms() {
     // 商品管理番号 / 商品番号
     html += '<div style="display:flex; gap:24px; margin-bottom:10px; font-size:13px;">';
     html += '<div><span style="color:#666;">商品管理番号（商品URL）</span><div style="margin-top:2px; font-weight:600; color:#333;">' + esc(prod.id || '') + '</div></div>';
-    html += '<div><span style="color:#666;">商品番号</span><div contenteditable="true" data-pi="' + gi + '" data-key="number" onblur="onFieldEdit(this,' + gi + ',\'number\')" onfocus="this.style.background=\'#fff8e8\'" style="margin-top:2px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; background:#fff; outline:none; cursor:text; min-width:120px;">' + esc(prod.number || '') + '</div></div>';
+    html += '<div><span style="color:#666;">商品番号</span><div style="margin-top:2px; padding:4px 8px; border:1px solid #eee; border-radius:4px; background:#fafafa; min-width:120px;">' + esc(prod.number || '') + '</div></div>';
     html += '</div>';
     // 商品名
     html += '<div style="margin-bottom:8px;">';
     html += '<div style="font-size:13px; color:#666; margin-bottom:2px;">商品名 <span style="background:#bf0000; color:#fff; font-size:10px; padding:1px 6px; border-radius:3px; margin-left:4px;">必須</span></div>';
-    html += '<div contenteditable="true" data-pi="' + gi + '" data-key="cleanName" onblur="onFieldEdit(this,' + gi + ',\'cleanName\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text; line-height:1.5; word-break:break-all;">' + esc(prod.cleanName || prod.name || '') + '</div>';
+    html += '<div style="padding:6px 10px; border:1px solid #eee; border-radius:4px; background:#fafafa; font-size:13px; line-height:1.5; word-break:break-all;">' + esc(prod.cleanName || prod.name || '') + '</div>';
     html += '</div>';
     // キャッチコピー
     html += '<div style="margin-bottom:10px;">';
     html += '<div style="font-size:13px; color:#666; margin-bottom:2px;">キャッチコピー</div>';
-    html += '<div contenteditable="true" data-pi="' + gi + '" data-key="catchCopy" onblur="onFieldEdit(this,' + gi + ',\'catchCopy\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; background:#fff; font-size:13px; outline:none; cursor:text;">' + esc(prod.catchCopy || '') + '</div>';
+    html += '<div style="padding:6px 10px; border:1px solid #eee; border-radius:4px; background:#fafafa; font-size:13px;">' + esc(prod.catchCopy || '') + '</div>';
     html += '</div>';
     // 倉庫指定 / サーチ表示（横並び）
     html += '<div style="display:flex; gap:24px; align-items:center; font-size:13px;">';
@@ -2329,8 +2425,8 @@ function renderStep2Rms() {
         html += '<tr style="background:' + (si % 2 === 0 ? '#fff' : '#fafafa') + ';">';
         html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(sku.skuMgmtNo || '') + '</td>';
         html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(vars) + '</td>';
-        html += '<td contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'price\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:7px 10px; border:1px solid #ddd; text-align:right; outline:none; cursor:text;">' + esc(sku.price || '') + '</td>';
-        html += '<td contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'displayPrice\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:7px 10px; border:1px solid #ddd; text-align:right; outline:none; cursor:text;">' + esc(sku.displayPrice || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd; text-align:right;">' + esc(sku.price || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd; text-align:right;">' + esc(sku.displayPrice || '') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -2381,7 +2477,7 @@ function renderStep2Rms() {
         html += '<td style="padding:7px 10px; border:1px solid #ddd;"><div style="font-weight:600;">' + esc(sku.skuMgmtNo || '') + '</div>';
         if (vars) html += '<div style="font-size:12px; color:#666;">' + esc(vars) + '</div>';
         html += '</td>';
-        html += '<td contenteditable="true" onblur="onSkuEdit(this,' + gi + ',' + si + ',\'stock\')" onfocus="this.style.background=\'#fff8e8\'" style="padding:7px 10px; border:1px solid #ddd; text-align:center; outline:none; cursor:text; width:120px;">' + esc(sku.stock || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd; text-align:center; width:120px;">' + esc(sku.stock || '') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -2418,7 +2514,7 @@ function renderStep2Rms() {
     html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">ジャンルID</td>';
     html += '<td style="padding:10px 14px; border:1px solid #ddd;">';
     const gId = prod.genreId || MASTER.malls.rakuten.genreId || '';
-    html += '<span contenteditable="true" data-pi="' + gi + '" data-key="genreId" onblur="onFieldEdit(this,' + gi + ',\'genreId\')" style="outline:none; cursor:text;" onfocus="this.style.background=\'#fff8e8\'">' + esc(gId) + '</span>';
+    html += '<span>' + esc(gId) + '</span>';
     html += ' <span class="genre-name-display" data-genre-id="' + esc(gId) + '" style="font-size:12px; margin-left:8px;"></span>';
     html += '</td></tr>';
     // カタログID情報
@@ -2864,7 +2960,7 @@ function renderCardView() {
         const editable = !key.startsWith('_');
         html += `<div class="field-row">`;
         html += `<div class="field-label">${label}</div>`;
-        html += `<div class="field-value"${editable ? ` contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')"` : ''}>${esc(trunc(value, 200))}</div>`;
+        html += `<div class="field-value">${esc(trunc(value, 200))}</div>`;
         html += `</div>`;
       });
     } else if (sourceType === 'rakuten') {
@@ -2883,7 +2979,7 @@ function renderCardView() {
         const editable = !key.startsWith('_');
         html += `<div class="field-row">`;
         html += `<div class="field-label">${label}</div>`;
-        html += `<div class="field-value"${editable ? ` contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')"` : ''}>${esc(trunc(value, 200))}`;
+        html += `<div class="field-value">${esc(trunc(value, 200))}`;
         if (key === 'genreId' && value) html += ` <span class="genre-name-display" data-genre-id="${esc(String(value))}" style="font-size:12px; margin-left:8px;"></span>`;
         html += `</div>`;
         html += `</div>`;
@@ -2902,7 +2998,7 @@ function renderCardView() {
       fields.forEach(([label, key, value]) => {
         html += `<div class="field-row">`;
         html += `<div class="field-label">${label}</div>`;
-        html += `<div class="field-value" contenteditable="true" data-pi="${pi}" data-key="${key}" onblur="onFieldEdit(this,${pi},'${key}')">${esc(trunc(value, 200))}</div>`;
+        html += `<div class="field-value">${esc(trunc(value, 200))}</div>`;
         html += `</div>`;
       });
     }
@@ -2938,7 +3034,7 @@ function renderCardView() {
           html += `<td title="${esc(sku.skuMgmtNo)}">${esc(sku.skuMgmtNo)}</td>`;
           html += `<td title="${esc(sku.systemSku)}">${esc(sku.systemSku)}</td>`;
           html += `<td>${esc(vars)}</td>`;
-          html += `<td contenteditable="true" onblur="onSkuEdit(this,${pi},${si},'price')">${esc(sku.price)}</td>`;
+          html += `<td>${esc(sku.price)}</td>`;
           html += `<td>${esc(sku.catalogId || sku.catalogNoReason)}</td>`;
           html += `<td>${esc(typeNo ? typeNo.value : '')}</td>`;
           html += `<td>${skuImgUrl ? `<img src="${skuImgUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:3px;" onerror="this.style.display='none'" loading="lazy">` : ''}</td>`;
@@ -2947,12 +3043,12 @@ function renderCardView() {
           html += `<td>${esc(sku.color)}</td>`;
           html += `<td>${esc(sku.size)}</td>`;
           html += `<td>${esc(sku.jan)}</td>`;
-          html += `<td contenteditable="true" onblur="onSkuEdit(this,${pi},${si},'price')">${esc(sku.price)}</td>`;
+          html += `<td>${esc(sku.price)}</td>`;
         } else {
           const opts = sku.options.map(o => `${o.name}:${o.value}`).join(' / ');
           html += `<td>${esc(sku.skuId)}</td>`;
           html += `<td>${esc(opts)}</td>`;
-          html += `<td contenteditable="true" onblur="onSkuEdit(this,${pi},${si},'price')">${esc(sku.price)}</td>`;
+          html += `<td>${esc(sku.price)}</td>`;
           html += `<td>${esc(sku.inventory)}</td>`;
           html += `<td>${sku.image ? `<img src="${sku.image}" style="width:36px;height:36px;object-fit:cover;border-radius:3px;" onerror="this.style.display='none'" loading="lazy">` : ''}</td>`;
         }
@@ -2987,7 +3083,7 @@ function renderTableView() {
     html += `<td class="col-idx">${ri + 1}</td>`;
     colIndices.forEach(ci => {
       const val = row[ci] || '';
-      html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}" onblur="onCellEdit(this,${ri},${ci})">${esc(trunc(val, 60))}</td>`;
+      html += `<td>${esc(trunc(val, 60))}</td>`;
     });
     html += '</tr>';
   });
@@ -3097,6 +3193,7 @@ function goToStep(n) {
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
   futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV（4ファイル）' },
+  tiktok: { name: 'TikTok', desc: 'TikTok Shop 商品CSV' },
   zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
   rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
 };
@@ -3179,6 +3276,7 @@ function downloadMall(mallKey) {
   switch(mallKey) {
     case 'rakuten': result = convertToRakuten(); break;
     case 'futureshop': result = convertToFutureshop(); break;
+    case 'tiktok': result = convertToTiktok(); break;
     case 'zozo': result = convertToZozo(); break;
     case 'rakufashion': result = convertToRakufashion(); break;
     default: return;
@@ -3981,6 +4079,35 @@ function convertToFutureshop() {
   sheets.push({ name: 'goodsSelection_', headers: gsH, rows: gsRows });
 
   return { sheets };
+}
+
+// ============================================================
+// CONVERSION: TikTok Shop (stub)
+// ============================================================
+function convertToTiktok() {
+  // TODO: TikTok Shop CSVフォーマットの実装
+  const ttH = ['商品コード','商品名','販売価格','カラー','サイズ','在庫数','商品説明'];
+  const rows = [];
+  products.forEach(prod => {
+    const name = prod.cleanName || prod.name;
+    prod.skus.forEach(sku => {
+      const r = new Array(ttH.length).fill('');
+      r[0] = prod.id || prod.number || '';
+      r[1] = applyMallName(name, 'tiktok');
+      r[2] = sku.price || '';
+      if (sourceType === 'rakuten') {
+        r[3] = sku.variants?.[0]?.value || '';
+        r[4] = sku.variants?.[1]?.value || '';
+      } else {
+        r[3] = sku.color || '';
+        r[4] = sku.size || '';
+      }
+      r[5] = sku.stock || '';
+      r[6] = prod.pcDesc || '';
+      rows.push(r);
+    });
+  });
+  return { headers: ttH, rows };
 }
 
 // ============================================================
