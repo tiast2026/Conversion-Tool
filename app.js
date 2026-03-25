@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', groupName: '全てのアイテム', priceBeforeText: '定価のところ', salePriceBeforeText: '当店特別価格', keywords: '0,NOAHL,ノアル,レディース', priority: '10000', descLargeTpl: '', descSmallTpl: '', ccGoodsDefaults: {} },
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {} },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -854,28 +854,15 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
   if (mall === 'futureshop') {
-    if (el('mall-fs-groupName')) el('mall-fs-groupName').value = m.groupName || '';
-    if (el('mall-fs-priority')) el('mall-fs-priority').value = m.priority || '';
-    if (el('mall-fs-priceBeforeText')) el('mall-fs-priceBeforeText').value = m.priceBeforeText || '';
-    if (el('mall-fs-salePriceBeforeText')) el('mall-fs-salePriceBeforeText').value = m.salePriceBeforeText || '';
-    if (el('mall-fs-keywords')) el('mall-fs-keywords').value = m.keywords || '';
-    if (el('mall-fs-deliveryType')) el('mall-fs-deliveryType').value = (m.ccGoodsDefaults || {})['配送種別'] || '0100';
-    // ccGoodsDefaults をテキストエリアに展開（個別フィールドに対応するキーは除外）
-    if (el('mall-fs-ccGoodsDefaults')) {
-      const skipKeys = ['メイングループ','優先度','定価価格前文字','販売価格前文字','キーワード(コマースクリエイター)','配送種別'];
-      const defaults = m.ccGoodsDefaults || {};
-      const lines = Object.entries(defaults)
-        .filter(([k]) => !skipKeys.includes(k))
-        .map(([k, v]) => `${k}=${v}`);
-      el('mall-fs-ccGoodsDefaults').value = lines.join('\n');
-    }
-    // 他シートのデフォルト値
-    ['vcDefaults', 'vdDefaults', 'gsDefaults'].forEach(key => {
-      const ta = el('mall-fs-' + key);
-      if (!ta) return;
-      const obj = m[key] || {};
-      ta.value = Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('\n');
-    });
+    // Load defaults into in-memory store and render tables
+    _fsDefaults.ccGoodsDefaults = Object.assign({}, m.ccGoodsDefaults || {});
+    _fsDefaults.vcDefaults = Object.assign({}, m.vcDefaults || {});
+    _fsDefaults.vdDefaults = Object.assign({}, m.vdDefaults || {});
+    _fsDefaults.gsDefaults = Object.assign({}, m.gsDefaults || {});
+    renderFsDefaultsTable('ccGoodsDefaults', 'fs-cc');
+    renderFsDefaultsTable('vcDefaults', 'fs-vc');
+    renderFsDefaultsTable('vdDefaults', 'fs-vd');
+    renderFsDefaultsTable('gsDefaults', 'fs-gs');
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
     if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
@@ -920,6 +907,80 @@ function switchRakutenTab(id, el) {
   document.querySelectorAll('.rakuten-tab-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   const panel = document.getElementById('rtab-' + id);
   if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
+}
+
+// --- FutureShop defaults table UI ---
+// In-memory store for FS defaults being edited (populated by loadMallMasterUI)
+const _fsDefaults = { ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {} };
+
+function toggleFsSection(headerEl) {
+  const arrow = headerEl.querySelector('.fs-arrow');
+  const body = headerEl.nextElementSibling;
+  if (body.style.display === 'none') {
+    body.style.display = '';
+    arrow.textContent = '▼';
+  } else {
+    body.style.display = 'none';
+    arrow.textContent = '▶';
+  }
+}
+
+function renderFsDefaultsTable(defaultsKey, prefix) {
+  const container = document.getElementById({
+    ccGoodsDefaults: 'mall-fs-ccGoods-table',
+    vcDefaults: 'mall-fs-vc-table',
+    vdDefaults: 'mall-fs-vd-table',
+    gsDefaults: 'mall-fs-gs-table'
+  }[defaultsKey]);
+  if (!container) return;
+  const data = _fsDefaults[defaultsKey] || {};
+  const entries = Object.entries(data);
+  const countEl = document.getElementById(prefix + '-count');
+  if (countEl) countEl.textContent = entries.length + '項目';
+  if (entries.length === 0) {
+    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">設定なし</p>';
+    return;
+  }
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">値</th><th style="width:40px; border-bottom:1px solid #ddd;"></th></tr>';
+  entries.forEach(([key, val]) => {
+    const safeKey = key.replace(/"/g, '&quot;');
+    const safeVal = String(val).replace(/"/g, '&quot;');
+    html += '<tr>';
+    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + key + '</td>';
+    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0;"><input type="text" value="' + safeVal + '" data-defaults-key="' + defaultsKey + '" data-col="' + safeKey + '" onchange="updateFsDefault(this)" style="width:100%; padding:2px 4px; border:1px solid #ddd; border-radius:3px; font-size:12px;"></td>';
+    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button data-defaults-key="' + defaultsKey + '" data-col="' + safeKey + '" data-prefix="' + prefix + '" onclick="deleteFsDefault(this.dataset.defaultsKey, this.dataset.col, this.dataset.prefix)" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:14px;" title="削除">✕</button></td>';
+    html += '</tr>';
+  });
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+function addFsDefault(defaultsKey, prefix) {
+  const keyInput = document.getElementById(prefix + '-new-key');
+  const valInput = document.getElementById(prefix + '-new-val');
+  if (!keyInput || !valInput) return;
+  const key = keyInput.value.trim();
+  const val = valInput.value.trim();
+  if (!key) { notify('列名を入力してください', 'error'); return; }
+  _fsDefaults[defaultsKey][key] = val;
+  keyInput.value = '';
+  valInput.value = '';
+  renderFsDefaultsTable(defaultsKey, prefix);
+  markMasterDirty();
+}
+
+function deleteFsDefault(defaultsKey, colName, prefix) {
+  delete _fsDefaults[defaultsKey][colName];
+  renderFsDefaultsTable(defaultsKey, prefix);
+  markMasterDirty();
+}
+
+function updateFsDefault(inputEl) {
+  const dk = inputEl.dataset.defaultsKey;
+  const col = inputEl.dataset.col;
+  _fsDefaults[dk][col] = inputEl.value;
+  markMasterDirty();
 }
 
 function saveMaster(which) {
@@ -1003,42 +1064,11 @@ function readMallFormToMaster(mall) {
     m.neUid = el('mall-rakuten-ne-uid')?.value?.trim() || '';
   }
   if (mall === 'futureshop') {
-    m.groupName = el('mall-fs-groupName')?.value?.trim() || '';
-    m.priority = el('mall-fs-priority')?.value?.trim() || '';
-    m.priceBeforeText = el('mall-fs-priceBeforeText')?.value?.trim() || '';
-    m.salePriceBeforeText = el('mall-fs-salePriceBeforeText')?.value?.trim() || '';
-    m.keywords = el('mall-fs-keywords')?.value?.trim() || '';
-    const deliveryType = el('mall-fs-deliveryType')?.value?.trim() || '';
-    // ccGoodsDefaults テキストエリアをパース
-    const defaultsText = el('mall-fs-ccGoodsDefaults')?.value || '';
-    const defaults = {};
-    defaultsText.split('\n').map(l => l.trim()).filter(l => l && l.includes('=')).forEach(line => {
-      const idx = line.indexOf('=');
-      const key = line.substring(0, idx).trim();
-      const val = line.substring(idx + 1).trim();
-      if (key) defaults[key] = val;
-    });
-    // 個別フィールドもdefaultsにマージ
-    if (m.groupName) defaults['メイングループ'] = m.groupName;
-    if (m.priority) defaults['優先度'] = m.priority;
-    if (m.priceBeforeText) defaults['定価価格前文字'] = m.priceBeforeText;
-    if (m.salePriceBeforeText) defaults['販売価格前文字'] = m.salePriceBeforeText;
-    if (m.keywords) defaults['キーワード(コマースクリエイター)'] = m.keywords;
-    if (deliveryType) defaults['配送種別'] = deliveryType;
-    m.ccGoodsDefaults = defaults;
-    // 他シートのデフォルト値
-    ['vcDefaults', 'vdDefaults', 'gsDefaults'].forEach(key => {
-      const ta = el('mall-fs-' + key);
-      if (!ta) return;
-      const obj = {};
-      ta.value.split('\n').map(l => l.trim()).filter(l => l && l.includes('=')).forEach(line => {
-        const idx = line.indexOf('=');
-        const k = line.substring(0, idx).trim();
-        const v = line.substring(idx + 1).trim();
-        if (k) obj[k] = v;
-      });
-      m[key] = obj;
-    });
+    // Read from in-memory table store
+    m.ccGoodsDefaults = Object.assign({}, _fsDefaults.ccGoodsDefaults || {});
+    m.vcDefaults = Object.assign({}, _fsDefaults.vcDefaults || {});
+    m.vdDefaults = Object.assign({}, _fsDefaults.vdDefaults || {});
+    m.gsDefaults = Object.assign({}, _fsDefaults.gsDefaults || {});
     // レビュー投稿設定
     m.selectionOptionName = el('mall-fs-selectionOptionName')?.value?.trim() || '';
     const choicesText = el('mall-fs-selectionChoices')?.value?.trim() || '';
@@ -3981,16 +4011,11 @@ function convertToFutureshop() {
     row[ccI['商品URLコード']] = prod.id || prod.number || '';
     row[ccI['商品番号']] = prod.id || prod.number || '';
     row[ccI['商品名']] = name;
-    row[ccI['メイングループ']] = fm.groupName || ccDefaults['メイングループ'] || '全てのアイテム';
-    row[ccI['優先度']] = fm.priority || ccDefaults['優先度'] || '10000';
     row[ccI['本体価格']] = price;
-    row[ccI['定価価格前文字']] = fm.priceBeforeText || ccDefaults['定価価格前文字'] || '定価のところ';
-    row[ccI['販売価格前文字']] = fm.salePriceBeforeText || ccDefaults['販売価格前文字'] || '当店特別価格';
     if (hasColor) row[ccI['バリエーション横軸名']] = 'カラー';
     if (hasSize) row[ccI['バリエーション縦軸名']] = 'サイズ';
     row[ccI['キャッチコピー']] = fsCleanName;
     row[ccI['外部連携商品名']] = fsCleanName;
-    row[ccI['キーワード(コマースクリエイター)']] = fm.keywords || ccDefaults['キーワード(コマースクリエイター)'] || '';
 
     // 商品説明（大）・（小）: 楽天ソースでは実データを直接使用
     if (sourceType === 'rakuten') {

@@ -939,49 +939,79 @@
       <div style="margin-top:8px; margin-bottom:16px;">
         <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
       </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">ccGoods_ 固定値マスタ</p>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:6px; align-items:center; max-width:600px;">
-        <label style="font-size:13px; font-weight:600;">メイングループ：</label>
-        <input type="text" id="mall-fs-groupName" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="全てのアイテム">
-        <label style="font-size:13px; font-weight:600;">優先度：</label>
-        <input type="text" id="mall-fs-priority" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:100px;" placeholder="10000">
-        <label style="font-size:13px; font-weight:600;">定価価格前文字：</label>
-        <input type="text" id="mall-fs-priceBeforeText" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="定価のところ">
-        <label style="font-size:13px; font-weight:600;">販売価格前文字：</label>
-        <input type="text" id="mall-fs-salePriceBeforeText" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="当店特別価格">
-        <label style="font-size:13px; font-weight:600;">キーワード：</label>
-        <input type="text" id="mall-fs-keywords" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="0,NOAHL,ノアル,レディース">
-        <label style="font-size:13px; font-weight:600;">配送種別：</label>
-        <input type="text" id="mall-fs-deliveryType" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; width:100px;" placeholder="0100">
+
+      <h4 style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">CSV出力デフォルト値</h4>
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">各シートで全商品に共通する固定値を設定します。列名と値のペアで管理します。</p>
+
+      <div class="fs-defaults-section" style="margin-bottom:16px;">
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:13px; font-weight:700;">ccGoods_</span>
+          <span style="font-size:11px; color:#888;" id="fs-cc-count"></span>
+        </div>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
+          <div id="mall-fs-ccGoods-table" style="max-height:300px; overflow-y:auto;"></div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <input type="text" id="fs-cc-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <input type="text" id="fs-cc-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsDefault('ccGoodsDefaults','fs-cc')">追加</button>
+          </div>
+        </div>
       </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
-        ccGoods_ 全項目デフォルト値（列名=値、1行1項目）
-        <span style="font-size:10px; color:#999;">※上のフィールドより優先されます</span>
-      </p>
-      <textarea id="mall-fs-ccGoodsDefaults" rows="10" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder="ステータス=1&#10;消費税=1&#10;在庫管理=0"></textarea>
 
-      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
-        goodsVariationConfirm_ デフォルト値（列名=値、1行1項目）
-      </p>
-      <textarea id="mall-fs-vcDefaults" rows="4" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder="コントロールカラム=n"></textarea>
-
-      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
-        goodsVariationDetail_ デフォルト値（列名=値、1行1項目）
-      </p>
-      <textarea id="mall-fs-vdDefaults" rows="4" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder=""></textarea>
-
-      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
-        goodsSelection_ デフォルト値（列名=値、1行1項目）
-      </p>
-      <textarea id="mall-fs-gsDefaults" rows="4" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder="コントロールカラム=n&#10;選択肢タイプ=s"></textarea>
-
-      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">goodsSelection_ レビュー投稿設定</p>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:6px; align-items:center; max-width:600px;">
-        <label style="font-size:13px; font-weight:600;">項目名：</label>
-        <input type="text" id="mall-fs-selectionOptionName" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="レビュー投稿でノベルティを">
-        <label style="font-size:13px; font-weight:600;">選択肢（カンマ区切り）：</label>
-        <input type="text" id="mall-fs-selectionChoices" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="GETする,GETしない">
+      <div class="fs-defaults-section" style="margin-bottom:16px;">
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:13px; font-weight:700;">goodsVariationConfirm_</span>
+          <span style="font-size:11px; color:#888;" id="fs-vc-count"></span>
+        </div>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
+          <div id="mall-fs-vc-table" style="max-height:200px; overflow-y:auto;"></div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <input type="text" id="fs-vc-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <input type="text" id="fs-vc-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsDefault('vcDefaults','fs-vc')">追加</button>
+          </div>
+        </div>
       </div>
+
+      <div class="fs-defaults-section" style="margin-bottom:16px;">
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:13px; font-weight:700;">goodsVariationDetail_</span>
+          <span style="font-size:11px; color:#888;" id="fs-vd-count"></span>
+        </div>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
+          <div id="mall-fs-vd-table" style="max-height:200px; overflow-y:auto;"></div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <input type="text" id="fs-vd-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <input type="text" id="fs-vd-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsDefault('vdDefaults','fs-vd')">追加</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="fs-defaults-section" style="margin-bottom:16px;">
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:13px; font-weight:700;">goodsSelection_</span>
+          <span style="font-size:11px; color:#888;" id="fs-gs-count"></span>
+        </div>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
+          <div id="mall-fs-gs-table" style="max-height:200px; overflow-y:auto;"></div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <input type="text" id="fs-gs-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <input type="text" id="fs-gs-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsDefault('gsDefaults','fs-gs')">追加</button>
+          </div>
+          <p style="font-size:11px; color:#888; margin-top:8px;">レビュー投稿設定</p>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="mall-fs-selectionOptionName" style="flex:1; min-width:150px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="項目名（例: レビュー投稿でノベルティを）">
+            <input type="text" id="mall-fs-selectionChoices" style="width:200px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="選択肢（カンマ区切り）">
+          </div>
+        </div>
+      </div>
+
       <div style="margin-top:12px;">
               </div>
     </div>
