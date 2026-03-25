@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {}, changeRules: [], deleteColumns: [] },
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {}, changeRules: { ccGoods: [], vc: [], vd: [], gs: [] }, deleteColumns: { ccGoods: [], vc: [], vd: [], gs: [] } },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -866,11 +866,22 @@ function loadMallMasterUI(mall) {
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
     if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
-    // 変更ルール・削除列
-    _fsChangeRules = (m.changeRules || []).map(r => Object.assign({}, r));
-    _fsDeleteCols = (m.deleteColumns || []).slice();
-    renderFsChangeRules();
-    renderFsDeleteCols();
+    // 変更ルール・削除列（シート別）
+    const rawCR = migrateChangeRules(m.changeRules);
+    const rawDC = migrateDeleteColumns(m.deleteColumns);
+    ['ccGoods','vc','vd','gs'].forEach(sk => {
+      _fsChangeRules[sk] = (rawCR[sk] || []).map(r => Object.assign({}, r));
+      _fsDeleteCols[sk] = (rawDC[sk] || []).slice();
+      // 列名ドロップダウンを構築
+      const headers = FS_SHEET_HEADERS[sk] || [];
+      const opts = '<option value="">-- 列名 --</option>' + headers.map(h => '<option value="' + h + '">' + h + '</option>').join('');
+      const changeColSel = document.getElementById('fs-change-col-' + sk);
+      if (changeColSel) changeColSel.innerHTML = opts;
+      const deleteColSel = document.getElementById('fs-delete-col-' + sk);
+      if (deleteColSel) deleteColSel.innerHTML = opts;
+      renderFsChangeRules(sk);
+      renderFsDeleteCols(sk);
+    });
   }
 }
 
@@ -988,80 +999,144 @@ function updateFsDefault(inputEl) {
   markMasterDirty();
 }
 
-// --- FutureShop change rules & delete columns ---
-let _fsChangeRules = []; // [{column, action, value}]
-let _fsDeleteCols = [];  // [columnName, ...]
+// --- FutureShop per-sheet change rules & delete columns ---
+let _fsChangeRules = { ccGoods: [], vc: [], vd: [], gs: [] };
+let _fsDeleteCols = { ccGoods: [], vc: [], vd: [], gs: [] };
 
-function renderFsChangeRules() {
-  const container = document.getElementById('mall-fs-change-rules-table');
+// 各シートのヘッダー定義（列名選択用）
+const FS_SHEET_HEADERS = {
+  ccGoods: [
+    'コントロールカラム','商品URLコード','ステータス','商品番号','商品名',
+    'メイングループ','優先度','本体価格','定価','消費税',
+    '販売期間(From)','販売期間(to)','販売期間表示','クール便指定',
+    '送料','送料パターン','送料パターン表示','送料個別金額','個別送料表示',
+    'オススメ商品商品ページ内表示','オススメ商品リスト','オススメ商品表示方法',
+    '商品価格上部コメントHTMLタグ','商品価格上部コメント',
+    '定価価格前文字','定価価格後文字','販売価格前文字','取消線定価表示方法',
+    '在庫管理','在庫数表示設定','在庫数表示設定方法','在庫僅少表示閾値',
+    '在庫なし表示テキスト','在庫なし表示テキスト表示方法',
+    '現在在庫数','調整在庫数','在庫数切れメール閾値',
+    'バリエーション横軸名','バリエーション縦軸名',
+    '会員価格設定','会員価格','アクセス制限',
+    'ポイント付与率設定','ポイント付与率',
+    'ステータス（他社サービス）','サンプル商品設定','サンプル商品同梱設定',
+    '最大購入制限個数','入荷お知らせメールボタン表示',
+    'JANコード','キャッチコピー',
+    'お気に入り登録数','メール便指定','メール便同梱数',
+    'バンドル販売','外部連携任意項目',
+    '外部連携商品名','外部連携商品説明',
+    'レイアウト割当名',
+    'ページ名(コマースクリエイター)','キーワード(コマースクリエイター)',
+    'Description(コマースクリエイター)','商品一言説明(コマースクリエイター)',
+    '商品説明（大）','商品説明（小）',
+    '独自コメント（1）','独自コメント（2）','独自コメント（3）','独自コメント（4）',
+    '独自コメント（5）','独自コメント（6）','独自コメント（7）','独自コメント（8）',
+    '配送種別','メール便同梱可能数（upgrade）','商品リードタイム'
+  ],
+  vc: [
+    'コントロールカラム','商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '表示順','商品番号','商品名','最終更新日時'
+  ],
+  vd: [
+    '商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '代表バリエーション','在庫閾値','在庫切れメール',
+    '商品番号','商品管理番号','商品名','JANコード','最終更新日付'
+  ],
+  gs: [
+    'コントロールカラム','商品URLコード','選択肢タイプ',
+    'セレクト／ラジオボタン用項目名','セレクト／ラジオボタン用選択肢','項目選択肢前改行',
+    '項目名位置','項目選択肢表示','テキスト幅','最終更新日時'
+  ]
+};
+
+const FS_SHEET_LABELS = { ccGoods: 'ccGoods_', vc: 'goodsVariationConfirm_', vd: 'goodsVariationDetail_', gs: 'goodsSelection_' };
+
+function renderFsChangeRules(sheetKey) {
+  const container = document.getElementById('mall-fs-change-rules-' + sheetKey);
   if (!container) return;
-  if (_fsChangeRules.length === 0) {
-    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">ルールなし</p>';
+  const rules = _fsChangeRules[sheetKey] || [];
+  if (rules.length === 0) {
+    container.innerHTML = '<p style="font-size:11px; color:#aaa; margin:4px 0;">ルールなし</p>';
     return;
   }
   const actionLabels = { prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
-  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
-  html += '<tr style="background:#fff3e0;"><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">操作</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">文字列</th><th style="width:40px; border-bottom:1px solid #ddd;"></th></tr>';
-  _fsChangeRules.forEach((rule, i) => {
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:11px;">';
+  html += '<tr style="background:#fff3e0;"><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">操作</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">文字列</th><th style="width:30px;"></th></tr>';
+  rules.forEach((rule, i) => {
     html += '<tr>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.column + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0;">' + (actionLabels[rule.action] || rule.action) + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.value + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button onclick="deleteFsChangeRule(' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:14px;" title="削除">✕</button></td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.column + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0;">' + (actionLabels[rule.action] || rule.action) + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.value + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button onclick="deleteFsChangeRule(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:13px;" title="削除">✕</button></td>';
     html += '</tr>';
   });
   html += '</table>';
   container.innerHTML = html;
 }
 
-function addFsChangeRule() {
-  const col = document.getElementById('fs-change-col')?.value?.trim();
-  const action = document.getElementById('fs-change-action')?.value;
-  const val = document.getElementById('fs-change-val')?.value?.trim();
-  if (!col) { notify('対象列名を入力してください', 'error'); return; }
+function addFsChangeRule(sheetKey) {
+  const col = document.getElementById('fs-change-col-' + sheetKey)?.value?.trim();
+  const action = document.getElementById('fs-change-action-' + sheetKey)?.value;
+  const val = document.getElementById('fs-change-val-' + sheetKey)?.value?.trim();
+  if (!col) { notify('対象列名を選択してください', 'error'); return; }
   if (!val) { notify('文字列を入力してください', 'error'); return; }
-  _fsChangeRules.push({ column: col, action: action, value: val });
-  document.getElementById('fs-change-col').value = '';
-  document.getElementById('fs-change-val').value = '';
-  renderFsChangeRules();
+  if (!_fsChangeRules[sheetKey]) _fsChangeRules[sheetKey] = [];
+  _fsChangeRules[sheetKey].push({ column: col, action: action, value: val });
+  document.getElementById('fs-change-col-' + sheetKey).value = '';
+  document.getElementById('fs-change-val-' + sheetKey).value = '';
+  renderFsChangeRules(sheetKey);
   markMasterDirty();
 }
 
-function deleteFsChangeRule(index) {
-  _fsChangeRules.splice(index, 1);
-  renderFsChangeRules();
+function deleteFsChangeRule(sheetKey, index) {
+  _fsChangeRules[sheetKey].splice(index, 1);
+  renderFsChangeRules(sheetKey);
   markMasterDirty();
 }
 
-function renderFsDeleteCols() {
-  const container = document.getElementById('mall-fs-delete-cols-list');
+function renderFsDeleteCols(sheetKey) {
+  const container = document.getElementById('mall-fs-delete-cols-' + sheetKey);
   if (!container) return;
-  if (_fsDeleteCols.length === 0) {
-    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">設定なし</p>';
+  const cols = _fsDeleteCols[sheetKey] || [];
+  if (cols.length === 0) {
+    container.innerHTML = '<p style="font-size:11px; color:#aaa; margin:4px 0;">設定なし</p>';
     return;
   }
-  let html = '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
-  _fsDeleteCols.forEach((col, i) => {
-    html += '<span style="display:inline-flex; align-items:center; gap:4px; background:#ffebee; border:1px solid #ef9a9a; border-radius:4px; padding:3px 8px; font-size:12px; font-family:monospace;">' + col + '<button onclick="deleteFsDeleteCol(' + i + ')" style="background:none; border:none; color:#c62828; cursor:pointer; font-size:12px; padding:0 2px;" title="削除">✕</button></span>';
+  let html = '<div style="display:flex; flex-wrap:wrap; gap:4px;">';
+  cols.forEach((col, i) => {
+    html += '<span style="display:inline-flex; align-items:center; gap:3px; background:#ffebee; border:1px solid #ef9a9a; border-radius:4px; padding:2px 6px; font-size:11px; font-family:monospace;">' + col + '<button onclick="deleteFsDeleteCol(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#c62828; cursor:pointer; font-size:11px; padding:0 2px;" title="削除">✕</button></span>';
   });
   html += '</div>';
   container.innerHTML = html;
 }
 
-function addFsDeleteCol() {
-  const col = document.getElementById('fs-delete-col')?.value?.trim();
-  if (!col) { notify('列名を入力してください', 'error'); return; }
-  if (_fsDeleteCols.includes(col)) { notify('既に追加されています', 'error'); return; }
-  _fsDeleteCols.push(col);
-  document.getElementById('fs-delete-col').value = '';
-  renderFsDeleteCols();
+function addFsDeleteCol(sheetKey) {
+  const col = document.getElementById('fs-delete-col-' + sheetKey)?.value?.trim();
+  if (!col) { notify('列名を選択してください', 'error'); return; }
+  if (!_fsDeleteCols[sheetKey]) _fsDeleteCols[sheetKey] = [];
+  if (_fsDeleteCols[sheetKey].includes(col)) { notify('既に追加されています', 'error'); return; }
+  _fsDeleteCols[sheetKey].push(col);
+  document.getElementById('fs-delete-col-' + sheetKey).value = '';
+  renderFsDeleteCols(sheetKey);
   markMasterDirty();
 }
 
-function deleteFsDeleteCol(index) {
-  _fsDeleteCols.splice(index, 1);
-  renderFsDeleteCols();
+function deleteFsDeleteCol(sheetKey, index) {
+  _fsDeleteCols[sheetKey].splice(index, 1);
+  renderFsDeleteCols(sheetKey);
   markMasterDirty();
+}
+
+// 旧フォーマット（配列）から新フォーマット（シート別オブジェクト）への互換変換
+function migrateChangeRules(raw) {
+  if (Array.isArray(raw)) return { ccGoods: raw, vc: [], vd: [], gs: [] };
+  return { ccGoods: raw?.ccGoods || [], vc: raw?.vc || [], vd: raw?.vd || [], gs: raw?.gs || [] };
+}
+function migrateDeleteColumns(raw) {
+  if (Array.isArray(raw)) return { ccGoods: raw, vc: [], vd: [], gs: [] };
+  return { ccGoods: raw?.ccGoods || [], vc: raw?.vc || [], vd: raw?.vd || [], gs: raw?.gs || [] };
 }
 
 function saveMaster(which) {
@@ -1154,9 +1229,13 @@ function readMallFormToMaster(mall) {
     m.selectionOptionName = el('mall-fs-selectionOptionName')?.value?.trim() || '';
     const choicesText = el('mall-fs-selectionChoices')?.value?.trim() || '';
     if (choicesText) m.selectionChoices = choicesText.split(',').map(s => s.trim()).filter(Boolean);
-    // 変更ルール・削除列
-    m.changeRules = _fsChangeRules.map(r => Object.assign({}, r));
-    m.deleteColumns = _fsDeleteCols.slice();
+    // 変更ルール・削除列（シート別）
+    m.changeRules = {};
+    m.deleteColumns = {};
+    ['ccGoods','vc','vd','gs'].forEach(sk => {
+      m.changeRules[sk] = (_fsChangeRules[sk] || []).map(r => Object.assign({}, r));
+      m.deleteColumns[sk] = (_fsDeleteCols[sk] || []).slice();
+    });
   }
 }
 
@@ -4121,16 +4200,18 @@ function convertToFutureshop() {
       row[ccI['メール便同梱数']] = '0';
     }
 
-    // 変更ルール適用
-    (fm.changeRules || []).forEach(rule => {
+    // 変更ルール適用（ccGoods_）
+    const ccChangeRules = migrateChangeRules(fm.changeRules);
+    (ccChangeRules.ccGoods || []).forEach(rule => {
       const ci = ccI[rule.column];
       if (ci === undefined) return;
       if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
       else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
       else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
-    // 削除列適用
-    (fm.deleteColumns || []).forEach(col => {
+    // 削除列適用（ccGoods_）
+    const ccDeleteCols = migrateDeleteColumns(fm.deleteColumns);
+    (ccDeleteCols.ccGoods || []).forEach(col => {
       if (ccI[col] !== undefined) row[ccI[col]] = '';
     });
 
@@ -4184,6 +4265,18 @@ function convertToFutureshop() {
       vcRows.push(row);
     });
   });
+  // 変更ルール・削除列適用（goodsVariationConfirm_）
+  const vcCR = migrateChangeRules(fm.changeRules);
+  const vcDC = migrateDeleteColumns(fm.deleteColumns);
+  vcRows.forEach(row => {
+    (vcCR.vc || []).forEach(rule => {
+      const ci = vcI[rule.column]; if (ci === undefined) return;
+      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
+      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
+      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
+    });
+    (vcDC.vc || []).forEach(col => { if (vcI[col] !== undefined) row[vcI[col]] = ''; });
+  });
   sheets.push({ name: 'goodsVariationConfirm_', headers: vcH, rows: vcRows });
 
   // ========== 3. goodsVariationDetail_ (SKU明細: 色×サイズ全組合せ) ==========
@@ -4230,6 +4323,18 @@ function convertToFutureshop() {
       });
     });
   });
+  // 変更ルール・削除列適用（goodsVariationDetail_）
+  const vdCR = migrateChangeRules(fm.changeRules);
+  const vdDC = migrateDeleteColumns(fm.deleteColumns);
+  vdRows.forEach(row => {
+    (vdCR.vd || []).forEach(rule => {
+      const ci = vdI[rule.column]; if (ci === undefined) return;
+      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
+      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
+      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
+    });
+    (vdDC.vd || []).forEach(col => { if (vdI[col] !== undefined) row[vdI[col]] = ''; });
+  });
   sheets.push({ name: 'goodsVariationDetail_', headers: vdH, rows: vdRows });
 
   // ========== 4. goodsSelection_ (選択肢項目) ==========
@@ -4272,6 +4377,18 @@ function convertToFutureshop() {
         gsRows.push(row);
       });
     });
+  });
+  // 変更ルール・削除列適用（goodsSelection_）
+  const gsCR = migrateChangeRules(fm.changeRules);
+  const gsDC = migrateDeleteColumns(fm.deleteColumns);
+  gsRows.forEach(row => {
+    (gsCR.gs || []).forEach(rule => {
+      const ci = gsI[rule.column]; if (ci === undefined) return;
+      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
+      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
+      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
+    });
+    (gsDC.gs || []).forEach(col => { if (gsI[col] !== undefined) row[gsI[col]] = ''; });
   });
   sheets.push({ name: 'goodsSelection_', headers: gsH, rows: gsRows });
 
