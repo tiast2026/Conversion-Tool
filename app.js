@@ -4008,12 +4008,13 @@ function convertToFutureshop() {
     // サイズ行（バリエーション3=サイズ名, バリエーション4=サイズコード）
     sortedSizes.forEach((size, idx) => {
       const code = sizeMap.get(size) || getFsSizeCode(size);
+      const sizeOrder = MASTER.colorOrder[size] || (idx + 1);
       const row = new Array(vcH.length).fill('');
       row[vcI['コントロールカラム']] = 'n';
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション3']] = size;
       row[vcI['バリエーション4']] = code ? '-' + code : '';
-      row[vcI['表示順']] = String(idx + 1);
+      row[vcI['表示順']] = String(sizeOrder);
       row[vcI['商品番号']] = urlCode;
       row[vcI['商品名']] = name;
       vcRows.push(row);
