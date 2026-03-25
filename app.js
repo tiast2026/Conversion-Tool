@@ -869,26 +869,17 @@ function loadMallMasterUI(mall) {
         .map(([k, v]) => `${k}=${v}`);
       el('mall-fs-ccGoodsDefaults').value = lines.join('\n');
     }
+    // 他シートのデフォルト値
+    ['vcDefaults', 'vdDefaults', 'gsDefaults'].forEach(key => {
+      const ta = el('mall-fs-' + key);
+      if (!ta) return;
+      const obj = m[key] || {};
+      ta.value = Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('\n');
+    });
+    // レビュー投稿設定
+    if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
+    if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
   }
-}
-
-function updateFsColorOrderPreview() {
-  const el = document.getElementById('fs-color-order-preview');
-  if (!el) return;
-  const entries = Object.entries(MASTER.colorOrder || {});
-  if (entries.length === 0) {
-    el.innerHTML = '<span style="color:#999;">カラー表示順が未設定です。</span>';
-    return;
-  }
-  entries.sort((a, b) => a[1] - b[1]);
-  let html = '<table style="width:100%; border-collapse:collapse;">';
-  html += '<tr><th style="text-align:left; padding:2px 8px; border-bottom:1px solid #ddd; font-size:10px; color:#888;">カラー名</th><th style="text-align:right; padding:2px 8px; border-bottom:1px solid #ddd; font-size:10px; color:#888;">表示順</th></tr>';
-  entries.forEach(([name, order]) => {
-    html += '<tr><td style="padding:2px 8px; border-bottom:1px solid #eee;">' + name + '</td><td style="padding:2px 8px; text-align:right; border-bottom:1px solid #eee; color:#1565c0; font-weight:600;">' + order + '</td></tr>';
-  });
-  html += '</table>';
-  html += '<div style="font-size:10px; color:#999; margin-top:4px;">' + entries.length + '件登録</div>';
-  el.innerHTML = html;
 }
 
 function closeMaster() {
@@ -913,8 +904,6 @@ function switchMasterMall(mallId, el) {
   document.querySelectorAll('.master-mall-panel').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   const panel = document.getElementById('mall-' + mallId);
   if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
-  // FutureShopタブ: カラー表示順プレビューを更新
-  if (mallId === 'futureshop') updateFsColorOrderPreview();
 }
 
 function switchMasterTab(id, el) {
@@ -1037,6 +1026,23 @@ function readMallFormToMaster(mall) {
     if (m.keywords) defaults['キーワード(コマースクリエイター)'] = m.keywords;
     if (deliveryType) defaults['配送種別'] = deliveryType;
     m.ccGoodsDefaults = defaults;
+    // 他シートのデフォルト値
+    ['vcDefaults', 'vdDefaults', 'gsDefaults'].forEach(key => {
+      const ta = el('mall-fs-' + key);
+      if (!ta) return;
+      const obj = {};
+      ta.value.split('\n').map(l => l.trim()).filter(l => l && l.includes('=')).forEach(line => {
+        const idx = line.indexOf('=');
+        const k = line.substring(0, idx).trim();
+        const v = line.substring(idx + 1).trim();
+        if (k) obj[k] = v;
+      });
+      m[key] = obj;
+    });
+    // レビュー投稿設定
+    m.selectionOptionName = el('mall-fs-selectionOptionName')?.value?.trim() || '';
+    const choicesText = el('mall-fs-selectionChoices')?.value?.trim() || '';
+    if (choicesText) m.selectionChoices = choicesText.split(',').map(s => s.trim()).filter(Boolean);
   }
 }
 
@@ -4019,6 +4025,7 @@ function convertToFutureshop() {
   const vcI = {};
   vcH.forEach((h, i) => vcI[h] = i);
   const vcRows = [];
+  const vcDefaults = fm.vcDefaults || {};
 
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     const fsCatchCopy2 = prod.catchCopy || prod.productPoint || '';
@@ -4030,7 +4037,7 @@ function convertToFutureshop() {
       const code = colorMap.get(color) || '';
       const order = MASTER.colorOrder[color] || '';
       const row = new Array(vcH.length).fill('');
-      row[vcI['コントロールカラム']] = 'n';
+      Object.entries(vcDefaults).forEach(([col, val]) => { if (vcI[col] !== undefined) row[vcI[col]] = val; });
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション1']] = color;
       row[vcI['バリエーション2']] = code ? '-' + code : '';
@@ -4045,7 +4052,7 @@ function convertToFutureshop() {
       const code = sizeMap.get(size) || getFsSizeCode(size);
       const sizeOrder = MASTER.colorOrder[size] || (idx + 1);
       const row = new Array(vcH.length).fill('');
-      row[vcI['コントロールカラム']] = 'n';
+      Object.entries(vcDefaults).forEach(([col, val]) => { if (vcI[col] !== undefined) row[vcI[col]] = val; });
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション3']] = size;
       row[vcI['バリエーション4']] = code ? '-' + code : '';
@@ -4067,6 +4074,7 @@ function convertToFutureshop() {
   const vdI = {};
   vdH.forEach((h, i) => vdI[h] = i);
   const vdRows = [];
+  const vdDefaults = fm.vdDefaults || {};
 
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     const fsCatchCopy3 = prod.catchCopy || prod.productPoint || '';
@@ -4086,6 +4094,7 @@ function convertToFutureshop() {
         const mgmtNo = urlCode + (cCode ? '-' + cCode : '');
 
         const row = new Array(vdH.length).fill('');
+        Object.entries(vdDefaults).forEach(([col, val]) => { if (vdI[col] !== undefined) row[vdI[col]] = val; });
         row[vdI['商品URLコード']] = urlCode;
         row[vdI['バリエーション1']] = color;
         row[vdI['バリエーション2']] = cCode ? '-' + cCode : '';
@@ -4107,7 +4116,10 @@ function convertToFutureshop() {
     'セレクト／ラジオボタン用項目名','セレクト／ラジオボタン用選択肢','項目選択肢前改行',
     '項目名位置','項目選択肢表示','テキスト幅','最終更新日時'
   ];
+  const gsI = {};
+  gsH.forEach((h, i) => gsI[h] = i);
   const gsRows = [];
+  const gsDefaults = fm.gsDefaults || {};
 
   // 全商品に「レビュー投稿でノベルティを」選択肢を生成
   const reviewOptionName = fm.selectionOptionName || 'レビュー投稿でノベルティを';
@@ -4117,14 +4129,25 @@ function convertToFutureshop() {
     const urlCode = prod.id || prod.number || '';
     // レビュー投稿オプション（全商品に付与）
     reviewChoices.forEach(choice => {
-      gsRows.push(['n', urlCode, 's', reviewOptionName, choice, '0', '0', '0', '', '']);
+      const row = new Array(gsH.length).fill('');
+      Object.entries(gsDefaults).forEach(([col, val]) => { if (gsI[col] !== undefined) row[gsI[col]] = val; });
+      row[gsI['商品URLコード']] = urlCode;
+      row[gsI['セレクト／ラジオボタン用項目名']] = reviewOptionName;
+      row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
+      gsRows.push(row);
     });
     // 追加の商品オプションがあれば出力
     const opts = prod._options || prod.options || [];
     opts.forEach(opt => {
-      if (opt.name === reviewOptionName) return; // 重複回避
+      if (opt.name === reviewOptionName) return;
       (opt.choices || []).forEach(choice => {
-        gsRows.push(['n', urlCode, opt.type || 's', opt.name || '', choice, '0', '0', '0', '', '']);
+        const row = new Array(gsH.length).fill('');
+        Object.entries(gsDefaults).forEach(([col, val]) => { if (gsI[col] !== undefined) row[gsI[col]] = val; });
+        row[gsI['商品URLコード']] = urlCode;
+        row[gsI['選択肢タイプ']] = opt.type || gsDefaults['選択肢タイプ'] || 's';
+        row[gsI['セレクト／ラジオボタン用項目名']] = opt.name || '';
+        row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
+        gsRows.push(row);
       });
     });
   });

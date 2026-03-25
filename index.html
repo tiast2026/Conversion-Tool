@@ -170,12 +170,6 @@
       </div>
       <div class="tab-panel master-form-card" id="tab-convert-settings">
         <p style="font-size:12px; color:var(--text-light); margin-bottom:16px;">変更はヘッダーの「GitHubに保存」で全設定まとめて保存されます。</p>
-        <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">カラー表示順</h4>
-        <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">カラー名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
-        <textarea id="master-color-order" style="width:100%; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999" oninput="markMasterDirty()"></textarea>
-        <div style="margin-top:8px; margin-bottom:20px;">
-          <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
-        </div>
 
         <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">商品名クリーニング</h4>
         <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">商品名から削除するパターンを1行ずつ正規表現で記入してください。</p>
@@ -939,10 +933,11 @@
         <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-futureshop-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">goodsVariationConfirm_ カラー表示順マスタ</p>
-      <div style="background:#f8f6f4; border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:14px; max-width:600px;">
-        <p style="font-size:12px; color:#666; margin-bottom:8px;">goodsVariationConfirm_ の表示順はこのマスタから自動設定されます。<br>編集は <a href="#" onclick="switchMasterMall('common', document.querySelector('.mall-tab:last-child')); setTimeout(()=>switchMasterTab('convert-settings', document.querySelector('#master-tabs-common .sub-tab:nth-child(2)')), 100); return false;" style="color:#1565c0; font-weight:600;">共通 → 変換設定 → カラー表示順</a> で行えます。</p>
-        <div id="fs-color-order-preview" style="max-height:180px; overflow-y:auto; font-size:11px; font-family:monospace; color:#555;"></div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">goodsVariationConfirm_ カラー／サイズ表示順</p>
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">カラー名・サイズ名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
+      <textarea id="master-color-order" style="width:100%; max-width:600px; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999" oninput="markMasterDirty()"></textarea>
+      <div style="margin-top:8px; margin-bottom:16px;">
+        <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">ccGoods_ 固定値マスタ</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:6px; align-items:center; max-width:600px;">
@@ -964,6 +959,29 @@
         <span style="font-size:10px; color:#999;">※上のフィールドより優先されます</span>
       </p>
       <textarea id="mall-fs-ccGoodsDefaults" rows="10" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder="ステータス=1&#10;消費税=1&#10;在庫管理=0"></textarea>
+
+      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
+        goodsVariationConfirm_ デフォルト値（列名=値、1行1項目）
+      </p>
+      <textarea id="mall-fs-vcDefaults" rows="4" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder="コントロールカラム=n"></textarea>
+
+      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
+        goodsVariationDetail_ デフォルト値（列名=値、1行1項目）
+      </p>
+      <textarea id="mall-fs-vdDefaults" rows="4" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder=""></textarea>
+
+      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">
+        goodsSelection_ デフォルト値（列名=値、1行1項目）
+      </p>
+      <textarea id="mall-fs-gsDefaults" rows="4" style="width:100%; max-width:600px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical;" placeholder="コントロールカラム=n&#10;選択肢タイプ=s"></textarea>
+
+      <p style="font-size:12px; color:var(--text-light); margin-top:14px; margin-bottom:4px;">goodsSelection_ レビュー投稿設定</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:6px; align-items:center; max-width:600px;">
+        <label style="font-size:13px; font-weight:600;">項目名：</label>
+        <input type="text" id="mall-fs-selectionOptionName" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="レビュー投稿でノベルティを">
+        <label style="font-size:13px; font-weight:600;">選択肢（カンマ区切り）：</label>
+        <input type="text" id="mall-fs-selectionChoices" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="GETする,GETしない">
+      </div>
       <div style="margin-top:12px;">
               </div>
     </div>
