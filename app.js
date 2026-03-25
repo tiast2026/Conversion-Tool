@@ -3407,8 +3407,8 @@ function convertToRakuten() {
       pRow[RI['商品管理番号（商品URL）']] = prod.number;
       pRow[RI['商品番号']] = prod._productNo || prod.number;
       pRow[RI['商品名']] = rakutenName;
-      pRow[RI['倉庫指定']] = '1';
-      pRow[RI['サーチ表示']] = '0';
+      pRow[RI['倉庫指定']] = prod._warehouse !== undefined ? prod._warehouse : (prod.warehouse || '0');
+      pRow[RI['サーチ表示']] = prod._searchDisplay !== undefined ? prod._searchDisplay : (prod.searchDisplay || '0');
       pRow[RI['消費税']] = prod._taxType !== undefined ? prod._taxType : (rm.taxType || '0');
       pRow[RI['販売期間指定（開始日時）']] = prod._salePeriodStart !== undefined ? prod._salePeriodStart : (prod.saleStartDate || '');
       pRow[RI['販売期間指定（終了日時）']] = prod._salePeriodEnd !== undefined ? prod._salePeriodEnd : (prod.saleEndDate || '');
