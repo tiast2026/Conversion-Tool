@@ -1763,7 +1763,7 @@ function renderRmsPreview() {
       }
       prevIsMall = !!item.isMall;
       if (item.isMall) {
-        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:6px 12px; cursor:pointer; font-size:11px; font-weight:600; border:1px solid ' + (isActive ? '#1565c0' : '#c5cae9') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#e8eaf6' : '#f5f6ff') + '; color:' + (isActive ? '#1565c0' : '#5c6bc0') + '; margin-left:2px;">' + item.label + '</div>';
+        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:8px 14px; cursor:pointer; font-size:12px; font-weight:700; border:1px solid ' + (isActive ? '#1565c0' : '#1976d2') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#1565c0' : '#1976d2') + '; color:#fff; margin-left:3px;">' + item.label + '</div>';
       } else {
         html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
       }
@@ -2018,10 +2018,10 @@ function switchS3RmsTab(tabId, gi) {
     const active = el.dataset.tab === tabId;
     const isMall = mallTabs.includes(el.dataset.tab);
     if (isMall) {
-      el.style.border = active ? '1px solid #1565c0' : '1px solid #c5cae9';
+      el.style.border = active ? '1px solid #0d47a1' : '1px solid #1976d2';
       el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
-      el.style.background = active ? '#e8eaf6' : '#f5f6ff';
-      el.style.color = active ? '#1565c0' : '#5c6bc0';
+      el.style.background = active ? '#0d47a1' : '#1976d2';
+      el.style.color = '#fff';
     } else {
       el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
       el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
