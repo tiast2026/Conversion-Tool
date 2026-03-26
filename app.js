@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {}, changeRules: [], deleteColumns: [] },
+    futureshop: { columnSettings: { ccGoods: [], vc: [], vd: [], gs: [] } },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -755,6 +755,10 @@ function deleteProfile() {
   notify(`プロファイルを削除しました。GitHubに保存してください。`, 'info');
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function parseColorOrderText(text) {
   const map = {};
   text.split('\n').forEach(line => {
@@ -777,6 +781,7 @@ function openMaster() {
   // 共通 変換設定を読み込み
   const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
   if (document.getElementById('master-color-order')) document.getElementById('master-color-order').value = co;
+  renderColorOrderTable();
   if (document.getElementById('master-name-clean')) document.getElementById('master-name-clean').value = MASTER.nameCleanPatterns.join('\n');
   if (document.getElementById('master-delete-tpl')) document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
   // モール別設定を読み込み
@@ -854,23 +859,24 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
   if (mall === 'futureshop') {
-    // Load defaults into in-memory store and render tables
-    _fsDefaults.ccGoodsDefaults = Object.assign({}, m.ccGoodsDefaults || {});
-    _fsDefaults.vcDefaults = Object.assign({}, m.vcDefaults || {});
-    _fsDefaults.vdDefaults = Object.assign({}, m.vdDefaults || {});
-    _fsDefaults.gsDefaults = Object.assign({}, m.gsDefaults || {});
-    renderFsDefaultsTable('ccGoodsDefaults', 'fs-cc');
-    renderFsDefaultsTable('vcDefaults', 'fs-vc');
-    renderFsDefaultsTable('vdDefaults', 'fs-vd');
-    renderFsDefaultsTable('gsDefaults', 'fs-gs');
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
     if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
-    // 変更ルール・削除列
-    _fsChangeRules = (m.changeRules || []).map(r => Object.assign({}, r));
-    _fsDeleteCols = (m.deleteColumns || []).slice();
-    renderFsChangeRules();
-    renderFsDeleteCols();
+    // 列マッピング（旧フォーマットからの移行を含む）
+    const csData = migrateFsColumnSettings(m);
+    ['ccGoods','vc','vd','gs'].forEach(sk => {
+      _fsColumnSettings[sk] = (csData[sk] || []).map(e => Object.assign({}, e));
+      // FutureShop列ドロップダウン構築
+      const headers = FS_SHEET_HEADERS[sk] || [];
+      const colOpts = '<option value="">-- FutureShop列 --</option>' + headers.map(h => '<option value="' + h + '">' + h + '</option>').join('');
+      const colSel = document.getElementById('fs-set-col-' + sk);
+      if (colSel) colSel.innerHTML = colOpts;
+      // ソースドロップダウン構築
+      const srcOpts = '<option value="">-- ソース --</option>' + RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + f.label + '</option>').join('');
+      const srcSel = document.getElementById('fs-set-src-' + sk);
+      if (srcSel) srcSel.innerHTML = srcOpts;
+      renderFsColumnSettings(sk);
+    });
   }
 }
 
@@ -914,155 +920,346 @@ function switchRakutenTab(id, el) {
   if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
 }
 
-// --- FutureShop defaults table UI ---
-// In-memory store for FS defaults being edited (populated by loadMallMasterUI)
-const _fsDefaults = { ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {} };
+// ============================================================
+// FutureShop 列マッピング（統合版）
+// ============================================================
+let _fsColumnSettings = { ccGoods: [], vc: [], vd: [], gs: [] };
 
-function toggleFsSection(headerEl) {
-  const arrow = headerEl.querySelector('.fs-arrow');
-  const body = headerEl.nextElementSibling;
-  if (body.style.display === 'none') {
-    body.style.display = '';
-    arrow.textContent = '▼';
-  } else {
-    body.style.display = 'none';
-    arrow.textContent = '▶';
-  }
-}
+// 楽天商品フィールド（ソース選択肢）
+const RAKUTEN_SOURCE_FIELDS = [
+  { key: 'fixed', label: '固定値' },
+  { key: 'current', label: '変換済みの値' },
+  { key: 'id', label: '楽天: 商品管理番号' },
+  { key: 'number', label: '楽天: 商品番号' },
+  { key: '_productNo', label: '楽天: 商品番号(元)' },
+  { key: 'name', label: '楽天: 商品名' },
+  { key: 'cleanName', label: '楽天: 商品名(クリーン)' },
+  { key: 'catchCopy', label: '楽天: キャッチコピー' },
+  { key: 'productPoint', label: '楽天: セールスポイント' },
+  { key: 'price', label: '楽天: 販売価格' },
+  { key: 'sellPrice', label: '楽天: 実売価格' },
+  { key: '_displayPrice', label: '楽天: 表示価格' },
+  { key: '_taxType', label: '楽天: 税区分' },
+  { key: 'jan', label: '楽天: JANコード' },
+  { key: 'genreId', label: '楽天: ジャンルID' },
+  { key: '_catalogId', label: '楽天: カタログID' },
+  { key: '_catalogReason', label: '楽天: カタログIDなしの理由' },
+  { key: 'pcDesc', label: '楽天: PC用商品説明文' },
+  { key: 'pcSaleDesc', label: '楽天: PC用販売説明文' },
+  { key: 'spDesc', label: '楽天: SP用商品説明文' },
+  { key: 'shippingMethod', label: '楽天: 配送方法' },
+  { key: '_shippingFee', label: '楽天: 送料' },
+  { key: '_shippingCat1', label: '楽天: 送料区分1' },
+  { key: '_shippingCat2', label: '楽天: 送料区分2' },
+  { key: '_shippingSet', label: '楽天: 送料セット' },
+  { key: '_shippingName', label: '楽天: 送料名' },
+  { key: '_indivShipping', label: '楽天: 個別送料' },
+  { key: '_stockType', label: '楽天: 在庫タイプ' },
+  { key: '_restockBtn', label: '楽天: 再入荷ボタン' },
+  { key: '_orderLimit', label: '楽天: 注文制限' },
+  { key: '_salePeriodStart', label: '楽天: 販売期間(開始)' },
+  { key: '_salePeriodEnd', label: '楽天: 販売期間(終了)' },
+  { key: '_pointRate', label: '楽天: ポイント倍率' },
+  { key: '_pointStart', label: '楽天: ポイント開始日' },
+  { key: '_pointEnd', label: '楽天: ポイント終了日' },
+  { key: '_asuraku', label: '楽天: あす楽' },
+  { key: '_noshi', label: '楽天: のし' },
+  { key: '_controlCol', label: '楽天: コントロールカラム' },
+  { key: 'memo', label: '楽天: メモ' },
+  { key: 'tags', label: '楽天: タグ' },
+];
 
-function renderFsDefaultsTable(defaultsKey, prefix) {
-  const container = document.getElementById({
-    ccGoodsDefaults: 'mall-fs-ccGoods-table',
-    vcDefaults: 'mall-fs-vc-table',
-    vdDefaults: 'mall-fs-vd-table',
-    gsDefaults: 'mall-fs-gs-table'
-  }[defaultsKey]);
+const COLUMN_ACTION_LABELS = { set: 'セット', prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
+
+// 各シートのヘッダー定義（FutureShop列名選択用）
+const FS_SHEET_HEADERS = {
+  ccGoods: [
+    'コントロールカラム','商品URLコード','ステータス','商品番号','商品名',
+    'メイングループ','優先度','本体価格','定価','消費税',
+    '販売期間(From)','販売期間(to)','販売期間表示','クール便指定',
+    '送料','送料パターン','送料パターン表示','送料個別金額','個別送料表示',
+    'オススメ商品商品ページ内表示','オススメ商品リスト','オススメ商品表示方法',
+    '商品価格上部コメントHTMLタグ','商品価格上部コメント',
+    '定価価格前文字','定価価格後文字','販売価格前文字','取消線','定価表示方法',
+    '在庫管理','在庫数表示設定','在庫数表示設定方法','在庫僅少表示閾値',
+    '在庫なし表示テキスト','在庫なし表示テキスト表示方法',
+    '現在在庫数','調整在庫数','在庫数切れメール閾値',
+    'バリエーション横軸名','バリエーション縦軸名',
+    '会員価格設定','会員価格','アクセス制限',
+    'ポイント付与率設定','ポイント付与率',
+    'ステータス（他社サービス）','サンプル商品設定','サンプル商品同梱設定',
+    '最大購入制限個数','入荷お知らせメールボタン表示',
+    'JANコード','キャッチコピー',
+    'レコメンド２：行動履歴収集タグ出力フラグ','レコメンド２：レコメンド商品出力フラグ',
+    'レコメンド２：レコメンド表示フラグ','レコメンド２：レコメンド使用タグ優先設定',
+    'レコメンド２：商品ページ上部コメントの上','レコメンド２：商品ページ上部コメントの下',
+    'レコメンド２：商品ページ下部コメントの上','レコメンド２：商品ページ下部コメントの下',
+    'レコメンド２：商品ページおすすめ商品の上','レコメンド２：商品ページおすすめ商品の下',
+    'お気に入り登録数','メール便指定','メール便同梱数',
+    'バンドル販売','外部連携任意項目',
+    'おすすめ商品表示パターン設定','おすすめ商品表示パターン(コマースクリエイター)',
+    '外部連携商品名','外部連携商品説明',
+    'レイアウト割当名',
+    'ページ名(コマースクリエイター)','ページ名表示方法(コマースクリエイター)',
+    'キーワード(コマースクリエイター)','キーワード表示方法(コマースクリエイター)',
+    'Description(コマースクリエイター)','Description表示方法(コマースクリエイター)',
+    '商品一言説明(コマースクリエイター)',
+    '商品説明（大）','商品説明（小）',
+    '独自コメント（1）','独自コメント（2）','独自コメント（3）','独自コメント（4）',
+    '独自コメント（5）','独自コメント（6）','独自コメント（7）','独自コメント（8）',
+    '独自コメント（9）','独自コメント（10）','独自コメント（11）','独自コメント（12）',
+    '独自コメント（13）','独自コメント（14）','独自コメント（15）','独自コメント（16）',
+    '独自コメント（17）','独自コメント（18）','独自コメント（19）','独自コメント（20）',
+    'レコメンド２：レコメンド表示フラグ(コマースクリエイター)',
+    'レコメンド２：レコメンド使用タグ優先設定(コマースクリエイター)',
+    'レコメンド２：出力タグ１','レコメンド２：出力タグ２','レコメンド２：出力タグ３',
+    'レコメンド２：出力タグ４','レコメンド２：出力タグ５','レコメンド２：出力タグ６',
+    '配送種別','メール便同梱可能数（upgrade）','商品リードタイム',
+    '登録日時','最終更新日時'
+  ],
+  vc: [
+    'コントロールカラム','商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '表示順','商品番号','商品名','最終更新日時'
+  ],
+  vd: [
+    '商品URLコード',
+    'バリエーション1','バリエーション2','バリエーション3','バリエーション4',
+    '代表バリエーション','在庫閾値','在庫切れメール',
+    '商品番号','商品管理番号','商品名','JANコード','最終更新日付'
+  ],
+  gs: [
+    'コントロールカラム','商品URLコード','選択肢タイプ',
+    'セレクト／ラジオボタン用項目名','セレクト／ラジオボタン用選択肢','項目選択肢前改行',
+    '項目名位置','項目選択肢表示','テキスト幅','最終更新日時'
+  ]
+};
+
+const FS_SHEET_LABELS = { ccGoods: 'ccGoods_', vc: 'goodsVariationConfirm_', vd: 'goodsVariationDetail_', gs: 'goodsSelection_' };
+
+function renderFsColumnSettings(sheetKey) {
+  const container = document.getElementById('mall-fs-settings-' + sheetKey);
   if (!container) return;
-  const data = _fsDefaults[defaultsKey] || {};
-  const entries = Object.entries(data);
-  const countEl = document.getElementById(prefix + '-count');
-  if (countEl) countEl.textContent = entries.length + '項目';
-  if (entries.length === 0) {
-    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">設定なし</p>';
+  const settings = _fsColumnSettings[sheetKey] || [];
+  const countEl = document.getElementById('fs-' + sheetKey + '-count');
+  if (countEl) countEl.textContent = settings.length + '項目';
+  if (settings.length === 0) {
+    container.innerHTML = '<p style="font-size:13px; color:#aaa; margin:6px 0;">設定なし</p>';
     return;
   }
-  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
-  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">値</th><th style="width:40px; border-bottom:1px solid #ddd;"></th></tr>';
-  entries.forEach(([key, val]) => {
-    const safeKey = key.replace(/"/g, '&quot;');
-    const safeVal = String(val).replace(/"/g, '&quot;');
-    html += '<tr>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + key + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0;"><input type="text" value="' + safeVal + '" data-defaults-key="' + defaultsKey + '" data-col="' + safeKey + '" onchange="updateFsDefault(this)" style="width:100%; padding:2px 4px; border:1px solid #ddd; border-radius:3px; font-size:12px;"></td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button data-defaults-key="' + defaultsKey + '" data-col="' + safeKey + '" data-prefix="' + prefix + '" onclick="deleteFsDefault(this.dataset.defaultsKey, this.dataset.col, this.dataset.prefix)" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:14px;" title="削除">✕</button></td>';
+  const headers = FS_SHEET_HEADERS[sheetKey] || [];
+  // CSVヘッダーの左→右順に並び替え
+  const colOrder = {};
+  headers.forEach((h, idx) => { colOrder[h] = idx; });
+  settings.sort((a, b) => {
+    const ai = colOrder[a.fsColumn] !== undefined ? colOrder[a.fsColumn] : 99999;
+    const bi = colOrder[b.fsColumn] !== undefined ? colOrder[b.fsColumn] : 99999;
+    return ai - bi;
+  });
+  const srcOpts = RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + escapeHtml(f.label) + '</option>').join('');
+  const actKeys = Object.keys(COLUMN_ACTION_LABELS);
+
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">FutureShop列</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">ソース</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">操作</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">値</th><th style="width:36px;"></th></tr>';
+  settings.forEach((entry, i) => {
+    const sk = escapeHtml(sheetKey);
+    const rowBg = i % 2 === 0 ? '#fff' : '#f7f5f2';
+    html += '<tr style="border-bottom:1px solid #eee; background:' + rowBg + ';">';
+    // FutureShop列（固定テキスト）
+    html += '<td style="padding:4px 6px; font-size:13px; font-weight:500;">' + escapeHtml(entry.fsColumn) + '</td>';
+    // ソース select
+    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'source\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    html += srcOpts.replace('value="' + entry.source + '"', 'value="' + entry.source + '" selected');
+    html += '</select></td>';
+    // 操作 select
+    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    actKeys.forEach(ak => {
+      const sel = ak === entry.action ? ' selected' : '';
+      html += '<option value="' + ak + '"' + sel + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
+    });
+    html += '</select></td>';
+    // 値 input
+    html += '<td style="padding:4px 6px;"><input type="text" value="' + escapeHtml(entry.value || '') + '" onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'value\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;"></td>';
+    // 削除
+    html += '<td style="padding:4px 6px; text-align:center;"><button onclick="deleteFsColumnSetting(\'' + sk + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:16px;" title="削除">✕</button></td>';
     html += '</tr>';
   });
   html += '</table>';
   container.innerHTML = html;
 }
 
-function addFsDefault(defaultsKey, prefix) {
-  const keyInput = document.getElementById(prefix + '-new-key');
-  const valInput = document.getElementById(prefix + '-new-val');
-  if (!keyInput || !valInput) return;
-  const key = keyInput.value.trim();
-  const val = valInput.value.trim();
-  if (!key) { notify('列名を入力してください', 'error'); return; }
-  _fsDefaults[defaultsKey][key] = val;
-  keyInput.value = '';
-  valInput.value = '';
-  renderFsDefaultsTable(defaultsKey, prefix);
+function updateFsColumnSetting(sheetKey, index, field, value) {
+  if (!_fsColumnSettings[sheetKey] || !_fsColumnSettings[sheetKey][index]) return;
+  _fsColumnSettings[sheetKey][index][field] = value;
   markMasterDirty();
 }
 
-function deleteFsDefault(defaultsKey, colName, prefix) {
-  delete _fsDefaults[defaultsKey][colName];
-  renderFsDefaultsTable(defaultsKey, prefix);
+function addFsColumnSetting(sheetKey) {
+  const fsCol = document.getElementById('fs-set-col-' + sheetKey)?.value?.trim();
+  const source = document.getElementById('fs-set-src-' + sheetKey)?.value?.trim();
+  const action = document.getElementById('fs-set-action-' + sheetKey)?.value || 'set';
+  const value = document.getElementById('fs-set-val-' + sheetKey)?.value?.trim() || '';
+  if (!fsCol) { notify('FutureShop列を選択してください', 'error'); return; }
+  if (!source) { notify('ソースを選択してください', 'error'); return; }
+  if (source === 'fixed' && !value) { notify('固定値を入力してください', 'error'); return; }
+  if (!_fsColumnSettings[sheetKey]) _fsColumnSettings[sheetKey] = [];
+  _fsColumnSettings[sheetKey].push({ fsColumn: fsCol, source, action, value });
+  document.getElementById('fs-set-col-' + sheetKey).value = '';
+  document.getElementById('fs-set-val-' + sheetKey).value = '';
+  renderFsColumnSettings(sheetKey);
   markMasterDirty();
 }
 
-function updateFsDefault(inputEl) {
-  const dk = inputEl.dataset.defaultsKey;
-  const col = inputEl.dataset.col;
-  _fsDefaults[dk][col] = inputEl.value;
+function deleteFsColumnSetting(sheetKey, index) {
+  _fsColumnSettings[sheetKey].splice(index, 1);
+  renderFsColumnSettings(sheetKey);
   markMasterDirty();
 }
 
-// --- FutureShop change rules & delete columns ---
-let _fsChangeRules = []; // [{column, action, value}]
-let _fsDeleteCols = [];  // [columnName, ...]
-
-function renderFsChangeRules() {
-  const container = document.getElementById('mall-fs-change-rules-table');
-  if (!container) return;
-  if (_fsChangeRules.length === 0) {
-    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">ルールなし</p>';
-    return;
-  }
-  const actionLabels = { prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
-  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
-  html += '<tr style="background:#fff3e0;"><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">操作</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">文字列</th><th style="width:40px; border-bottom:1px solid #ddd;"></th></tr>';
-  _fsChangeRules.forEach((rule, i) => {
-    html += '<tr>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.column + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0;">' + (actionLabels[rule.action] || rule.action) + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.value + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button onclick="deleteFsChangeRule(' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:14px;" title="削除">✕</button></td>';
-    html += '</tr>';
+// デフォルトの列マッピング設定（全列を表示、実データに基づく値を設定）
+function getDefaultFsColumnSettings() {
+  // ccGoods: 既知のデフォルト値マップ
+  const ccGoodsDefaults = {
+    'コントロールカラム': { source: 'fixed', value: 'n' },
+    'ステータス': { source: 'fixed', value: '1' },
+    'メイングループ': { source: 'fixed', value: '全てのアイテム' },
+    '優先度': { source: 'fixed', value: '10000' },
+    '消費税': { source: 'fixed', value: '1' },
+    '販売期間表示': { source: 'fixed', value: '0' },
+    'クール便指定': { source: 'fixed', value: '0' },
+    '送料': { source: 'fixed', value: '0' },
+    '送料パターン表示': { source: 'fixed', value: '0' },
+    '個別送料表示': { source: 'fixed', value: '0' },
+    'オススメ商品商品ページ内表示': { source: 'fixed', value: '1' },
+    'オススメ商品表示方法': { source: 'fixed', value: '0' },
+    '商品価格上部コメントHTMLタグ': { source: 'fixed', value: '0' },
+    '定価価格前文字': { source: 'fixed', value: '定価' },
+    '定価価格後文字': { source: 'fixed', value: 'のところ' },
+    '販売価格前文字': { source: 'fixed', value: '当店特別価格' },
+    '取消線': { source: 'fixed', value: '1' },
+    '定価表示方法': { source: 'fixed', value: '0' },
+    '在庫管理': { source: 'fixed', value: '1' },
+    '在庫数表示設定': { source: 'fixed', value: '0' },
+    '在庫数表示設定方法': { source: 'fixed', value: '0' },
+    '在庫数切れメール閾値': { source: 'fixed', value: '0' },
+    'バリエーション横軸名': { source: 'fixed', value: 'カラー' },
+    'バリエーション縦軸名': { source: 'fixed', value: 'サイズ' },
+    '会員価格設定': { source: 'fixed', value: '0' },
+    'アクセス制限': { source: 'fixed', value: '0' },
+    'ポイント付与率設定': { source: 'fixed', value: '0' },
+    'ステータス（他社サービス）': { source: 'fixed', value: '0' },
+    'サンプル商品設定': { source: 'fixed', value: '0' },
+    '入荷お知らせメールボタン表示': { source: 'fixed', value: '1' },
+    'キャッチコピー': { source: 'cleanName', value: '' },
+    'メール便指定': { source: 'fixed', value: '0' },
+    'バンドル販売': { source: 'fixed', value: '0' },
+    '外部連携任意項目': { source: 'fixed', value: '0' },
+    '外部連携商品名': { source: 'cleanName', value: '' },
+    '外部連携商品説明': { source: 'catchCopy', value: '' },
+    'ページ名(コマースクリエイター)': { source: 'fixed', value: '{% product.name %}' },
+    'ページ名表示方法(コマースクリエイター)': { source: 'fixed', value: '0' },
+    'キーワード(コマースクリエイター)': { source: 'fixed', value: ',NOAHL,ノアル,レディース' },
+    'キーワード表示方法(コマースクリエイター)': { source: 'fixed', value: '2' },
+    'Description表示方法(コマースクリエイター)': { source: 'fixed', value: '0' },
+    '商品説明（大）': { source: 'spDesc', value: '' },
+    '商品説明（小）': { source: 'catchCopy', value: '' },
+    '配送種別': { source: 'fixed', value: '0100' },
+  };
+  // 全114列を生成（値がないものはfixed空欄）
+  const ccGoods = FS_SHEET_HEADERS.ccGoods.map(col => {
+    const d = ccGoodsDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
   });
-  html += '</table>';
-  container.innerHTML = html;
-}
 
-function addFsChangeRule() {
-  const col = document.getElementById('fs-change-col')?.value?.trim();
-  const action = document.getElementById('fs-change-action')?.value;
-  const val = document.getElementById('fs-change-val')?.value?.trim();
-  if (!col) { notify('対象列名を入力してください', 'error'); return; }
-  if (!val) { notify('文字列を入力してください', 'error'); return; }
-  _fsChangeRules.push({ column: col, action: action, value: val });
-  document.getElementById('fs-change-col').value = '';
-  document.getElementById('fs-change-val').value = '';
-  renderFsChangeRules();
-  markMasterDirty();
-}
-
-function deleteFsChangeRule(index) {
-  _fsChangeRules.splice(index, 1);
-  renderFsChangeRules();
-  markMasterDirty();
-}
-
-function renderFsDeleteCols() {
-  const container = document.getElementById('mall-fs-delete-cols-list');
-  if (!container) return;
-  if (_fsDeleteCols.length === 0) {
-    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">設定なし</p>';
-    return;
-  }
-  let html = '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
-  _fsDeleteCols.forEach((col, i) => {
-    html += '<span style="display:inline-flex; align-items:center; gap:4px; background:#ffebee; border:1px solid #ef9a9a; border-radius:4px; padding:3px 8px; font-size:12px; font-family:monospace;">' + col + '<button onclick="deleteFsDeleteCol(' + i + ')" style="background:none; border:none; color:#c62828; cursor:pointer; font-size:12px; padding:0 2px;" title="削除">✕</button></span>';
+  // vc: 全列
+  const vcDefaults = {
+    'コントロールカラム': { source: 'fixed', value: 'n' },
+  };
+  const vc = FS_SHEET_HEADERS.vc.map(col => {
+    const d = vcDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
   });
-  html += '</div>';
-  container.innerHTML = html;
+
+  // vd: 全列
+  const vd = FS_SHEET_HEADERS.vd.map(col => {
+    return { fsColumn: col, source: 'fixed', action: 'set', value: '' };
+  });
+
+  // gs: 全列
+  const gsDefaults = {
+    'コントロールカラム': { source: 'fixed', value: 'n' },
+    '選択肢タイプ': { source: 'fixed', value: 's' },
+    '項目選択肢前改行': { source: 'fixed', value: '0' },
+    '項目名位置': { source: 'fixed', value: '0' },
+    '項目選択肢表示': { source: 'fixed', value: '0' },
+  };
+  const gs = FS_SHEET_HEADERS.gs.map(col => {
+    const d = gsDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
+  });
+
+  return { ccGoods, vc, vd, gs };
 }
 
-function addFsDeleteCol() {
-  const col = document.getElementById('fs-delete-col')?.value?.trim();
-  if (!col) { notify('列名を入力してください', 'error'); return; }
-  if (_fsDeleteCols.includes(col)) { notify('既に追加されています', 'error'); return; }
-  _fsDeleteCols.push(col);
-  document.getElementById('fs-delete-col').value = '';
-  renderFsDeleteCols();
-  markMasterDirty();
+// 旧フォーマットからの移行
+function migrateFsColumnSettings(mallData) {
+  if (mallData.columnSettings) {
+    // 全シートが空の場合はデフォルトを返す
+    const cs = mallData.columnSettings;
+    const isEmpty = ['ccGoods','vc','vd','gs'].every(k => !(cs[k] || []).length);
+    return isEmpty ? getDefaultFsColumnSettings() : cs;
+  }
+  const result = { ccGoods: [], vc: [], vd: [], gs: [] };
+  // 旧 defaults → fixed source
+  const defaultsMap = { ccGoodsDefaults: 'ccGoods', vcDefaults: 'vc', vdDefaults: 'vd', gsDefaults: 'gs' };
+  let hasOldData = false;
+  Object.entries(defaultsMap).forEach(([dk, sk]) => {
+    const defaults = mallData[dk] || {};
+    Object.entries(defaults).forEach(([col, val]) => {
+      result[sk].push({ fsColumn: col, source: 'fixed', action: 'set', value: String(val) });
+      hasOldData = true;
+    });
+  });
+  // 旧 changeRules → current source
+  const rawCR = mallData.changeRules || {};
+  const crObj = Array.isArray(rawCR) ? { ccGoods: rawCR } : rawCR;
+  Object.entries(crObj).forEach(([sk, rules]) => {
+    (rules || []).forEach(rule => {
+      result[sk].push({ fsColumn: rule.column, source: 'current', action: rule.action, value: rule.value });
+      hasOldData = true;
+    });
+  });
+  // 旧データもない場合はデフォルトを返す
+  return hasOldData ? result : getDefaultFsColumnSettings();
 }
 
-function deleteFsDeleteCol(index) {
-  _fsDeleteCols.splice(index, 1);
-  renderFsDeleteCols();
-  markMasterDirty();
+// 列マッピングを行に適用する汎用関数
+function applyFsColumnSettings(settings, colIndex, row, prod) {
+  (settings || []).forEach(entry => {
+    const ci = colIndex[entry.fsColumn];
+    if (ci === undefined) return;
+    let baseVal;
+    if (entry.source === 'fixed') {
+      row[ci] = entry.value;
+      return;
+    } else if (entry.source === 'current') {
+      baseVal = row[ci];
+    } else {
+      baseVal = String(prod[entry.source] || '');
+    }
+    if (entry.action === 'prefix') row[ci] = entry.value + baseVal;
+    else if (entry.action === 'suffix') row[ci] = baseVal + entry.value;
+    else if (entry.action === 'remove') row[ci] = baseVal.split(entry.value).join('');
+    else row[ci] = baseVal; // 'set'
+  });
 }
+
 
 function saveMaster(which) {
   if (which === 'colorOrder') {
@@ -1145,18 +1342,15 @@ function readMallFormToMaster(mall) {
     m.neUid = el('mall-rakuten-ne-uid')?.value?.trim() || '';
   }
   if (mall === 'futureshop') {
-    // Read from in-memory table store
-    m.ccGoodsDefaults = Object.assign({}, _fsDefaults.ccGoodsDefaults || {});
-    m.vcDefaults = Object.assign({}, _fsDefaults.vcDefaults || {});
-    m.vdDefaults = Object.assign({}, _fsDefaults.vdDefaults || {});
-    m.gsDefaults = Object.assign({}, _fsDefaults.gsDefaults || {});
     // レビュー投稿設定
     m.selectionOptionName = el('mall-fs-selectionOptionName')?.value?.trim() || '';
     const choicesText = el('mall-fs-selectionChoices')?.value?.trim() || '';
     if (choicesText) m.selectionChoices = choicesText.split(',').map(s => s.trim()).filter(Boolean);
-    // 変更ルール・削除列
-    m.changeRules = _fsChangeRules.map(r => Object.assign({}, r));
-    m.deleteColumns = _fsDeleteCols.slice();
+    // 列マッピング
+    m.columnSettings = {};
+    ['ccGoods','vc','vd','gs'].forEach(sk => {
+      m.columnSettings[sk] = (_fsColumnSettings[sk] || []).map(e => Object.assign({}, e));
+    });
   }
 }
 
@@ -1267,9 +1461,87 @@ function catalogReasonLabel(code) {
 
 function loadDefaultColorOrder() {
   MASTER.colorOrder = parseColorOrderText(DEFAULT_COLOR_ORDER);
-  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  saveToGitHub();
+  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
+  if (document.getElementById('master-color-order')) document.getElementById('master-color-order').value = co;
+  renderColorOrderTable();
+  markMasterDirty();
   notify('デフォルトのカラー表示順を読み込みました', 'info');
+}
+
+function renderColorOrderTable() {
+  const container = document.getElementById('color-order-table');
+  if (!container) return;
+  const entries = Object.entries(MASTER.colorOrder).sort((a, b) => a[1] - b[1]);
+  if (!entries.length) {
+    container.innerHTML = '<p style="padding:12px; color:#999; font-size:12px;">データがありません</p>';
+    return;
+  }
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  html += '<thead><tr style="background:#f5f3f0; position:sticky; top:0;"><th style="padding:6px 10px; text-align:left; font-weight:600; border-bottom:1px solid var(--border);">カラー／サイズ名</th><th style="padding:6px 10px; text-align:center; font-weight:600; width:80px; border-bottom:1px solid var(--border);">表示順</th><th style="padding:6px 10px; width:40px; border-bottom:1px solid var(--border);"></th></tr></thead><tbody>';
+  entries.forEach(([name, order], idx) => {
+    const rowBg = idx % 2 === 0 ? '#fff' : '#f7f5f2';
+    html += '<tr style="border-bottom:1px solid #eee; background:' + rowBg + ';">';
+    html += '<td style="padding:5px 10px;">' + escapeHtml(name) + '</td>';
+    html += '<td style="padding:5px 10px; text-align:center;"><input type="number" value="' + order + '" min="0" style="width:60px; padding:2px 4px; border:1px solid var(--border); border-radius:3px; font-size:11px; text-align:center;" onchange="updateColorOrderRow(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\', this.value)"></td>';
+    html += '<td style="padding:5px 10px; text-align:center;"><button onclick="deleteColorOrderRow(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\')" style="background:none; border:none; color:#c44; cursor:pointer; font-size:14px;" title="削除">×</button></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function addColorOrderRow() {
+  const nameEl = document.getElementById('color-order-new-name');
+  const orderEl = document.getElementById('color-order-new-order');
+  const name = (nameEl?.value || '').trim();
+  const order = parseInt(orderEl?.value) || 9999;
+  if (!name) { notify('カラー名／サイズ名を入力してください', 'warn'); return; }
+  MASTER.colorOrder[name] = order;
+  syncColorOrderTextarea();
+  renderColorOrderTable();
+  markMasterDirty();
+  if (nameEl) nameEl.value = '';
+  if (orderEl) orderEl.value = '';
+}
+
+function updateColorOrderRow(name, val) {
+  MASTER.colorOrder[name] = parseInt(val) || 9999;
+  syncColorOrderTextarea();
+  markMasterDirty();
+}
+
+function deleteColorOrderRow(name) {
+  delete MASTER.colorOrder[name];
+  syncColorOrderTextarea();
+  renderColorOrderTable();
+  markMasterDirty();
+}
+
+function syncColorOrderTextarea() {
+  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
+  const ta = document.getElementById('master-color-order');
+  if (ta) ta.value = co;
+}
+
+function toggleColorOrderEdit() {
+  const tableView = document.getElementById('color-order-table-view');
+  const textView = document.getElementById('color-order-text-view');
+  const btn = document.getElementById('color-order-toggle-btn');
+  if (!tableView || !textView) return;
+  if (textView.style.display === 'none') {
+    // テキスト編集モードへ
+    textView.style.display = 'block';
+    tableView.style.display = 'none';
+    if (btn) btn.textContent = 'テーブル表示に戻す';
+  } else {
+    // テーブル表示へ戻す（テキストエリアの内容を反映）
+    const ta = document.getElementById('master-color-order');
+    if (ta) MASTER.colorOrder = parseColorOrderText(ta.value);
+    textView.style.display = 'none';
+    tableView.style.display = 'block';
+    renderColorOrderTable();
+    if (btn) btn.textContent = '一括テキスト編集';
+  }
 }
 
 // モール別の商品名加工
@@ -1819,7 +2091,7 @@ function generateColorImageMap(prod) {
 }
 
 // ============================================================
-// STEP 3: RMS商品編集画面風プレビュー
+// STEP 3: モール別CSV出力プレビュー
 // ============================================================
 function renderRmsPreview() {
   const container = document.getElementById('rms-preview-container');
@@ -1842,332 +2114,48 @@ function renderRmsPreview() {
     container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">変換データがありません。</p>';
     return;
   }
-  const rH = result.headers;
   const rows = result.rows;
+  const rH = result.headers;
   const RI = {};
   rH.forEach((h, i) => RI[h] = i);
 
-  // 商品行とSKU行をグルーピング + 元のproductデータも紐付け
-  const grouped = [];
-  let current = null;
-  let prodIdx = 0;
-  rows.forEach(row => {
-    const prodName = row[RI['商品名']];
-    const skuMgmt = row[RI['SKU管理番号']];
-    if (prodName && prodName.trim()) {
-      current = { row, skuRows: [], prod: products[prodIdx] || null };
-      grouped.push(current);
-      prodIdx++;
-    } else if (current && skuMgmt) {
-      current.skuRows.push(row);
-    }
-  });
+  // 商品数カウント
+  let prodCount = 0;
+  rows.forEach(row => { if (row[RI['商品名']] && row[RI['商品名']].trim()) prodCount++; });
 
-  // Step2と同じフルスクリーン2カラムレイアウト
+  // モール別CSV出力タブ
+  const mallPreviews = [
+    { tab: 'mall_futureshop', label: 'FutureShop', convertFn: 'futureshop' },
+    { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
+    { tab: 'mall_zozo', label: 'ZOZO', convertFn: 'zozo' },
+    { tab: 'mall_rakufashion', label: '楽天ファッション', convertFn: 'rakufashion' },
+  ];
+
   let html = '';
   html += '<div id="rms3-layout-root" style="display:flex; flex-direction:column; overflow:hidden; width:100%; box-sizing:border-box;">';
-  html += '<div style="display:flex; flex:1; min-height:0; overflow:hidden;">';
 
-  // --- 左: 商品一覧 ---
-  html += '<div style="width:220px; flex-shrink:0; background:#faf8f6; border-right:1px solid #e0e0e0; overflow-y:auto; padding:8px 0;">';
-  html += '<div style="padding:8px 12px; font-size:12px; color:#888;">商品一覧 (' + grouped.length + ')</div>';
-  grouped.forEach((g, i) => {
-    const no = g.row[RI['商品番号']] || '';
-    const name = g.row[RI['商品名']] || '商品' + (i + 1);
-    const shortName = name.length > 20 ? name.substring(0, 20) + '…' : name;
-    html += '<div class="s3rms-prod-item" onclick="switchStep3RmsProduct(' + i + ')" style="padding:10px 12px; cursor:pointer; border-left:3px solid ' + (i === 0 ? 'var(--primary)' : 'transparent') + '; background:' + (i === 0 ? '#e8e2dc' : '') + '; border-bottom:1px solid #eee;">';
-    html += '<div style="font-size:13px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(no) + '</div>';
-    html += '<div style="font-size:12px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">' + esc(shortName) + '</div>';
-    html += '<div style="font-size:11px; color:#aaa; margin-top:2px;">SKU:' + g.skuRows.length + '</div>';
-    html += '</div>';
+  // モールタブバー
+  html += '<div style="display:flex; align-items:center; background:#f5f5f5; border-bottom:1px solid #ddd; padding:0 16px; flex-shrink:0;">';
+  html += '<div style="font-size:15px; font-weight:700; color:#333; padding:12px 0; margin-right:20px;">CSV出力プレビュー</div>';
+  mallPreviews.forEach((mp, idx) => {
+    const isActive = idx === 0;
+    html += '<div class="mall-csv-tab" data-mall-tab="' + mp.tab + '" onclick="switchMallCsvTab(\'' + mp.tab + '\',\'' + mp.convertFn + '\')" style="padding:12px 24px; cursor:pointer; font-size:14px; font-weight:700; border-radius:6px 6px 0 0; margin-bottom:-1px; border:1px solid ' + (isActive ? '#1976d2' : 'transparent') + '; border-bottom:1px solid ' + (isActive ? '#fff' : 'transparent') + '; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#1976d2' : '#666') + ';">' + mp.label + '</div>';
   });
   html += '</div>';
 
-  // --- 右: 商品詳細パネル群 ---
-  html += '<div style="min-width:0; min-height:0; display:flex; flex-direction:column; flex:1; overflow:hidden;">';
-
-  grouped.forEach((g, gi) => {
-    const r = g.row;
-    const v = (key) => r[RI[key]] || '';
-    const prod = g.prod;
-    const imgUrl = prod ? (prod.imageUrl || (prod.images && prod.images.length > 0 ? (prod.images[0].url || buildRakutenImgUrl(prod.images[0].path)) : '')) : '';
-
-    html += '<div class="step3-rms-panel" data-rms-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden;">';
-    html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
-    html += '<div class="s3rms-tab-area" style="flex:1; min-height:0; overflow-y:scroll; overflow-x:hidden;">';
-
-    // パンくず
-    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">編集 &gt; <span style="color:#333; font-weight:600;">' + esc(v('商品番号') || v('商品管理番号（商品URL）')) + '</span></div>';
-
-    // 基本情報ヘッダー
-    html += '<div style="padding:16px 24px;">';
-    html += '<div style="display:flex; gap:16px; align-items:flex-start;">';
-    html += '<div style="flex-shrink:0; width:80px; height:80px; border:1px solid #ddd; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;">';
-    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>No Image</div>\'">';
-    else html += '<div style="color:#ccc; font-size:10px;">No Image</div>';
+  // モールコンテンツ
+  mallPreviews.forEach((mp, idx) => {
+    html += '<div class="mall-csv-content" data-mall-tab="' + mp.tab + '" style="flex:1; min-height:0; overflow:auto; padding:20px; display:' + (idx === 0 ? '' : 'none') + ';">';
+    html += '<div class="mall-preview-area" data-mall="' + mp.tab + '" style="font-size:12px;">';
+    html += '<p style="color:#999;">読み込み中...</p>';
     html += '</div>';
-    // バッジヘルパー
-    const bReq = '<span style="background:#e53935; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">必須</span>';
-    const bImp = '<span style="background:#1565c0; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">取込</span>';
-    const bMst = '<span style="background:#2e7d32; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:4px;">マスタ</span>';
-
-    html += '<div style="flex:1; min-width:0;">';
-    html += '<div style="display:flex; gap:24px; margin-bottom:10px; font-size:13px;">';
-    html += '<div><span style="color:#666;">商品管理番号 ' + bReq + bImp + '</span><div contenteditable="true" data-rms-field="number" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品管理番号（商品URL）')) + '</div></div>';
-    html += '<div><span style="color:#666;">商品番号 ' + bReq + bImp + '</span><div contenteditable="true" data-rms-field="productNo" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="margin-top:2px; font-weight:600; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-width:80px;">' + esc(v('商品番号')) + '</div></div>';
     html += '</div>';
-    html += '<div style="margin-bottom:8px;"><div style="font-size:13px; color:#666; margin-bottom:2px;">商品名 ' + bReq + bImp + '</div>';
-    html += '<div contenteditable="true" data-rms-field="cleanName" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="font-size:13px; font-weight:600; word-break:break-all; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text;">' + esc(v('商品名')) + '</div></div>';
-    html += '<div style="margin-bottom:8px;"><div style="font-size:13px; color:#666; margin-bottom:2px;">キャッチコピー ' + bImp + '</div>';
-    html += '<div contenteditable="true" data-rms-field="catchCopy" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="font-size:13px; padding:2px 6px; border:1px solid #e0e0e0; border-radius:3px; outline:none; cursor:text; min-height:18px;">' + esc(v('キャッチコピー')) + '</div></div>';
-    html += '</div></div></div>';
-
-    // 横タブ
-    const s3tabs = [
-      {label:'バリエーション', tab:'variation'},
-      {label:'販売・価格', tab:'price'},
-      {label:'在庫・配送', tab:'shipping'},
-      {label:'製品情報', tab:'product'},
-      {label:'ページデザイン', tab:'design'},
-      {label:'ポイント', tab:'point'},
-      {label:'FutureShop', tab:'mall_futureshop', isMall: true},
-      {label:'TikTok', tab:'mall_tiktok', isMall: true},
-      {label:'ZOZO', tab:'mall_zozo', isMall: true},
-      {label:'楽天ファッション', tab:'mall_rakufashion', isMall: true},
-    ];
-    html += '<div style="display:flex; align-items:end; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2; flex-wrap:wrap;">';
-    let prevIsMall = false;
-    s3tabs.forEach((item, idx) => {
-      const isActive = idx === 0;
-      // モールタブの手前にセパレーターを入れる
-      if (item.isMall && !prevIsMall) {
-        html += '<div style="width:1px; height:24px; background:#ccc; margin:0 8px 6px;"></div>';
-        html += '<div style="font-size:9px; color:#888; margin-right:4px; margin-bottom:8px; writing-mode:horizontal-tb;">CSV出力▼</div>';
-      }
-      prevIsMall = !!item.isMall;
-      if (item.isMall) {
-        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:8px 14px; cursor:pointer; font-size:12px; font-weight:700; border:1px solid ' + (isActive ? '#1565c0' : '#1976d2') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#1565c0' : '#1976d2') + '; color:#fff; margin-left:3px;">' + item.label + '</div>';
-      } else {
-        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
-      }
-    });
-    html += '</div>';
-
-    html += '<div style="padding:16px 24px 24px;">';
-
-    // ===== タブコンテンツ =====
-
-    // --- バリエーション ---
-    html += '<div class="s3rms-tab-content" data-tab="variation" data-gi="' + gi + '" style="padding:20px;">';
-    const varKeyDef = v('バリエーション項目キー定義');
-    const var1Def = v('バリエーション1選択肢定義');
-    const var2Def = v('バリエーション2選択肢定義');
-    if (varKeyDef) {
-      html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">バリエーション設定</h4>';
-      html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; width:180px; font-weight:600;">項目キー定義 ' + bReq + '</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(varKeyDef) + '</td></tr>';
-      html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">項目名定義 ' + bReq + '</td><td style="padding:8px 12px; border:1px solid #ddd;">' + esc(v('バリエーション項目名定義')) + '</td></tr>';
-      if (var1Def) {
-        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢1（カラー） ' + bReq + bImp + '</td><td style="padding:8px 12px; border:1px solid #ddd;">';
-        var1Def.split('|').forEach(c => { html += '<span style="display:inline-block; background:#fff3e0; border:1px solid #ffcc80; border-radius:4px; padding:3px 10px; margin:2px 3px; font-size:12px;">' + esc(c) + '</span>'; });
-        html += '</td></tr>';
-      }
-      if (var2Def) {
-        html += '<tr><td style="padding:8px 12px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">選択肢2（サイズ） ' + bReq + bImp + '</td><td style="padding:8px 12px; border:1px solid #ddd;">';
-        var2Def.split('|').forEach(s => { html += '<span style="display:inline-block; background:#e3f2fd; border:1px solid #90caf9; border-radius:4px; padding:3px 10px; margin:2px 3px; font-size:12px;">' + esc(s) + '</span>'; });
-        html += '</td></tr>';
-      }
-      html += '</table>';
-    }
-    // SKU一覧
-    if (g.skuRows.length > 0) {
-      html += '<h4 style="font-size:14px; color:#333; margin:20px 0 10px; border-bottom:2px solid #333; padding-bottom:6px;">SKU一覧（' + g.skuRows.length + '件）</h4>';
-      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12px;">';
-      html += '<thead><tr>';
-      const skuHeaders = [
-        ['SKU管理番号', bReq],
-        ['システム連携用SKU番号', bImp],
-        ['カラー', bReq + bImp],
-        ['サイズ', bReq + bImp],
-        ['通常購入販売価格', bReq + bImp],
-        ['在庫数', ''],
-        ['型番', bImp],
-        ['カタログIDなしの理由', bReq + bMst],
-        ['SKU画像タイプ', ''],
-        ['SKU画像パス', ''],
-      ];
-      skuHeaders.forEach(([h, badge]) => {
-        html += '<th style="background:#f5f5f5; padding:8px; border:1px solid #ddd; font-weight:600; font-size:11px; white-space:nowrap;">' + esc(h) + ' ' + badge + '</th>';
-      });
-      html += '</tr></thead><tbody>';
-      const edSkuCell = 'padding:6px 8px; border:1px solid #ddd; outline:none; cursor:text;';
-      g.skuRows.forEach((sRow, si) => {
-        const bg = si % 2 === 0 ? '#fff' : '#fafafa';
-        html += '<tr style="background:' + bg + ';">';
-        html += '<td contenteditable="true" data-rms-sku="skuMgmt" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['SKU管理番号']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="systemSku" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['システム連携用SKU番号']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="color" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['バリエーション項目選択肢1']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="size" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['バリエーション項目選択肢2']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="price" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + ' text-align:right;">' + esc(sRow[RI['通常購入販売価格']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="stock" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + ' text-align:center;">' + esc(sRow[RI['在庫数']] || '0') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="jan" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['自由入力行（値）1']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="catalogReason" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['カタログIDなしの理由']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="skuImgType" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['SKU画像タイプ']] || '') + '</td>';
-        html += '<td contenteditable="true" data-rms-sku="skuImgPath" data-gi="' + gi + '" data-si="' + si + '" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" onfocus="onRmsFocus(this)" style="' + edSkuCell + '">' + esc(sRow[RI['SKU画像パス']] || '') + '</td>';
-        html += '</tr>';
-      });
-      html += '</tbody></table></div>';
-    }
-    html += '</div>'; // variation tab
-
-    // --- 販売・価格 ---
-    const edSpan = 'padding:6px 10px; border:1px solid #ccc; border-radius:4px; display:inline-block; background:#fff; min-width:100px; outline:none; cursor:text;';
-    html += '<div class="s3rms-tab-content" data-tab="price" data-gi="' + gi + '" style="padding:20px; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">価格設定</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">通常購入販売価格 ' + bReq + bImp + '<br><span style="font-size:10px; color:#bf0000; font-weight:400;">SKU毎に入力</span></td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="sellPrice" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(prod ? (prod.sellPrice || '') : '') + '</span> <span style="color:#888; font-size:11px;">最大9桁（半角数字）</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">消費税 ' + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="taxType" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('消費税')) + '</span> <span style="color:#888; font-size:11px;">0:税込み / 1:税別</span></td></tr>';
-    html += '</table>';
-    html += '<h4 style="font-size:14px; color:#333; margin:20px 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">販売設定</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    const spStart = v('販売期間指定（開始日時）') || (prod ? (prod.saleStartDate || '') : '');
-    const spEnd = v('販売期間指定（終了日時）') || (prod ? (prod.saleEndDate || '') : '');
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">販売期間（開始） ' + bImp + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(spStart) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">販売期間（終了） ' + bImp + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="salePeriodEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(spEnd) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">注文受付数</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="orderLimit" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('注文受付数')) + '</span></td></tr>';
-    html += '</table>';
-    html += '</div>'; // price tab
-
-    // --- 在庫・配送 ---
-    html += '<div class="s3rms-tab-content" data-tab="shipping" data-gi="' + gi + '" style="padding:20px; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">在庫設定</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">倉庫指定</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span style="' + edSpan + '">' + esc(v('倉庫指定') || '0') + '</span> <span style="color:#888; font-size:11px;">0:通常 / 1:倉庫</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">再入荷お知らせボタン ' + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="restockBtn" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('再入荷お知らせボタン')) + '</span> <span style="color:#888; font-size:11px;">0:非表示 / 1:表示</span></td></tr>';
-    html += '</table>';
-    html += '<h4 style="font-size:14px; color:#333; margin:20px 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">配送設定</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    const shipFields = [
-      ['送料', 'shippingFee', v('送料'), '0:送料込み / 1:送料別', bMst],
-      ['個別送料', 'indivShipping', v('個別送料'), '円', bMst],
-      ['送料区分1', 'shippingCat1', v('送料区分1'), '', bMst],
-      ['送料区分2', 'shippingCat2', v('送料区分2'), '', bMst],
-      ['配送方法セット管理番号', 'shippingSet', v('配送方法セット管理番号'), '', bMst],
-      ['のし対応', 'noshi', v('のし対応'), '0:対応しない / 1:対応する', bMst],
-    ];
-    shipFields.forEach(([label, field, val, hint, badge]) => {
-      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">' + esc(label) + ' ' + badge + '</td>';
-      html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="' + field + '" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(val) + '</span>';
-      if (hint) html += ' <span style="color:#888; font-size:11px;">' + esc(hint) + '</span>';
-      html += '</td></tr>';
-    });
-    html += '</table>';
-    html += '</div>'; // shipping tab
-
-    // --- 製品情報 ---
-    html += '<div class="s3rms-tab-content" data-tab="product" data-gi="' + gi + '" style="padding:20px; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">製品情報</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">コントロールカラム ' + bReq + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="controlCol" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('コントロールカラム')) + '</span> <span style="color:#888; font-size:11px;">n:新規 / u:更新 / d:削除</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">ジャンルID ' + bReq + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="genreId" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ジャンルID')) + '</span> <span class="genre-name-display" data-genre-id="' + esc(v('ジャンルID')) + '" style="font-size:12px; margin-left:8px;"></span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログID ' + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="catalogId" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('カタログID') || '') + '</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由 ' + bReq + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="catalogReason" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('カタログIDなしの理由')) + '</span> <span style="color:#888; font-size:11px;">' + esc(catalogReasonLabel(v('カタログIDなしの理由'))) + '</span></td></tr>';
-    html += '</table>';
-    html += '</div>'; // product tab
-
-    // --- ページデザイン ---
-    html += '<div class="s3rms-tab-content" data-tab="design" data-gi="' + gi + '" style="padding:20px; display:none;">';
-
-    // 商品画像URL一覧
-    if (prod && sourceType === 'jisha') {
-      const imgUrls = generateRakutenImageUrls(prod);
-      if (imgUrls.length > 0) {
-        html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品画像URL（自動生成: ' + imgUrls.length + '枚）</h4>';
-        html += '<div style="background:#fafafa; border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:20px; max-height:300px; overflow-y:auto;">';
-        html += '<table style="width:100%; border-collapse:collapse; font-size:11px; font-family:monospace;">';
-        imgUrls.forEach((url, i) => {
-          const label = i === 0 ? 'メイン(-1r)' : (i === imgUrls.length - 1 ? '最後(-11)' : (i === imgUrls.length - 2 ? '最後-1(-10)' : 'カラバリ'));
-          html += '<tr style="border-bottom:1px solid #eee;">';
-          html += '<td style="padding:4px 8px; color:#888; white-space:nowrap; width:30px;">' + (i + 1) + '</td>';
-          html += '<td style="padding:4px 8px; color:#999; white-space:nowrap; width:70px; font-size:10px;">' + label + '</td>';
-          html += '<td style="padding:4px 8px; word-break:break-all;"><a href="' + esc(url) + '" target="_blank" style="color:#1565c0; text-decoration:none;">' + esc(url) + '</a></td>';
-          html += '</tr>';
-        });
-        html += '</table>';
-        html += '</div>';
-      }
-    }
-
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品説明文</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    [['PC用商品説明文', 'pcDesc', v('PC用商品説明文'), bMst], ['スマートフォン用商品説明文', 'spDesc', v('スマートフォン用商品説明文'), bMst], ['PC用販売説明文', 'saleDesc', v('PC用販売説明文'), bMst]].forEach(([label, field, val, badge]) => {
-      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600; vertical-align:top;">' + esc(label) + ' ' + badge;
-      if (val) html += ' <button onclick="previewHtml(decodeURIComponent(\'' + encodeURIComponent(val) + '\'), \'' + esc(label) + '\')" style="font-size:10px; padding:2px 6px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; margin-left:4px;">確認</button>';
-      html += '</td>';
-      html += '<td style="padding:10px 14px; border:1px solid #ddd;">';
-      html += '<textarea data-rms-field="' + field + '" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="width:100%; min-height:120px; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; font-size:11px; word-break:break-all; white-space:pre-wrap; font-family:inherit; resize:vertical; outline:none; box-sizing:border-box;">' + esc(val) + '</textarea>';
-      if (val) html += '<div style="font-size:10px; color:#888; margin-top:4px;">' + val.length + '文字</div>';
-      html += '</td></tr>';
-    });
-    html += '</table>';
-    html += '</div>'; // design tab
-
-    // --- ポイント変倍 ---
-    html += '<div class="s3rms-tab-content" data-tab="point" data-gi="' + gi + '" style="padding:20px; display:none;">';
-    html += '<h4 style="font-size:14px; color:#333; margin:0 0 12px; border-bottom:2px solid #333; padding-bottom:6px;">商品別ポイント変倍</h4>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ポイント変倍率 ' + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointRate" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ポイント変倍率')) + '</span> <span style="color:#888; font-size:11px;">倍</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用期間開始 ' + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointStart" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ポイント変倍率適用期間（開始日時）')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/01/01 00:00</span></td></tr>';
-    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">適用期間終了 ' + bMst + '</td>';
-    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><span data-rms-field="pointEnd" contenteditable="true" onblur="onRmsEdit(this,' + gi + ')" onfocus="onRmsFocus(this)" style="' + edSpan + '">' + esc(v('ポイント変倍率適用期間（終了日時）')) + '</span> <span style="color:#888; font-size:11px;">例: 2024/12/31 23:59</span></td></tr>';
-    html += '</table>';
-    html += '</div>'; // point tab
-
-    // --- モール別CSVプレビュータブ ---
-    const mallPreviews = [
-      { tab: 'mall_futureshop', label: 'FutureShop', convertFn: 'futureshop' },
-      { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
-      { tab: 'mall_zozo', label: 'ZOZO', convertFn: 'zozo' },
-      { tab: 'mall_rakufashion', label: '楽天ファッション', convertFn: 'rakufashion' },
-    ];
-    mallPreviews.forEach(mp => {
-      html += '<div class="s3rms-tab-content" data-tab="' + mp.tab + '" data-gi="' + gi + '" style="padding:20px; display:none;">';
-      html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">';
-      html += '<h4 style="font-size:14px; color:#333; margin:0;">' + mp.label + ' CSV出力プレビュー</h4>';
-      html += '<button onclick="refreshMallPreview(\'' + mp.tab + '\',' + gi + ',\'' + mp.convertFn + '\')" style="font-size:11px; padding:4px 12px; border:1px solid #ccc; border-radius:4px; background:#fff; cursor:pointer;">更新</button>';
-      html += '</div>';
-      html += '<div class="mall-preview-area" data-mall="' + mp.tab + '" data-gi="' + gi + '" style="font-size:12px;">';
-      html += '<p style="color:#999;">タブを選択すると自動的にプレビューを生成します。</p>';
-      html += '</div>';
-      html += '</div>';
-    });
-
-    html += '</div>'; // padding
-    html += '</div>'; // s3rms-tab-area
-    html += '</div>'; // white card wrapper
-    html += '</div>'; // step3-rms-panel
   });
 
-  html += '</div>'; // right panel wrapper
-  html += '</div>'; // flex row
-
-  // フッター: ナビゲーションボタン
+  // フッター
   html += '<div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">';
   html += '<button class="btn btn-outline" onclick="goToStep(2)">← 戻る</button>';
-  html += '<div style="font-size:13px; color:#666;">' + grouped.length + '商品 / ' + rows.length + '行</div>';
+  html += '<div style="font-size:13px; color:#666;">' + prodCount + '商品 / ' + rows.length + '行</div>';
   html += '<button class="btn btn-primary" onclick="goToStep(4)">ダウンロードへ →</button>';
   html += '</div>';
 
@@ -2187,40 +2175,30 @@ function renderRmsPreview() {
     window.addEventListener('resize', adjustHeight);
   }
 
-  resolveGenreNames();
+  // 最初のタブ(FutureShop)を自動生成
+  switchMallCsvTab('mall_futureshop', 'futureshop');
 }
 
-function switchS3RmsTab(tabId, gi) {
-  // Step3 タブコンテンツ切替
-  document.querySelectorAll('.s3rms-tab-content[data-gi="' + gi + '"]').forEach(el => {
-    el.style.display = el.dataset.tab === tabId ? '' : 'none';
+
+function switchMallCsvTab(tabId, convertFn) {
+  // タブ切替
+  document.querySelectorAll('.mall-csv-tab').forEach(el => {
+    const active = el.dataset.mallTab === tabId;
+    el.style.border = active ? '1px solid #1976d2' : '1px solid transparent';
+    el.style.borderBottom = active ? '1px solid #fff' : '1px solid transparent';
+    el.style.background = active ? '#fff' : 'transparent';
+    el.style.color = active ? '#1976d2' : '#666';
   });
-  // Step3 タブヘッダー切替
-  const mallTabs = ['mall_futureshop','mall_tiktok','mall_zozo','mall_rakufashion'];
-  document.querySelectorAll('.s3rms-side[data-gi="' + gi + '"]').forEach(el => {
-    const active = el.dataset.tab === tabId;
-    const isMall = mallTabs.includes(el.dataset.tab);
-    if (isMall) {
-      el.style.border = active ? '1px solid #0d47a1' : '1px solid #1976d2';
-      el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
-      el.style.background = active ? '#0d47a1' : '#1976d2';
-      el.style.color = '#fff';
-    } else {
-      el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
-      el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
-      el.style.background = active ? '#fff' : 'transparent';
-      el.style.color = active ? '#333' : '#888';
-    }
+  // コンテンツ切替
+  document.querySelectorAll('.mall-csv-content').forEach(el => {
+    el.style.display = el.dataset.mallTab === tabId ? '' : 'none';
   });
-  // モール別CSVプレビュー自動生成
-  if (tabId.startsWith('mall_')) {
-    const mallKey = tabId.replace('mall_', '');
-    refreshMallPreview(tabId, gi, mallKey);
-  }
+  // プレビュー生成
+  refreshMallPreview(tabId, convertFn);
 }
 
-function refreshMallPreview(tabId, gi, mallKey) {
-  const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"][data-gi="' + gi + '"]');
+function refreshMallPreview(tabId, mallKey) {
+  const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
   let result;
   try {
@@ -2243,10 +2221,10 @@ function refreshMallPreview(tabId, gi, mallKey) {
     result.sheets.forEach((file, fi) => {
       html += '<div style="margin-bottom:20px;">';
       html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
-      html += '<h5 style="font-size:13px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
-      html += '<span style="font-size:11px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
+      html += '<h5 style="font-size:14px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
+      html += '<span style="font-size:12px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
       html += '</div>';
-      html += buildCsvPreviewTable(file.headers, file.rows, gi);
+      html += buildCsvPreviewTable(file.headers, file.rows);
       html += '</div>';
     });
     area.innerHTML = html;
@@ -2254,19 +2232,19 @@ function refreshMallPreview(tabId, gi, mallKey) {
     let html = '<div style="margin-bottom:8px;">';
     html += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
     html += '</div>';
-    html += buildCsvPreviewTable(result.headers, result.rows, gi);
+    html += buildCsvPreviewTable(result.headers, result.rows);
     area.innerHTML = html;
   } else {
     area.innerHTML = '<p style="color:#999;">データなし</p>';
   }
 }
 
-function buildCsvPreviewTable(headers, rows, gi) {
+function buildCsvPreviewTable(headers, rows) {
   let html = '<div style="overflow-x:auto; max-height:500px; overflow-y:auto; border:1px solid #ddd; border-radius:4px;">';
-  html += '<table style="width:100%; border-collapse:collapse; font-size:11px; white-space:nowrap;">';
+  html += '<table style="width:100%; border-collapse:collapse; font-size:13px; white-space:nowrap;">';
   html += '<thead><tr>';
   headers.forEach(h => {
-    html += '<th style="background:#f0f0f0; padding:6px 8px; border:1px solid #ddd; font-weight:600; position:sticky; top:0; z-index:1; font-size:10px;">' + esc(h) + '</th>';
+    html += '<th style="background:#f0f0f0; padding:8px 10px; border:1px solid #ddd; font-weight:600; position:sticky; top:0; z-index:1; font-size:12px;">' + esc(h) + '</th>';
   });
   html += '</tr></thead><tbody>';
   rows.forEach((row, ri) => {
@@ -2275,7 +2253,7 @@ function buildCsvPreviewTable(headers, rows, gi) {
     headers.forEach((h, ci) => {
       const val = row[ci] || '';
       const truncVal = val.length > 60 ? val.substring(0, 60) + '…' : val;
-      html += '<td style="padding:4px 8px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+      html += '<td contenteditable="true" style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
     });
     html += '</tr>';
   });
@@ -4022,7 +4000,7 @@ function convertToFutureshop() {
     return { prod, colorMap, sizeMap, sortedColors, sortedSizes };
   });
 
-  // ========== 1. ccGoods_ (商品基本情報 113列) ==========
+  // ========== 1. ccGoods_ (商品基本情報 114列) ==========
   const ccH = [
     'コントロールカラム','商品URLコード','ステータス','商品番号','商品名',
     'メイングループ','優先度','本体価格','定価','消費税',
@@ -4030,7 +4008,7 @@ function convertToFutureshop() {
     '送料','送料パターン','送料パターン表示','送料個別金額','個別送料表示',
     'オススメ商品商品ページ内表示','オススメ商品リスト','オススメ商品表示方法',
     '商品価格上部コメントHTMLタグ','商品価格上部コメント',
-    '定価価格前文字','定価価格後文字','販売価格前文字','取消線定価表示方法',
+    '定価価格前文字','定価価格後文字','販売価格前文字','取消線','定価表示方法',
     '在庫管理','在庫数表示設定','在庫数表示設定方法','在庫僅少表示閾値',
     '在庫なし表示テキスト','在庫なし表示テキスト表示方法',
     '現在在庫数','調整在庫数','在庫数切れメール閾値',
@@ -4071,48 +4049,41 @@ function convertToFutureshop() {
   ccH.forEach((h, i) => ccI[h] = i);
   const ccRows = [];
 
-  // ccGoodsDefaults: マスタで定義された固定値を全商品に一括適用
-  const ccDefaults = fm.ccGoodsDefaults || {};
+  // 列マッピング設定を取得
+  const csData = migrateFsColumnSettings(fm);
 
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     // 商品名: 楽天ソースではキャッチコピーをクリーンして使用
     const fsCatchCopy = prod.catchCopy || prod.productPoint || '';
     const fsCleanName = cleanProductName(fsCatchCopy) || prod.cleanName || prod.name || '';
     const name = applyMallName(fsCleanName, 'futureshop');
-    const basePrice = prod.sellPrice || prod.skus[0]?.price || '';
-    const price = calcMallPrice(basePrice, 'futureshop');
+
+    // 本体価格: 楽天商品名の末尾数字を逆順にして取得
+    let price = '';
+    if (sourceType === 'rakuten') {
+      const rawName = prod.name || '';
+      const lastNumMatch = rawName.match(/(\d+)\s*$/);
+      if (lastNumMatch) {
+        price = lastNumMatch[1].split('').reverse().join('');
+        // 先頭の0を除去
+        price = price.replace(/^0+/, '') || '0';
+      }
+    }
+    if (!price) {
+      const basePrice = prod.sellPrice || prod.skus[0]?.price || '';
+      price = calcMallPrice(basePrice, 'futureshop');
+    }
+
     const hasColor = sortedColors.length > 0;
     const hasSize = sortedSizes.length > 0;
 
     const row = new Array(ccH.length).fill('');
 
-    // マスタのデフォルト値を一括適用
-    Object.entries(ccDefaults).forEach(([col, val]) => {
-      if (ccI[col] !== undefined) row[ccI[col]] = val;
-    });
-
-    // 商品個別の値（デフォルトを上書き）
+    // 商品個別の値（動的に決まるもの）
     row[ccI['商品URLコード']] = prod.id || prod.number || '';
     row[ccI['商品番号']] = prod.id || prod.number || '';
     row[ccI['商品名']] = name;
     row[ccI['本体価格']] = price;
-    if (hasColor) row[ccI['バリエーション横軸名']] = 'カラー';
-    if (hasSize) row[ccI['バリエーション縦軸名']] = 'サイズ';
-    row[ccI['キャッチコピー']] = fsCleanName;
-    row[ccI['外部連携商品名']] = fsCleanName;
-
-    // 商品説明（大）・（小）: 楽天ソースでは実データを直接使用
-    if (sourceType === 'rakuten') {
-      row[ccI['商品説明（大）']] = prod.pcSaleDesc || '';
-      row[ccI['商品説明（小）']] = prod.pcDesc || '';
-    } else {
-      row[ccI['商品説明（大）']] = fm.descLargeTpl
-        ? applyDescTemplate(fm.descLargeTpl, prod)
-        : applyDescTemplate(rm.saleDescTpl, prod);
-      row[ccI['商品説明（小）']] = fm.descSmallTpl
-        ? applyDescTemplate(fm.descSmallTpl, prod)
-        : applyDescTemplate(rm.pcDescTpl, prod);
-    }
 
     // メール便指定（配送方法またはキャッチコピーから判定）
     const shippingHint = prod.shippingMethod || fsCatchCopy || prod.name || '';
@@ -4121,18 +4092,8 @@ function convertToFutureshop() {
       row[ccI['メール便同梱数']] = '0';
     }
 
-    // 変更ルール適用
-    (fm.changeRules || []).forEach(rule => {
-      const ci = ccI[rule.column];
-      if (ci === undefined) return;
-      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
-      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
-      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
-    });
-    // 削除列適用
-    (fm.deleteColumns || []).forEach(col => {
-      if (ccI[col] !== undefined) row[ccI[col]] = '';
-    });
+    // 列マッピング適用（ccGoods_）- マスタ設定の値で上書き
+    applyFsColumnSettings(csData.ccGoods, ccI, row, prod);
 
     ccRows.push(row);
   });
@@ -4147,40 +4108,36 @@ function convertToFutureshop() {
   const vcI = {};
   vcH.forEach((h, i) => vcI[h] = i);
   const vcRows = [];
-  const vcDefaults = fm.vcDefaults || {};
-
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     const fsCatchCopy2 = prod.catchCopy || prod.productPoint || '';
     const name = cleanProductName(fsCatchCopy2) || prod.cleanName || prod.name || '';
     const urlCode = prod.id || prod.number || '';
 
-    // カラー行（バリエーション1=カラー名, バリエーション2=カラーコード）
     sortedColors.forEach(color => {
       const code = colorMap.get(color) || '';
       const order = MASTER.colorOrder[color] || '';
       const row = new Array(vcH.length).fill('');
-      Object.entries(vcDefaults).forEach(([col, val]) => { if (vcI[col] !== undefined) row[vcI[col]] = val; });
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション1']] = color;
       row[vcI['バリエーション2']] = code ? '-' + code : '';
       row[vcI['表示順']] = String(order);
       row[vcI['商品番号']] = urlCode;
       row[vcI['商品名']] = name;
+      applyFsColumnSettings(csData.vc, vcI, row, prod);
       vcRows.push(row);
     });
 
-    // サイズ行（バリエーション3=サイズ名, バリエーション4=サイズコード）
     sortedSizes.forEach((size, idx) => {
       const code = sizeMap.get(size) || getFsSizeCode(size);
       const sizeOrder = MASTER.colorOrder[size] || (idx + 1);
       const row = new Array(vcH.length).fill('');
-      Object.entries(vcDefaults).forEach(([col, val]) => { if (vcI[col] !== undefined) row[vcI[col]] = val; });
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション3']] = size;
       row[vcI['バリエーション4']] = code ? '-' + code : '';
       row[vcI['表示順']] = String(sizeOrder);
       row[vcI['商品番号']] = urlCode;
       row[vcI['商品名']] = name;
+      applyFsColumnSettings(csData.vc, vcI, row, prod);
       vcRows.push(row);
     });
   });
@@ -4196,14 +4153,12 @@ function convertToFutureshop() {
   const vdI = {};
   vdH.forEach((h, i) => vdI[h] = i);
   const vdRows = [];
-  const vdDefaults = fm.vdDefaults || {};
-
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     const fsCatchCopy3 = prod.catchCopy || prod.productPoint || '';
     const name = cleanProductName(fsCatchCopy3) || prod.cleanName || prod.name || '';
     const urlCode = prod.id || prod.number || '';
 
-    // 全色×全サイズの組み合わせを生成
+    let isFirstVariation = true;
     sortedColors.forEach(color => {
       const cCode = colorMap.get(color) || '';
       sortedSizes.forEach(size => {
@@ -4212,21 +4167,21 @@ function convertToFutureshop() {
           const info = getFsSkuInfo(sku, prod);
           return info.color === color && info.size === size;
         });
-        const jan = matchSku ? (matchSku.jan || matchSku.systemSku || '') : '';
         const mgmtNo = urlCode + (cCode ? '-' + cCode : '');
 
         const row = new Array(vdH.length).fill('');
-        Object.entries(vdDefaults).forEach(([col, val]) => { if (vdI[col] !== undefined) row[vdI[col]] = val; });
         row[vdI['商品URLコード']] = urlCode;
         row[vdI['バリエーション1']] = color;
         row[vdI['バリエーション2']] = cCode ? '-' + cCode : '';
         row[vdI['バリエーション3']] = size;
         row[vdI['バリエーション4']] = sCode ? '-' + sCode : '';
+        row[vdI['代表バリエーション']] = isFirstVariation ? '1' : '';
         row[vdI['商品番号']] = urlCode;
         row[vdI['商品管理番号']] = mgmtNo;
         row[vdI['商品名']] = name;
-        row[vdI['JANコード']] = jan;
+        applyFsColumnSettings(csData.vd, vdI, row, prod);
         vdRows.push(row);
+        isFirstVariation = false;
       });
     });
   });
@@ -4241,7 +4196,6 @@ function convertToFutureshop() {
   const gsI = {};
   gsH.forEach((h, i) => gsI[h] = i);
   const gsRows = [];
-  const gsDefaults = fm.gsDefaults || {};
 
   // 全商品に「レビュー投稿でノベルティを」選択肢を生成
   const reviewOptionName = fm.selectionOptionName || 'レビュー投稿でノベルティを';
@@ -4252,10 +4206,10 @@ function convertToFutureshop() {
     // レビュー投稿オプション（全商品に付与）
     reviewChoices.forEach(choice => {
       const row = new Array(gsH.length).fill('');
-      Object.entries(gsDefaults).forEach(([col, val]) => { if (gsI[col] !== undefined) row[gsI[col]] = val; });
       row[gsI['商品URLコード']] = urlCode;
       row[gsI['セレクト／ラジオボタン用項目名']] = reviewOptionName;
       row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
+      applyFsColumnSettings(csData.gs, gsI, row, prod);
       gsRows.push(row);
     });
     // 追加の商品オプションがあれば出力
@@ -4264,11 +4218,11 @@ function convertToFutureshop() {
       if (opt.name === reviewOptionName) return;
       (opt.choices || []).forEach(choice => {
         const row = new Array(gsH.length).fill('');
-        Object.entries(gsDefaults).forEach(([col, val]) => { if (gsI[col] !== undefined) row[gsI[col]] = val; });
         row[gsI['商品URLコード']] = urlCode;
-        row[gsI['選択肢タイプ']] = opt.type || gsDefaults['選択肢タイプ'] || 's';
+        row[gsI['選択肢タイプ']] = opt.type || 's';
         row[gsI['セレクト／ラジオボタン用項目名']] = opt.name || '';
         row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
+        applyFsColumnSettings(csData.gs, gsI, row, prod);
         gsRows.push(row);
       });
     });

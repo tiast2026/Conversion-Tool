@@ -922,116 +922,115 @@
         <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">楽天CSV → FutureShop CSV</span>
         <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">FutureShop CSVに出力する固定値を設定</span>
       </div>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:14px; font-weight:600;">価格掛率（%）：</label>
-        <input type="number" id="mall-futureshop-price-rate" value="100" min="1" max="200" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:80px;">
+      <h4 style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">カラー／サイズ表示順</h4>
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">goodsVariationConfirm_ で使用するカラー名・サイズ名の表示順を設定します。数値が小さいほど先に表示されます。</p>
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button class="btn btn-sm btn-outline" id="color-order-toggle-btn" onclick="toggleColorOrderEdit()">一括テキスト編集</button>
       </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品名プレフィックス・サフィックス</p>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:14px; font-weight:600;">商品名の前に付ける文字：</label>
-        <input type="text" id="mall-futureshop-name-prefix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-        <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
-        <input type="text" id="mall-futureshop-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
-      </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">goodsVariationConfirm_ カラー／サイズ表示順</p>
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">カラー名・サイズ名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
-      <textarea id="master-color-order" style="width:100%; max-width:600px; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999" oninput="markMasterDirty()"></textarea>
-      <div style="margin-top:8px; margin-bottom:16px;">
-        <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
-      </div>
-
-      <h4 style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">CSV出力デフォルト値</h4>
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">各シートで全商品に共通する固定値を設定します。列名と値のペアで管理します。</p>
-
-      <div class="fs-defaults-section" style="margin-bottom:16px;">
-        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
-          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
-          <span style="font-size:13px; font-weight:700;">ccGoods_</span>
-          <span style="font-size:11px; color:#888;" id="fs-cc-count"></span>
+      <!-- テーブル表示 -->
+      <div id="color-order-table-view">
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <input type="text" id="color-order-new-name" placeholder="カラー名 / サイズ名" style="flex:1; max-width:200px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+          <input type="number" id="color-order-new-order" placeholder="表示順" style="width:80px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" min="0">
+          <button class="btn btn-sm btn-outline" onclick="addColorOrderRow()">追加</button>
         </div>
-        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
-          <div id="mall-fs-ccGoods-table" style="max-height:300px; overflow-y:auto;"></div>
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <input type="text" id="fs-cc-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <input type="text" id="fs-cc-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <button class="btn btn-sm btn-outline" onclick="addFsDefault('ccGoodsDefaults','fs-cc')">追加</button>
+        <div id="color-order-table" style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;"></div>
+      </div>
+      <!-- テキスト編集（非表示） -->
+      <div id="color-order-text-view" style="display:none;">
+        <textarea id="master-color-order" style="width:100%; max-width:600px; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999" oninput="markMasterDirty()"></textarea>
+      </div>
+
+      <h4 style="font-size:15px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">CSV列マッピング設定</h4>
+      <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">各シートの列マッピング（楽天フィールド → FutureShop列 → 変換）を設定します。</p>
+
+      <!-- ===== ccGoods_ ===== -->
+      <div class="fs-defaults-section" style="margin-bottom:16px;">
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:13px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:14px; font-weight:700;">ccGoods_</span>
+          <span style="font-size:13px; color:#888;" id="fs-ccGoods-count"></span>
+        </div>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:12px;">
+          <div id="mall-fs-settings-ccGoods" style="max-height:400px; overflow-y:auto;"></div>
+          <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="fs-set-col-ccGoods" style="flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- FutureShop列 --</option></select>
+            <select id="fs-set-src-ccGoods" style="flex:1; min-width:120px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- ソース --</option></select>
+            <select id="fs-set-action-ccGoods" style="padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+              <option value="set">セット</option><option value="prefix">先頭に追加</option><option value="suffix">末尾に追加</option><option value="remove">テキスト除去</option>
+            </select>
+            <input type="text" id="fs-set-val-ccGoods" placeholder="値" style="width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsColumnSetting('ccGoods')">追加</button>
           </div>
         </div>
       </div>
 
+      <!-- ===== goodsVariationConfirm_ ===== -->
       <div class="fs-defaults-section" style="margin-bottom:16px;">
-        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
-          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
-          <span style="font-size:13px; font-weight:700;">goodsVariationConfirm_</span>
-          <span style="font-size:11px; color:#888;" id="fs-vc-count"></span>
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:13px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:14px; font-weight:700;">goodsVariationConfirm_</span>
+          <span style="font-size:13px; color:#888;" id="fs-vc-count"></span>
         </div>
-        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
-          <div id="mall-fs-vc-table" style="max-height:200px; overflow-y:auto;"></div>
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <input type="text" id="fs-vc-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <input type="text" id="fs-vc-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <button class="btn btn-sm btn-outline" onclick="addFsDefault('vcDefaults','fs-vc')">追加</button>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:12px;">
+          <div id="mall-fs-settings-vc" style="max-height:400px; overflow-y:auto;"></div>
+          <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="fs-set-col-vc" style="flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- FutureShop列 --</option></select>
+            <select id="fs-set-src-vc" style="flex:1; min-width:120px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- ソース --</option></select>
+            <select id="fs-set-action-vc" style="padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+              <option value="set">セット</option><option value="prefix">先頭に追加</option><option value="suffix">末尾に追加</option><option value="remove">テキスト除去</option>
+            </select>
+            <input type="text" id="fs-set-val-vc" placeholder="値" style="width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsColumnSetting('vc')">追加</button>
           </div>
         </div>
       </div>
 
+      <!-- ===== goodsVariationDetail_ ===== -->
       <div class="fs-defaults-section" style="margin-bottom:16px;">
-        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
-          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
-          <span style="font-size:13px; font-weight:700;">goodsVariationDetail_</span>
-          <span style="font-size:11px; color:#888;" id="fs-vd-count"></span>
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:13px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:14px; font-weight:700;">goodsVariationDetail_</span>
+          <span style="font-size:13px; color:#888;" id="fs-vd-count"></span>
         </div>
-        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
-          <div id="mall-fs-vd-table" style="max-height:200px; overflow-y:auto;"></div>
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <input type="text" id="fs-vd-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <input type="text" id="fs-vd-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <button class="btn btn-sm btn-outline" onclick="addFsDefault('vdDefaults','fs-vd')">追加</button>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:12px;">
+          <div id="mall-fs-settings-vd" style="max-height:400px; overflow-y:auto;"></div>
+          <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="fs-set-col-vd" style="flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- FutureShop列 --</option></select>
+            <select id="fs-set-src-vd" style="flex:1; min-width:120px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- ソース --</option></select>
+            <select id="fs-set-action-vd" style="padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+              <option value="set">セット</option><option value="prefix">先頭に追加</option><option value="suffix">末尾に追加</option><option value="remove">テキスト除去</option>
+            </select>
+            <input type="text" id="fs-set-val-vd" placeholder="値" style="width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsColumnSetting('vd')">追加</button>
           </div>
         </div>
       </div>
 
+      <!-- ===== goodsSelection_ ===== -->
       <div class="fs-defaults-section" style="margin-bottom:16px;">
-        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
-          <span style="font-size:12px; transition:transform 0.2s;" class="fs-arrow">▼</span>
-          <span style="font-size:13px; font-weight:700;">goodsSelection_</span>
-          <span style="font-size:11px; color:#888;" id="fs-gs-count"></span>
+        <div onclick="toggleFsSection(this)" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f5f3f0; border:1px solid var(--border); border-radius:6px 6px 0 0; user-select:none;">
+          <span style="font-size:13px; transition:transform 0.2s;" class="fs-arrow">▼</span>
+          <span style="font-size:14px; font-weight:700;">goodsSelection_</span>
+          <span style="font-size:13px; color:#888;" id="fs-gs-count"></span>
         </div>
-        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:10px;">
-          <div id="mall-fs-gs-table" style="max-height:200px; overflow-y:auto;"></div>
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <input type="text" id="fs-gs-new-key" placeholder="列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <input type="text" id="fs-gs-new-val" placeholder="値" style="width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-            <button class="btn btn-sm btn-outline" onclick="addFsDefault('gsDefaults','fs-gs')">追加</button>
+        <div class="fs-section-body" style="border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; padding:12px;">
+          <div id="mall-fs-settings-gs" style="max-height:400px; overflow-y:auto;"></div>
+          <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="fs-set-col-gs" style="flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- FutureShop列 --</option></select>
+            <select id="fs-set-src-gs" style="flex:1; min-width:120px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"><option value="">-- ソース --</option></select>
+            <select id="fs-set-action-gs" style="padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+              <option value="set">セット</option><option value="prefix">先頭に追加</option><option value="suffix">末尾に追加</option><option value="remove">テキスト除去</option>
+            </select>
+            <input type="text" id="fs-set-val-gs" placeholder="値" style="width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+            <button class="btn btn-sm btn-outline" onclick="addFsColumnSetting('gs')">追加</button>
           </div>
-          <p style="font-size:11px; color:#888; margin-top:8px;">レビュー投稿設定</p>
+          <p style="font-size:13px; color:#888; margin-top:12px;">レビュー投稿設定</p>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <input type="text" id="mall-fs-selectionOptionName" style="flex:1; min-width:150px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="項目名（例: レビュー投稿でノベルティを）">
-            <input type="text" id="mall-fs-selectionChoices" style="width:200px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="選択肢（カンマ区切り）">
+            <input type="text" id="mall-fs-selectionOptionName" style="flex:1; min-width:150px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;" placeholder="項目名（例: レビュー投稿でノベルティを）">
+            <input type="text" id="mall-fs-selectionChoices" style="width:220px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:13px;" placeholder="選択肢（カンマ区切り）">
           </div>
         </div>
-      </div>
-
-      <h4 style="font-size:14px; font-weight:700; color:#e65100; margin-top:24px; margin-bottom:12px; border-bottom:2px solid #ff9800; padding-bottom:6px;">値を変更するルール</h4>
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">変換時に特定の列の値に対して文字列の追加・除去を行います。</p>
-      <div id="mall-fs-change-rules-table" style="max-height:250px; overflow-y:auto;"></div>
-      <div style="margin-top:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-        <input type="text" id="fs-change-col" placeholder="対象列名" style="flex:1; min-width:120px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-        <select id="fs-change-action" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-          <option value="prefix">先頭に追加</option>
-          <option value="suffix">末尾に追加</option>
-          <option value="remove">テキスト除去</option>
-        </select>
-        <input type="text" id="fs-change-val" placeholder="文字列" style="width:140px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-        <button class="btn btn-sm btn-outline" onclick="addFsChangeRule()">追加</button>
-      </div>
-
-      <h4 style="font-size:14px; font-weight:700; color:#c62828; margin-top:24px; margin-bottom:12px; border-bottom:2px solid #ef5350; padding-bottom:6px;">値を削除する列</h4>
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">変換時に指定した列の値を空にします。</p>
-      <div id="mall-fs-delete-cols-list" style="max-height:200px; overflow-y:auto;"></div>
-      <div style="margin-top:8px; display:flex; gap:8px;">
-        <input type="text" id="fs-delete-col" placeholder="削除する列名" style="flex:1; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
-        <button class="btn btn-sm btn-outline" onclick="addFsDeleteCol()">追加</button>
       </div>
 
       <div style="margin-top:16px;"></div>
