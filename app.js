@@ -213,7 +213,7 @@ let MASTER = {
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
     futureshop: { columnSettings: { ccGoods: [], vc: [], vd: [], gs: [] } },
-    tiktok:     { columnMappings: [] },
+    tiktok:     { columnMappings: [], templateData: '' },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -861,8 +861,7 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
   if (mall === 'tiktok') {
-    const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
-    const hasTemplate = !!localStorage.getItem(templateKey);
+    const hasTemplate = !!(MASTER.malls.tiktok || {}).templateData;
     const statusEl = el('tiktok-template-status');
     if (statusEl) statusEl.textContent = hasTemplate ? '設定済み' : '未設定';
     _tiktokColumnMappings = ((MASTER.malls.tiktok || {}).columnMappings || []).map(e => Object.assign({}, e));
@@ -972,8 +971,8 @@ function handleTiktokTemplateUpload(file) {
     let binary = '';
     bytes.forEach(b => binary += String.fromCharCode(b));
     const b64 = btoa(binary);
-    const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
-    localStorage.setItem(templateKey, b64);
+    if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
+    MASTER.malls.tiktok.templateData = b64;
     // Template シート1行目から列名を取得
     const wb = XLSX.read(bytes, { type: 'array' });
     const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
@@ -989,7 +988,6 @@ function handleTiktokTemplateUpload(file) {
     _tiktokColumnMappings.forEach(e => { existingMap[e.ttColumn] = e; });
     const defaults = getDefaultTiktokMappings(columns);
     _tiktokColumnMappings = defaults.map(d => existingMap[d.ttColumn] || d);
-    if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
     MASTER.malls.tiktok.columnMappings = _tiktokColumnMappings.map(e => Object.assign({}, e));
     const statusEl = document.getElementById('tiktok-template-status');
     if (statusEl) statusEl.textContent = file.name;
@@ -1001,10 +999,11 @@ function handleTiktokTemplateUpload(file) {
 }
 
 function clearTiktokTemplate() {
-  const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
-  localStorage.removeItem(templateKey);
+  if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
+  MASTER.malls.tiktok.templateData = '';
   const statusEl = document.getElementById('tiktok-template-status');
   if (statusEl) statusEl.textContent = '未設定';
+  markMasterDirty();
   notify('テンプレートを削除しました。', 'info');
 }
 
@@ -4410,8 +4409,7 @@ function convertToFutureshop() {
 function convertToTiktok() {
   const tm = MASTER.malls.tiktok || {};
   const mappings = tm.columnMappings || [];
-  const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
-  const templateB64 = localStorage.getItem(templateKey);
+  const templateB64 = (MASTER.malls.tiktok || {}).templateData || '';
 
   // テンプレートなし: シンプルCSVプレビュー
   if (!templateB64) {
