@@ -158,7 +158,7 @@
               },
               {
                 "fsColumn": "本体価格",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
@@ -808,55 +808,55 @@
               },
               {
                 "fsColumn": "商品URLコード",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション1",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション2",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション3",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション4",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "表示順",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "商品番号",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "商品名",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "最終更新日時",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               }
@@ -864,79 +864,79 @@
             "vd": [
               {
                 "fsColumn": "商品URLコード",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション1",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション2",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション3",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "バリエーション4",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "代表バリエーション",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "在庫閾値",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "在庫切れメール",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "商品番号",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "商品管理番号",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "商品名",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "JANコード",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "最終更新日付",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               }
@@ -950,7 +950,7 @@
               },
               {
                 "fsColumn": "商品URLコード",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
@@ -962,13 +962,13 @@
               },
               {
                 "fsColumn": "セレクト／ラジオボタン用項目名",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "セレクト／ラジオボタン用選択肢",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
@@ -992,13 +992,13 @@
               },
               {
                 "fsColumn": "テキスト幅",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
               {
                 "fsColumn": "最終更新日時",
-                "source": "fixed",
+                "source": "none",
                 "action": "set",
                 "value": ""
               }
