@@ -2106,10 +2106,10 @@ function renderRmsPreview() {
 
   // モールタブバー
   html += '<div style="display:flex; align-items:center; background:#f5f5f5; border-bottom:1px solid #ddd; padding:0 16px; flex-shrink:0;">';
-  html += '<div style="font-size:14px; font-weight:700; color:#333; padding:12px 0; margin-right:20px;">CSV出力プレビュー</div>';
+  html += '<div style="font-size:15px; font-weight:700; color:#333; padding:12px 0; margin-right:20px;">CSV出力プレビュー</div>';
   mallPreviews.forEach((mp, idx) => {
     const isActive = idx === 0;
-    html += '<div class="mall-csv-tab" data-mall-tab="' + mp.tab + '" onclick="switchMallCsvTab(\'' + mp.tab + '\',\'' + mp.convertFn + '\')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:700; border-radius:6px 6px 0 0; margin-bottom:-1px; border:1px solid ' + (isActive ? '#1976d2' : 'transparent') + '; border-bottom:1px solid ' + (isActive ? '#fff' : 'transparent') + '; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#1976d2' : '#666') + ';">' + mp.label + '</div>';
+    html += '<div class="mall-csv-tab" data-mall-tab="' + mp.tab + '" onclick="switchMallCsvTab(\'' + mp.tab + '\',\'' + mp.convertFn + '\')" style="padding:12px 24px; cursor:pointer; font-size:14px; font-weight:700; border-radius:6px 6px 0 0; margin-bottom:-1px; border:1px solid ' + (isActive ? '#1976d2' : 'transparent') + '; border-bottom:1px solid ' + (isActive ? '#fff' : 'transparent') + '; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#1976d2' : '#666') + ';">' + mp.label + '</div>';
   });
   html += '</div>';
 
@@ -2191,8 +2191,8 @@ function refreshMallPreview(tabId, mallKey) {
     result.sheets.forEach((file, fi) => {
       html += '<div style="margin-bottom:20px;">';
       html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
-      html += '<h5 style="font-size:13px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
-      html += '<span style="font-size:11px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
+      html += '<h5 style="font-size:14px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
+      html += '<span style="font-size:12px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
       html += '</div>';
       html += buildCsvPreviewTable(file.headers, file.rows);
       html += '</div>';
@@ -2211,10 +2211,10 @@ function refreshMallPreview(tabId, mallKey) {
 
 function buildCsvPreviewTable(headers, rows) {
   let html = '<div style="overflow-x:auto; max-height:500px; overflow-y:auto; border:1px solid #ddd; border-radius:4px;">';
-  html += '<table style="width:100%; border-collapse:collapse; font-size:11px; white-space:nowrap;">';
+  html += '<table style="width:100%; border-collapse:collapse; font-size:13px; white-space:nowrap;">';
   html += '<thead><tr>';
   headers.forEach(h => {
-    html += '<th style="background:#f0f0f0; padding:6px 8px; border:1px solid #ddd; font-weight:600; position:sticky; top:0; z-index:1; font-size:10px;">' + esc(h) + '</th>';
+    html += '<th style="background:#f0f0f0; padding:8px 10px; border:1px solid #ddd; font-weight:600; position:sticky; top:0; z-index:1; font-size:12px;">' + esc(h) + '</th>';
   });
   html += '</tr></thead><tbody>';
   rows.forEach((row, ri) => {
@@ -2223,7 +2223,7 @@ function buildCsvPreviewTable(headers, rows) {
     headers.forEach((h, ci) => {
       const val = row[ci] || '';
       const truncVal = val.length > 60 ? val.substring(0, 60) + '…' : val;
-      html += '<td contenteditable="true" style="padding:4px 8px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+      html += '<td contenteditable="true" style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
     });
     html += '</tr>';
   });
