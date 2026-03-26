@@ -49,6 +49,7 @@
       ],
       "malls": {
         "rakuten": {
+          "shopId": "noahl",
           "controlCol": "n",
           "genreId": "",
           "catalogReason": "3",
