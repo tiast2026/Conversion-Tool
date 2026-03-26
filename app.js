@@ -936,10 +936,59 @@ let _fsColumnSettings = { ccGoods: [], vc: [], vd: [], gs: [] };
 let _tiktokColumnMappings = [];
 
 // ============================================================
+// TikTok カテゴリ自動判定・パッケージサイズ
+// ============================================================
+const TIKTOK_CATEGORY_RULES = [
+  { keywords: ['ワンピース', 'ドレス'],                       category: 'レディースワンピース/カジュアルドレス' },
+  { keywords: ['ブラウス', 'シャツ'],                         category: 'レディーストップス/ブラウスとシャツ' },
+  { keywords: ['ニット', 'セーター', 'カーディガン'],         category: 'レディーストップス/レディースニット' },
+  { keywords: ['パーカー', 'フーディー'],                     category: 'レディーストップス/フーディー＆スウェットシャツ' },
+  { keywords: ['スウェット', 'トレーナー'],                   category: 'レディーストップス/フーディー＆スウェットシャツ' },
+  { keywords: ['Tシャツ', 'ロンT', 'カットソー', 'ロンt'],   category: 'レディーストップス/レディースTシャツ' },
+  { keywords: ['トップス', 'プルオーバー'],                   category: 'レディーストップス/レディースTシャツ' },
+  { keywords: ['タンクトップ', 'キャミ'],                     category: 'レディーストップス/レディースタンクトップ・キャミソール' },
+  { keywords: ['ベスト', 'ジレ'],                             category: 'レディーストップス/レディースベスト' },
+  { keywords: ['ジャケット', 'ブルゾン', 'コート'],           category: 'レディーストップス/ジャケット・コート/ウィメンズカジュアルジャケット' },
+  { keywords: ['パンツ', 'デニム', 'ジーンズ'],               category: 'レディースボトムス/パンツ' },
+  { keywords: ['ショートパンツ', 'ハーフパンツ'],             category: 'レディースボトムス/ショートパンツ' },
+  { keywords: ['セットアップ'],                               category: 'レディーススーツ・セット/レディースセットアップ' },
+];
+const TIKTOK_SKIRT_CATEGORY    = 'レディースボトムス/スカート';
+const TIKTOK_FALLBACK_CATEGORY = 'レディーストップス/レディースTシャツ';
+const TIKTOK_PACKAGE_SIZE_MAP = {
+  'レディースワンピース/カジュアルドレス':                                        { weight: 800, length: 40, width: 30, height: 10 },
+  'レディーストップス/ブラウスとシャツ':                                          { weight: 300, length: 30, width: 25, height: 5 },
+  'レディーストップス/レディースニット':                                          { weight: 500, length: 35, width: 28, height: 8 },
+  'レディーストップス/フーディー＆スウェットシャツ':                              { weight: 600, length: 35, width: 28, height: 8 },
+  'レディーストップス/レディースTシャツ':                                         { weight: 300, length: 30, width: 25, height: 5 },
+  'レディーストップス/レディースタンクトップ・キャミソール':                      { weight: 200, length: 25, width: 20, height: 3 },
+  'レディーストップス/レディースベスト':                                          { weight: 350, length: 30, width: 25, height: 5 },
+  'レディーストップス/ジャケット・コート/ウィメンズカジュアルジャケット':        { weight: 800, length: 40, width: 30, height: 10 },
+  'レディースボトムス/パンツ':                                                    { weight: 500, length: 35, width: 28, height: 6 },
+  'レディースボトムス/ショートパンツ':                                            { weight: 350, length: 30, width: 25, height: 5 },
+  'レディースボトムス/スカート':                                                  { weight: 400, length: 35, width: 28, height: 6 },
+  'レディーススーツ・セット/レディースセットアップ':                              { weight: 900, length: 40, width: 30, height: 10 },
+};
+const TIKTOK_DEFAULT_PACKAGE = { weight: 300, length: 25, width: 20, height: 5 };
+
+function detectTiktokCategory(name) {
+  if (!name) return TIKTOK_FALLBACK_CATEGORY;
+  if (name.includes('スカート')) return TIKTOK_SKIRT_CATEGORY;
+  for (const rule of TIKTOK_CATEGORY_RULES) {
+    if (rule.keywords.some(kw => name.includes(kw))) return rule.category;
+  }
+  return TIKTOK_FALLBACK_CATEGORY;
+}
+
+function getTiktokPackageSize(category) {
+  return TIKTOK_PACKAGE_SIZE_MAP[category] || TIKTOK_DEFAULT_PACKAGE;
+}
+
+// ============================================================
 // TikTok 列マッピング
 // ============================================================
 const TIKTOK_DEFAULT_SOURCE_MAP = {
-  'category':              { source: 'fixed',              value: '' },
+  'category':              { source: 'tiktokCategory',      value: '' },
   'brand':                 { source: 'fixed',              value: '' },
   'product_name':          { source: 'cleanName',          value: '' },
   'product_description':   { source: 'tiktokDescWithImgs', value: '' },
@@ -962,6 +1011,11 @@ const TIKTOK_DEFAULT_SOURCE_MAP = {
   'price':                 { source: 'skuPrice',           value: '' },
   'quantity':              { source: 'stockQty',           value: '' },
   'size_chart':            { source: 'sizeChartImg',       value: '' },
+  'parcel_weight':         { source: 'parcelWeight',       value: '' },
+  'parcel_length':         { source: 'parcelLength',       value: '' },
+  'parcel_width':          { source: 'parcelWidth',        value: '' },
+  'parcel_height':         { source: 'parcelHeight',       value: '' },
+  'delivery':              { source: 'fixed',              value: 'NOAHL送料' },
 };
 
 function getDefaultTiktokMappings(columns) {
@@ -1121,9 +1175,14 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: 'var1Image', label: 'SKU: バリエーション1画像' },
   { key: 'var2Name',       label: 'SKU: バリエーション2名称' },
   { key: 'var2Value',      label: 'SKU: バリエーション2値' },
-  { key: 'stockQty',       label: 'SKU: 在庫数' },
-  { key: 'sizeChartImg',   label: '楽天: サイズ表画像(最終画像)' },
+  { key: 'stockQty',           label: 'SKU: 在庫数' },
+  { key: 'sizeChartImg',       label: '楽天: サイズ表画像(最終画像)' },
   { key: 'tiktokDescWithImgs', label: '楽天: TikTok用説明文(画像タグ含む)' },
+  { key: 'tiktokCategory',     label: 'TikTok: 自動判定カテゴリ' },
+  { key: 'parcelWeight',       label: 'TikTok: パッケージ重量(g)' },
+  { key: 'parcelLength',       label: 'TikTok: パッケージ長さ(cm)' },
+  { key: 'parcelWidth',        label: 'TikTok: パッケージ幅(cm)' },
+  { key: 'parcelHeight',       label: 'TikTok: パッケージ高さ(cm)' },
 ];
 
 const COLUMN_ACTION_LABELS = { set: 'セット', prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
@@ -4555,6 +4614,10 @@ function expandProductsToSkuRows(prods) {
     // 説明文（画像タグ含む）= 商品単位で1回計算
     const tiktokDescWithImgs = buildDescWithImgs(prod);
 
+    // カテゴリ自動判定・パッケージサイズ（商品単位）
+    const tiktokCategory = detectTiktokCategory(prod.name);
+    const pkg = getTiktokPackageSize(tiktokCategory);
+
     if (!prod.skus || prod.skus.length === 0) {
       flatRows.push(Object.assign({}, prod, imgUrls, {
         skuCode: prod.id || '', skuPrice: prod.price || '',
@@ -4562,6 +4625,9 @@ function expandProductsToSkuRows(prods) {
         var1Name: varNames[0] || '', var1Value: '', var1Image: '',
         var2Name: varNames[1] || '', var2Value: '',
         stockQty: 0, sizeChartImg, tiktokDescWithImgs,
+        tiktokCategory,
+        parcelWeight: pkg.weight, parcelLength: pkg.length,
+        parcelWidth: pkg.width,  parcelHeight: pkg.height,
       }));
     } else {
       prod.skus.forEach(sku => {
@@ -4579,6 +4645,9 @@ function expandProductsToSkuRows(prods) {
           var2Value: v2 ? v2.value : '',
           stockQty: parseInt(sku.stock) || 0,
           sizeChartImg, tiktokDescWithImgs,
+          tiktokCategory,
+          parcelWeight: pkg.weight, parcelLength: pkg.length,
+          parcelWidth: pkg.width,  parcelHeight: pkg.height,
         }));
       });
     }
