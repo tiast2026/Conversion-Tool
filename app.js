@@ -1006,23 +1006,45 @@ function renderFsColumnSettings(sheetKey) {
     container.innerHTML = '<p style="font-size:13px; color:#aaa; margin:6px 0;">設定なし</p>';
     return;
   }
-  const srcLabels = {};
-  RAKUTEN_SOURCE_FIELDS.forEach(f => srcLabels[f.key] = f.label);
+  const headers = FS_SHEET_HEADERS[sheetKey] || [];
+  const colOpts = headers.map(h => '<option value="' + escapeHtml(h) + '">' + escapeHtml(h) + '</option>').join('');
+  const srcOpts = RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + escapeHtml(f.label) + '</option>').join('');
+  const actKeys = Object.keys(COLUMN_ACTION_LABELS);
+
   let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
-  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">FutureShop列</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">ソース</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">操作</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">値</th><th style="width:36px;"></th></tr>';
+  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">FutureShop列</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">ソース</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">操作</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">値</th><th style="width:36px;"></th></tr>';
   settings.forEach((entry, i) => {
-    const srcLabel = srcLabels[entry.source] || entry.source;
-    const actLabel = COLUMN_ACTION_LABELS[entry.action] || 'セット';
-    html += '<tr>';
-    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee; white-space:nowrap;">' + entry.fsColumn + '</td>';
-    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee;">' + srcLabel + '</td>';
-    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee;">' + actLabel + '</td>';
-    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee; font-family:monospace;">' + (entry.value || '') + '</td>';
-    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee; text-align:center;"><button onclick="deleteFsColumnSetting(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:16px;" title="削除">✕</button></td>';
+    const sk = escapeHtml(sheetKey);
+    html += '<tr style="border-bottom:1px solid #eee;">';
+    // FutureShop列 select
+    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'fsColumn\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    html += colOpts.replace('value="' + escapeHtml(entry.fsColumn) + '"', 'value="' + escapeHtml(entry.fsColumn) + '" selected');
+    html += '</select></td>';
+    // ソース select
+    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'source\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    html += srcOpts.replace('value="' + entry.source + '"', 'value="' + entry.source + '" selected');
+    html += '</select></td>';
+    // 操作 select
+    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    actKeys.forEach(ak => {
+      const sel = ak === entry.action ? ' selected' : '';
+      html += '<option value="' + ak + '"' + sel + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
+    });
+    html += '</select></td>';
+    // 値 input
+    html += '<td style="padding:4px 6px;"><input type="text" value="' + escapeHtml(entry.value || '') + '" onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'value\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;"></td>';
+    // 削除
+    html += '<td style="padding:4px 6px; text-align:center;"><button onclick="deleteFsColumnSetting(\'' + sk + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:16px;" title="削除">✕</button></td>';
     html += '</tr>';
   });
   html += '</table>';
   container.innerHTML = html;
+}
+
+function updateFsColumnSetting(sheetKey, index, field, value) {
+  if (!_fsColumnSettings[sheetKey] || !_fsColumnSettings[sheetKey][index]) return;
+  _fsColumnSettings[sheetKey][index][field] = value;
+  markMasterDirty();
 }
 
 function addFsColumnSetting(sheetKey) {
