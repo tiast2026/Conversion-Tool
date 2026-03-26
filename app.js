@@ -1056,7 +1056,6 @@ function renderFsColumnSettings(sheetKey) {
     const bi = colOrder[b.fsColumn] !== undefined ? colOrder[b.fsColumn] : 99999;
     return ai - bi;
   });
-  const colOpts = headers.map(h => '<option value="' + escapeHtml(h) + '">' + escapeHtml(h) + '</option>').join('');
   const srcOpts = RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + escapeHtml(f.label) + '</option>').join('');
   const actKeys = Object.keys(COLUMN_ACTION_LABELS);
 
@@ -1066,10 +1065,8 @@ function renderFsColumnSettings(sheetKey) {
     const sk = escapeHtml(sheetKey);
     const rowBg = i % 2 === 0 ? '#fff' : '#f7f5f2';
     html += '<tr style="border-bottom:1px solid #eee; background:' + rowBg + ';">';
-    // FutureShop列 select
-    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'fsColumn\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
-    html += colOpts.replace('value="' + escapeHtml(entry.fsColumn) + '"', 'value="' + escapeHtml(entry.fsColumn) + '" selected');
-    html += '</select></td>';
+    // FutureShop列（固定テキスト）
+    html += '<td style="padding:4px 6px; font-size:13px; font-weight:500;">' + escapeHtml(entry.fsColumn) + '</td>';
     // ソース select
     html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'source\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
     html += srcOpts.replace('value="' + entry.source + '"', 'value="' + entry.source + '" selected');
