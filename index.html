@@ -933,11 +933,24 @@
         <label style="font-size:14px; font-weight:600;">商品名の後に付ける文字：</label>
         <input type="text" id="mall-futureshop-name-suffix" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="">
       </div>
-      <p style="font-size:12px; color:var(--text-light); margin-top:16px; margin-bottom:6px;">goodsVariationConfirm_ カラー／サイズ表示順</p>
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">カラー名・サイズ名と表示順の対応を設定します。「カラー名,表示順」の形式で1行ずつ記入してください。</p>
-      <textarea id="master-color-order" style="width:100%; max-width:600px; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999" oninput="markMasterDirty()"></textarea>
-      <div style="margin-top:8px; margin-bottom:16px;">
+      <h4 style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">カラー／サイズ表示順</h4>
+      <p style="font-size:12px; color:var(--text-light); margin-bottom:8px;">goodsVariationConfirm_ で使用するカラー名・サイズ名の表示順を設定します。数値が小さいほど先に表示されます。</p>
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
         <button class="btn btn-sm btn-outline" onclick="loadDefaultColorOrder()">デフォルト読込</button>
+        <button class="btn btn-sm btn-outline" id="color-order-toggle-btn" onclick="toggleColorOrderEdit()">一括テキスト編集</button>
+      </div>
+      <!-- テーブル表示 -->
+      <div id="color-order-table-view">
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <input type="text" id="color-order-new-name" placeholder="カラー名 / サイズ名" style="flex:1; max-width:200px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+          <input type="number" id="color-order-new-order" placeholder="表示順" style="width:80px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;" min="0">
+          <button class="btn btn-sm btn-outline" onclick="addColorOrderRow()">追加</button>
+        </div>
+        <div id="color-order-table" style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;"></div>
+      </div>
+      <!-- テキスト編集（非表示） -->
+      <div id="color-order-text-view" style="display:none;">
+        <textarea id="master-color-order" style="width:100%; max-width:600px; height:200px; border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:monospace;" placeholder="アイボリー,4&#10;ブラウン,20&#10;ブラック,9999" oninput="markMasterDirty()"></textarea>
       </div>
 
       <h4 style="font-size:14px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">CSV列マッピング設定</h4>

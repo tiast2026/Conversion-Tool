@@ -755,6 +755,10 @@ function deleteProfile() {
   notify(`プロファイルを削除しました。GitHubに保存してください。`, 'info');
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function parseColorOrderText(text) {
   const map = {};
   text.split('\n').forEach(line => {
@@ -777,6 +781,7 @@ function openMaster() {
   // 共通 変換設定を読み込み
   const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
   if (document.getElementById('master-color-order')) document.getElementById('master-color-order').value = co;
+  renderColorOrderTable();
   if (document.getElementById('master-name-clean')) document.getElementById('master-name-clean').value = MASTER.nameCleanPatterns.join('\n');
   if (document.getElementById('master-delete-tpl')) document.getElementById('master-delete-tpl').value = MASTER.deleteTemplates.join('\n');
   // モール別設定を読み込み
@@ -1326,9 +1331,86 @@ function catalogReasonLabel(code) {
 
 function loadDefaultColorOrder() {
   MASTER.colorOrder = parseColorOrderText(DEFAULT_COLOR_ORDER);
-  localStorage.setItem('noahl_master', JSON.stringify(MASTER));
-  saveToGitHub();
+  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
+  if (document.getElementById('master-color-order')) document.getElementById('master-color-order').value = co;
+  renderColorOrderTable();
+  markMasterDirty();
   notify('デフォルトのカラー表示順を読み込みました', 'info');
+}
+
+function renderColorOrderTable() {
+  const container = document.getElementById('color-order-table');
+  if (!container) return;
+  const entries = Object.entries(MASTER.colorOrder).sort((a, b) => a[1] - b[1]);
+  if (!entries.length) {
+    container.innerHTML = '<p style="padding:12px; color:#999; font-size:12px;">データがありません</p>';
+    return;
+  }
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  html += '<thead><tr style="background:#f5f3f0; position:sticky; top:0;"><th style="padding:6px 10px; text-align:left; font-weight:600; border-bottom:1px solid var(--border);">カラー／サイズ名</th><th style="padding:6px 10px; text-align:center; font-weight:600; width:80px; border-bottom:1px solid var(--border);">表示順</th><th style="padding:6px 10px; width:40px; border-bottom:1px solid var(--border);"></th></tr></thead><tbody>';
+  entries.forEach(([name, order]) => {
+    html += '<tr style="border-bottom:1px solid #eee;">';
+    html += '<td style="padding:5px 10px;">' + escapeHtml(name) + '</td>';
+    html += '<td style="padding:5px 10px; text-align:center;"><input type="number" value="' + order + '" min="0" style="width:60px; padding:2px 4px; border:1px solid var(--border); border-radius:3px; font-size:11px; text-align:center;" onchange="updateColorOrderRow(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\', this.value)"></td>';
+    html += '<td style="padding:5px 10px; text-align:center;"><button onclick="deleteColorOrderRow(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\')" style="background:none; border:none; color:#c44; cursor:pointer; font-size:14px;" title="削除">×</button></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function addColorOrderRow() {
+  const nameEl = document.getElementById('color-order-new-name');
+  const orderEl = document.getElementById('color-order-new-order');
+  const name = (nameEl?.value || '').trim();
+  const order = parseInt(orderEl?.value) || 9999;
+  if (!name) { notify('カラー名／サイズ名を入力してください', 'warn'); return; }
+  MASTER.colorOrder[name] = order;
+  syncColorOrderTextarea();
+  renderColorOrderTable();
+  markMasterDirty();
+  if (nameEl) nameEl.value = '';
+  if (orderEl) orderEl.value = '';
+}
+
+function updateColorOrderRow(name, val) {
+  MASTER.colorOrder[name] = parseInt(val) || 9999;
+  syncColorOrderTextarea();
+  markMasterDirty();
+}
+
+function deleteColorOrderRow(name) {
+  delete MASTER.colorOrder[name];
+  syncColorOrderTextarea();
+  renderColorOrderTable();
+  markMasterDirty();
+}
+
+function syncColorOrderTextarea() {
+  const co = Object.entries(MASTER.colorOrder).map(([k,v]) => `${k},${v}`).join('\n');
+  const ta = document.getElementById('master-color-order');
+  if (ta) ta.value = co;
+}
+
+function toggleColorOrderEdit() {
+  const tableView = document.getElementById('color-order-table-view');
+  const textView = document.getElementById('color-order-text-view');
+  const btn = document.getElementById('color-order-toggle-btn');
+  if (!tableView || !textView) return;
+  if (textView.style.display === 'none') {
+    // テキスト編集モードへ
+    textView.style.display = 'block';
+    tableView.style.display = 'none';
+    if (btn) btn.textContent = 'テーブル表示に戻す';
+  } else {
+    // テーブル表示へ戻す（テキストエリアの内容を反映）
+    const ta = document.getElementById('master-color-order');
+    if (ta) MASTER.colorOrder = parseColorOrderText(ta.value);
+    textView.style.display = 'none';
+    tableView.style.display = 'block';
+    renderColorOrderTable();
+    if (btn) btn.textContent = '一括テキスト編集';
+  }
 }
 
 // モール別の商品名加工
