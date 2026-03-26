@@ -3765,7 +3765,7 @@ function goToStep(n) {
 const MALLS = {
   rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
   futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV（4ファイル）' },
-  tiktok: { name: 'TikTok', desc: 'TikTok Shop 商品CSV' },
+  tiktok: { name: 'TikTok', desc: 'TikTok Shop 商品Excel' },
   zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
   rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
 };
@@ -3788,7 +3788,8 @@ function renderStep4Download() {
     html += `<div class="mall-name">${mall.name}</div>`;
     html += `<div class="mall-desc">${mall.desc}</div>`;
     if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
-    html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ ${key === 'rakuten' ? 'normal-item.csv' : 'CSVダウンロード'}</button>`;
+    const dlLabel = key === 'rakuten' ? 'normal-item.csv' : key === 'tiktok' ? 'Excelダウンロード' : 'CSVダウンロード';
+    html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ ${dlLabel}</button>`;
     // 楽天の場合: item-cat.csvダウンロードボタン
     if (key === 'rakuten') {
       html += `<button class="btn btn-outline" onclick="downloadItemCat()" style="margin-top:6px; font-size:12px;">⬇ item-cat.csv</button>`;
