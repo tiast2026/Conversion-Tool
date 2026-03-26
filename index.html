@@ -146,6 +146,7 @@
       <div class="mall-tab" onclick="switchMasterMall('futureshop', this)">FutureShop</div>
       <div class="mall-tab" onclick="switchMasterMall('zozo', this)">ZOZO</div>
       <div class="mall-tab" onclick="switchMasterMall('rakufashion', this)">Rakuten Fashion</div>
+      <div class="mall-tab" onclick="switchMasterMall('tiktok', this)">TikTok</div>
       <div class="mall-tab" onclick="switchMasterMall('common', this)">共通</div>
     </div>
 
@@ -915,6 +916,34 @@
           </div>
         </div>
       </details>
+    </div>
+
+    <!-- TikTok 設定 -->
+    <div class="master-mall-panel" id="mall-tiktok" style="display:none; padding-top:16px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">楽天CSV → TikTok Shop Excel</span>
+        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">テンプレートxlsxの7行目以降に商品データを出力</span>
+      </div>
+
+      <h4 style="font-size:15px; font-weight:700; color:var(--primary-dark); margin-top:0; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">テンプレートファイル</h4>
+      <div style="margin-bottom:20px; padding:16px; background:#fafafa; border:1px solid #e0e0e0; border-radius:8px;">
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">
+          TikTok Shopのセラーセンターからダウンロードしたテンプレートxlsxをアップロードしてください。<br>
+          Templateシートの1行目から列構成を自動取得し、7行目以降に商品データを書き込みます。<br>
+          他のシート（Instruction / Category / Brand 等）はそのまま保持されます。
+        </p>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <input type="file" id="tiktok-template-input" accept=".xlsx,.xls" style="display:none" onchange="handleTiktokTemplateUpload(this.files[0]); this.value='';">
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('tiktok-template-input').click()">テンプレートを選択</button>
+          <span id="tiktok-template-status" style="font-size:13px; color:#666; padding:4px 8px; background:#f0f0f0; border-radius:4px;">未設定</span>
+          <button class="btn btn-sm" style="background:#e53935; color:white; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;" onclick="clearTiktokTemplate()">クリア</button>
+        </div>
+        <p style="font-size:11px; color:var(--text-light); margin-top:8px;">※テンプレートはブラウザのlocalStorageに保存されます（GitHubには保存されません）。</p>
+      </div>
+
+      <h4 style="font-size:15px; font-weight:700; color:var(--primary-dark); margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">列マッピング設定</h4>
+      <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">TikTok列と楽天フィールドの対応を設定します。テンプレートをアップロードすると列が自動表示されます。マッピングはGitHubに保存されます。</p>
+      <div id="tiktok-column-mappings" style="max-height:500px; overflow-y:auto;"></div>
     </div>
 
     <div class="master-mall-panel" id="mall-futureshop" style="display:none; padding-top:16px;">
