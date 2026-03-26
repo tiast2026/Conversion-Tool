@@ -1048,6 +1048,14 @@ function renderFsColumnSettings(sheetKey) {
     return;
   }
   const headers = FS_SHEET_HEADERS[sheetKey] || [];
+  // CSVヘッダーの左→右順に並び替え
+  const colOrder = {};
+  headers.forEach((h, idx) => { colOrder[h] = idx; });
+  settings.sort((a, b) => {
+    const ai = colOrder[a.fsColumn] !== undefined ? colOrder[a.fsColumn] : 99999;
+    const bi = colOrder[b.fsColumn] !== undefined ? colOrder[b.fsColumn] : 99999;
+    return ai - bi;
+  });
   const colOpts = headers.map(h => '<option value="' + escapeHtml(h) + '">' + escapeHtml(h) + '</option>').join('');
   const srcOpts = RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + escapeHtml(f.label) + '</option>').join('');
   const actKeys = Object.keys(COLUMN_ACTION_LABELS);
