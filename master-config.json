@@ -536,7 +536,7 @@
               },
               {
                 "fsColumn": "外部連携商品説明",
-                "source": "catchCopy",
+                "source": "pcDescClean",
                 "action": "set",
                 "value": ""
               },
