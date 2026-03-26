@@ -229,12 +229,6 @@
                 "value": "全てのアイテム"
               },
               {
-                "fsColumn": "本体価格",
-                "source": "price",
-                "action": "set",
-                "value": ""
-              },
-              {
                 "fsColumn": "個別送料表示",
                 "source": "fixed",
                 "action": "set",
