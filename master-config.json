@@ -323,6 +323,30 @@
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
+              },
+              {
+                "fsColumn": "取消線",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "定価表示方法",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "キャッチコピー",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "お気に入り登録数",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
               }
             ],
             "vc": [
