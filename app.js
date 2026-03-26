@@ -4417,6 +4417,7 @@ function convertToFutureshop() {
     const name = cleanProductName(fsCatchCopy3) || prod.cleanName || prod.name || '';
     const urlCode = prod.id || prod.number || '';
 
+    let isFirstVariation = true;
     sortedColors.forEach(color => {
       const cCode = colorMap.get(color) || '';
       sortedSizes.forEach(size => {
@@ -4434,12 +4435,14 @@ function convertToFutureshop() {
         row[vdI['バリエーション2']] = cCode ? '-' + cCode : '';
         row[vdI['バリエーション3']] = size;
         row[vdI['バリエーション4']] = sCode ? '-' + sCode : '';
+        row[vdI['代表バリエーション']] = isFirstVariation ? '1' : '';
         row[vdI['商品番号']] = urlCode;
         row[vdI['商品管理番号']] = mgmtNo;
         row[vdI['商品名']] = name;
         row[vdI['JANコード']] = jan;
         applyFsColumnSettings(csData.vd, vdI, row, prod);
         vdRows.push(row);
+        isFirstVariation = false;
       });
     });
   });
