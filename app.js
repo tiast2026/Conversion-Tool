@@ -212,7 +212,7 @@ let MASTER = {
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
-    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {}, changeRules: { ccGoods: [], vc: [], vd: [], gs: [] } },
+    futureshop: { priceRate: 100, namePrefix: '', nameSuffix: '', columnSettings: { ccGoods: [], vc: [], vd: [], gs: [] } },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -854,32 +854,23 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
   if (mall === 'futureshop') {
-    // Load defaults into in-memory store and render tables
-    _fsDefaults.ccGoodsDefaults = Object.assign({}, m.ccGoodsDefaults || {});
-    _fsDefaults.vcDefaults = Object.assign({}, m.vcDefaults || {});
-    _fsDefaults.vdDefaults = Object.assign({}, m.vdDefaults || {});
-    _fsDefaults.gsDefaults = Object.assign({}, m.gsDefaults || {});
-    renderFsDefaultsTable('ccGoodsDefaults', 'fs-cc');
-    renderFsDefaultsTable('vcDefaults', 'fs-vc');
-    renderFsDefaultsTable('vdDefaults', 'fs-vd');
-    renderFsDefaultsTable('gsDefaults', 'fs-gs');
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
     if (el('mall-fs-selectionChoices')) el('mall-fs-selectionChoices').value = (m.selectionChoices || []).join(',');
-    // 変更ルール（シート別）& 列名ドロップダウン構築
-    const rawCR = migrateChangeRules(m.changeRules);
-    const skToPrefix = { ccGoods: 'fs-cc', vc: 'fs-vc', vd: 'fs-vd', gs: 'fs-gs' };
+    // 列マッピング（旧フォーマットからの移行を含む）
+    const csData = migrateFsColumnSettings(m);
     ['ccGoods','vc','vd','gs'].forEach(sk => {
-      _fsChangeRules[sk] = (rawCR[sk] || []).map(r => Object.assign({}, r));
+      _fsColumnSettings[sk] = (csData[sk] || []).map(e => Object.assign({}, e));
+      // FutureShop列ドロップダウン構築
       const headers = FS_SHEET_HEADERS[sk] || [];
-      const opts = '<option value="">-- 列名 --</option>' + headers.map(h => '<option value="' + h + '">' + h + '</option>').join('');
-      // 変更ルール列名ドロップダウン
-      const changeColSel = document.getElementById('fs-change-col-' + sk);
-      if (changeColSel) changeColSel.innerHTML = opts;
-      // デフォルト値列名ドロップダウン
-      const defaultColSel = document.getElementById(skToPrefix[sk] + '-new-key');
-      if (defaultColSel) defaultColSel.innerHTML = opts;
-      renderFsChangeRules(sk);
+      const colOpts = '<option value="">-- FutureShop列 --</option>' + headers.map(h => '<option value="' + h + '">' + h + '</option>').join('');
+      const colSel = document.getElementById('fs-set-col-' + sk);
+      if (colSel) colSel.innerHTML = colOpts;
+      // ソースドロップダウン構築
+      const srcOpts = '<option value="">-- ソース --</option>' + RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + f.label + '</option>').join('');
+      const srcSel = document.getElementById('fs-set-src-' + sk);
+      if (srcSel) srcSel.innerHTML = srcOpts;
+      renderFsColumnSettings(sk);
     });
   }
 }
@@ -924,84 +915,33 @@ function switchRakutenTab(id, el) {
   if (panel) { panel.style.display = 'block'; panel.classList.add('active'); }
 }
 
-// --- FutureShop defaults table UI ---
-// In-memory store for FS defaults being edited (populated by loadMallMasterUI)
-const _fsDefaults = { ccGoodsDefaults: {}, vcDefaults: {}, vdDefaults: {}, gsDefaults: {} };
+// ============================================================
+// FutureShop 列マッピング（統合版）
+// ============================================================
+let _fsColumnSettings = { ccGoods: [], vc: [], vd: [], gs: [] };
 
-function toggleFsSection(headerEl) {
-  const arrow = headerEl.querySelector('.fs-arrow');
-  const body = headerEl.nextElementSibling;
-  if (body.style.display === 'none') {
-    body.style.display = '';
-    arrow.textContent = '▼';
-  } else {
-    body.style.display = 'none';
-    arrow.textContent = '▶';
-  }
-}
+// 楽天商品フィールド（ソース選択肢）
+const RAKUTEN_SOURCE_FIELDS = [
+  { key: 'fixed', label: '固定値' },
+  { key: 'current', label: '変換済みの値' },
+  { key: 'id', label: '楽天: 商品管理番号' },
+  { key: 'number', label: '楽天: 商品番号' },
+  { key: 'name', label: '楽天: 商品名' },
+  { key: 'cleanName', label: '楽天: 商品名(クリーン)' },
+  { key: 'price', label: '楽天: 販売価格' },
+  { key: 'sellPrice', label: '楽天: 実売価格' },
+  { key: 'catchCopy', label: '楽天: キャッチコピー' },
+  { key: 'productPoint', label: '楽天: セールスポイント' },
+  { key: 'jan', label: '楽天: JANコード' },
+  { key: 'genre', label: '楽天: ジャンルID' },
+  { key: 'pcDesc', label: '楽天: PC用商品説明文' },
+  { key: 'pcSaleDesc', label: '楽天: PC用販売説明文' },
+  { key: 'spDesc', label: '楽天: SP用商品説明文' },
+];
 
-function renderFsDefaultsTable(defaultsKey, prefix) {
-  const container = document.getElementById({
-    ccGoodsDefaults: 'mall-fs-ccGoods-table',
-    vcDefaults: 'mall-fs-vc-table',
-    vdDefaults: 'mall-fs-vd-table',
-    gsDefaults: 'mall-fs-gs-table'
-  }[defaultsKey]);
-  if (!container) return;
-  const data = _fsDefaults[defaultsKey] || {};
-  const entries = Object.entries(data);
-  const countEl = document.getElementById(prefix + '-count');
-  if (countEl) countEl.textContent = entries.length + '項目';
-  if (entries.length === 0) {
-    container.innerHTML = '<p style="font-size:12px; color:#aaa; margin:4px 0;">設定なし</p>';
-    return;
-  }
-  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
-  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">値</th><th style="width:40px; border-bottom:1px solid #ddd;"></th></tr>';
-  entries.forEach(([key, val]) => {
-    const safeKey = key.replace(/"/g, '&quot;');
-    const safeVal = String(val).replace(/"/g, '&quot;');
-    html += '<tr>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + key + '</td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0;"><input type="text" value="' + safeVal + '" data-defaults-key="' + defaultsKey + '" data-col="' + safeKey + '" onchange="updateFsDefault(this)" style="width:100%; padding:2px 4px; border:1px solid #ddd; border-radius:3px; font-size:12px;"></td>';
-    html += '<td style="padding:3px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button data-defaults-key="' + defaultsKey + '" data-col="' + safeKey + '" data-prefix="' + prefix + '" onclick="deleteFsDefault(this.dataset.defaultsKey, this.dataset.col, this.dataset.prefix)" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:14px;" title="削除">✕</button></td>';
-    html += '</tr>';
-  });
-  html += '</table>';
-  container.innerHTML = html;
-}
+const COLUMN_ACTION_LABELS = { set: 'セット', prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
 
-function addFsDefault(defaultsKey, prefix) {
-  const keyInput = document.getElementById(prefix + '-new-key');
-  const valInput = document.getElementById(prefix + '-new-val');
-  if (!keyInput || !valInput) return;
-  const key = keyInput.value.trim();
-  const val = valInput.value.trim();
-  if (!key) { notify('列名を選択してください', 'error'); return; }
-  _fsDefaults[defaultsKey][key] = val;
-  keyInput.value = '';
-  valInput.value = '';
-  renderFsDefaultsTable(defaultsKey, prefix);
-  markMasterDirty();
-}
-
-function deleteFsDefault(defaultsKey, colName, prefix) {
-  delete _fsDefaults[defaultsKey][colName];
-  renderFsDefaultsTable(defaultsKey, prefix);
-  markMasterDirty();
-}
-
-function updateFsDefault(inputEl) {
-  const dk = inputEl.dataset.defaultsKey;
-  const col = inputEl.dataset.col;
-  _fsDefaults[dk][col] = inputEl.value;
-  markMasterDirty();
-}
-
-// --- FutureShop per-sheet change rules & delete columns ---
-let _fsChangeRules = { ccGoods: [], vc: [], vd: [], gs: [] };
-
-// 各シートのヘッダー定義（列名選択用）
+// 各シートのヘッダー定義（FutureShop列名選択用）
 const FS_SHEET_HEADERS = {
   ccGoods: [
     'コントロールカラム','商品URLコード','ステータス','商品番号','商品名',
@@ -1051,54 +991,140 @@ const FS_SHEET_HEADERS = {
 
 const FS_SHEET_LABELS = { ccGoods: 'ccGoods_', vc: 'goodsVariationConfirm_', vd: 'goodsVariationDetail_', gs: 'goodsSelection_' };
 
-function renderFsChangeRules(sheetKey) {
-  const container = document.getElementById('mall-fs-change-rules-' + sheetKey);
+function renderFsColumnSettings(sheetKey) {
+  const container = document.getElementById('mall-fs-settings-' + sheetKey);
   if (!container) return;
-  const rules = _fsChangeRules[sheetKey] || [];
-  if (rules.length === 0) {
-    container.innerHTML = '<p style="font-size:11px; color:#aaa; margin:4px 0;">ルールなし</p>';
+  const settings = _fsColumnSettings[sheetKey] || [];
+  const countEl = document.getElementById('fs-' + sheetKey + '-count');
+  if (countEl) countEl.textContent = settings.length + '項目';
+  if (settings.length === 0) {
+    container.innerHTML = '<p style="font-size:11px; color:#aaa; margin:4px 0;">設定なし</p>';
     return;
   }
-  const actionLabels = { prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
+  const srcLabels = {};
+  RAKUTEN_SOURCE_FIELDS.forEach(f => srcLabels[f.key] = f.label);
   let html = '<table style="width:100%; border-collapse:collapse; font-size:11px;">';
-  html += '<tr style="background:#fff3e0;"><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">列名</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">操作</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">文字列</th><th style="width:30px;"></th></tr>';
-  rules.forEach((rule, i) => {
+  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">FutureShop列</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">ソース</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">操作</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">値</th><th style="width:28px;"></th></tr>';
+  settings.forEach((entry, i) => {
+    const srcLabel = srcLabels[entry.source] || entry.source;
+    const actLabel = COLUMN_ACTION_LABELS[entry.action] || 'セット';
     html += '<tr>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.column + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0;">' + (actionLabels[rule.action] || rule.action) + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + rule.value + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button onclick="deleteFsChangeRule(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:13px;" title="削除">✕</button></td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace; white-space:nowrap;">' + entry.fsColumn + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-size:10px;">' + srcLabel + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-size:10px;">' + actLabel + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + (entry.value || '') + '</td>';
+    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button onclick="deleteFsColumnSetting(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:13px;" title="削除">✕</button></td>';
     html += '</tr>';
   });
   html += '</table>';
   container.innerHTML = html;
 }
 
-function addFsChangeRule(sheetKey) {
-  const col = document.getElementById('fs-change-col-' + sheetKey)?.value?.trim();
-  const action = document.getElementById('fs-change-action-' + sheetKey)?.value;
-  const val = document.getElementById('fs-change-val-' + sheetKey)?.value?.trim();
-  if (!col) { notify('対象列名を選択してください', 'error'); return; }
-  if (!val) { notify('文字列を入力してください', 'error'); return; }
-  if (!_fsChangeRules[sheetKey]) _fsChangeRules[sheetKey] = [];
-  _fsChangeRules[sheetKey].push({ column: col, action: action, value: val });
-  document.getElementById('fs-change-col-' + sheetKey).value = '';
-  document.getElementById('fs-change-val-' + sheetKey).value = '';
-  renderFsChangeRules(sheetKey);
+function addFsColumnSetting(sheetKey) {
+  const fsCol = document.getElementById('fs-set-col-' + sheetKey)?.value?.trim();
+  const source = document.getElementById('fs-set-src-' + sheetKey)?.value?.trim();
+  const action = document.getElementById('fs-set-action-' + sheetKey)?.value || 'set';
+  const value = document.getElementById('fs-set-val-' + sheetKey)?.value?.trim() || '';
+  if (!fsCol) { notify('FutureShop列を選択してください', 'error'); return; }
+  if (!source) { notify('ソースを選択してください', 'error'); return; }
+  if (source === 'fixed' && !value) { notify('固定値を入力してください', 'error'); return; }
+  if (!_fsColumnSettings[sheetKey]) _fsColumnSettings[sheetKey] = [];
+  _fsColumnSettings[sheetKey].push({ fsColumn: fsCol, source, action, value });
+  document.getElementById('fs-set-col-' + sheetKey).value = '';
+  document.getElementById('fs-set-val-' + sheetKey).value = '';
+  renderFsColumnSettings(sheetKey);
   markMasterDirty();
 }
 
-function deleteFsChangeRule(sheetKey, index) {
-  _fsChangeRules[sheetKey].splice(index, 1);
-  renderFsChangeRules(sheetKey);
+function deleteFsColumnSetting(sheetKey, index) {
+  _fsColumnSettings[sheetKey].splice(index, 1);
+  renderFsColumnSettings(sheetKey);
   markMasterDirty();
 }
 
-// 旧フォーマット（配列）から新フォーマット（シート別オブジェクト）への互換変換
-function migrateChangeRules(raw) {
-  if (Array.isArray(raw)) return { ccGoods: raw, vc: [], vd: [], gs: [] };
-  return { ccGoods: raw?.ccGoods || [], vc: raw?.vc || [], vd: raw?.vd || [], gs: raw?.gs || [] };
+// デフォルトの列マッピング設定（現在のハードコードロジックに基づく）
+function getDefaultFsColumnSettings() {
+  return {
+    ccGoods: [
+      { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
+      { fsColumn: 'ステータス', source: 'fixed', action: 'set', value: '1' },
+      { fsColumn: '消費税', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '送料', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '在庫管理', source: 'fixed', action: 'set', value: '1' },
+      { fsColumn: '在庫数表示設定', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'ポイント付与率設定', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '入荷お知らせメールボタン表示', source: 'fixed', action: 'set', value: '1' },
+      { fsColumn: 'JANコード', source: 'jan', action: 'set', value: '' },
+      { fsColumn: '商品説明（大）', source: 'pcSaleDesc', action: 'set', value: '' },
+      { fsColumn: '商品説明（小）', source: 'pcDesc', action: 'set', value: '' },
+    ],
+    vc: [
+      { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
+    ],
+    vd: [],
+    gs: [
+      { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
+      { fsColumn: '選択肢タイプ', source: 'fixed', action: 'set', value: 's' },
+      { fsColumn: '項目選択肢前改行', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '項目名位置', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '項目選択肢表示', source: 'fixed', action: 'set', value: '0' },
+    ]
+  };
 }
+
+// 旧フォーマットからの移行
+function migrateFsColumnSettings(mallData) {
+  if (mallData.columnSettings) {
+    // 全シートが空の場合はデフォルトを返す
+    const cs = mallData.columnSettings;
+    const isEmpty = ['ccGoods','vc','vd','gs'].every(k => !(cs[k] || []).length);
+    return isEmpty ? getDefaultFsColumnSettings() : cs;
+  }
+  const result = { ccGoods: [], vc: [], vd: [], gs: [] };
+  // 旧 defaults → fixed source
+  const defaultsMap = { ccGoodsDefaults: 'ccGoods', vcDefaults: 'vc', vdDefaults: 'vd', gsDefaults: 'gs' };
+  let hasOldData = false;
+  Object.entries(defaultsMap).forEach(([dk, sk]) => {
+    const defaults = mallData[dk] || {};
+    Object.entries(defaults).forEach(([col, val]) => {
+      result[sk].push({ fsColumn: col, source: 'fixed', action: 'set', value: String(val) });
+      hasOldData = true;
+    });
+  });
+  // 旧 changeRules → current source
+  const rawCR = mallData.changeRules || {};
+  const crObj = Array.isArray(rawCR) ? { ccGoods: rawCR } : rawCR;
+  Object.entries(crObj).forEach(([sk, rules]) => {
+    (rules || []).forEach(rule => {
+      result[sk].push({ fsColumn: rule.column, source: 'current', action: rule.action, value: rule.value });
+      hasOldData = true;
+    });
+  });
+  // 旧データもない場合はデフォルトを返す
+  return hasOldData ? result : getDefaultFsColumnSettings();
+}
+
+// 列マッピングを行に適用する汎用関数
+function applyFsColumnSettings(settings, colIndex, row, prod) {
+  (settings || []).forEach(entry => {
+    const ci = colIndex[entry.fsColumn];
+    if (ci === undefined) return;
+    let baseVal;
+    if (entry.source === 'fixed') {
+      row[ci] = entry.value;
+      return;
+    } else if (entry.source === 'current') {
+      baseVal = row[ci];
+    } else {
+      baseVal = String(prod[entry.source] || '');
+    }
+    if (entry.action === 'prefix') row[ci] = entry.value + baseVal;
+    else if (entry.action === 'suffix') row[ci] = baseVal + entry.value;
+    else if (entry.action === 'remove') row[ci] = baseVal.split(entry.value).join('');
+    else row[ci] = baseVal; // 'set'
+  });
+}
+
 
 function saveMaster(which) {
   if (which === 'colorOrder') {
@@ -1181,19 +1207,14 @@ function readMallFormToMaster(mall) {
     m.neUid = el('mall-rakuten-ne-uid')?.value?.trim() || '';
   }
   if (mall === 'futureshop') {
-    // Read from in-memory table store
-    m.ccGoodsDefaults = Object.assign({}, _fsDefaults.ccGoodsDefaults || {});
-    m.vcDefaults = Object.assign({}, _fsDefaults.vcDefaults || {});
-    m.vdDefaults = Object.assign({}, _fsDefaults.vdDefaults || {});
-    m.gsDefaults = Object.assign({}, _fsDefaults.gsDefaults || {});
     // レビュー投稿設定
     m.selectionOptionName = el('mall-fs-selectionOptionName')?.value?.trim() || '';
     const choicesText = el('mall-fs-selectionChoices')?.value?.trim() || '';
     if (choicesText) m.selectionChoices = choicesText.split(',').map(s => s.trim()).filter(Boolean);
-    // 変更ルール・削除列（シート別）
-    m.changeRules = {};
+    // 列マッピング
+    m.columnSettings = {};
     ['ccGoods','vc','vd','gs'].forEach(sk => {
-      m.changeRules[sk] = (_fsChangeRules[sk] || []).map(r => Object.assign({}, r));
+      m.columnSettings[sk] = (_fsColumnSettings[sk] || []).map(e => Object.assign({}, e));
     });
   }
 }
@@ -4109,8 +4130,8 @@ function convertToFutureshop() {
   ccH.forEach((h, i) => ccI[h] = i);
   const ccRows = [];
 
-  // ccGoodsDefaults: マスタで定義された固定値を全商品に一括適用
-  const ccDefaults = fm.ccGoodsDefaults || {};
+  // 列マッピング設定を取得
+  const csData = migrateFsColumnSettings(fm);
 
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     // 商品名: 楽天ソースではキャッチコピーをクリーンして使用
@@ -4124,12 +4145,7 @@ function convertToFutureshop() {
 
     const row = new Array(ccH.length).fill('');
 
-    // マスタのデフォルト値を一括適用
-    Object.entries(ccDefaults).forEach(([col, val]) => {
-      if (ccI[col] !== undefined) row[ccI[col]] = val;
-    });
-
-    // 商品個別の値（デフォルトを上書き）
+    // 商品個別の値
     row[ccI['商品URLコード']] = prod.id || prod.number || '';
     row[ccI['商品番号']] = prod.id || prod.number || '';
     row[ccI['商品名']] = name;
@@ -4159,15 +4175,8 @@ function convertToFutureshop() {
       row[ccI['メール便同梱数']] = '0';
     }
 
-    // 変更ルール適用（ccGoods_）
-    const ccChangeRules = migrateChangeRules(fm.changeRules);
-    (ccChangeRules.ccGoods || []).forEach(rule => {
-      const ci = ccI[rule.column];
-      if (ci === undefined) return;
-      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
-      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
-      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
-    });
+    // 列マッピング適用（ccGoods_）
+    applyFsColumnSettings(csData.ccGoods, ccI, row, prod);
 
     ccRows.push(row);
   });
@@ -4182,51 +4191,37 @@ function convertToFutureshop() {
   const vcI = {};
   vcH.forEach((h, i) => vcI[h] = i);
   const vcRows = [];
-  const vcDefaults = fm.vcDefaults || {};
-
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     const fsCatchCopy2 = prod.catchCopy || prod.productPoint || '';
     const name = cleanProductName(fsCatchCopy2) || prod.cleanName || prod.name || '';
     const urlCode = prod.id || prod.number || '';
 
-    // カラー行（バリエーション1=カラー名, バリエーション2=カラーコード）
     sortedColors.forEach(color => {
       const code = colorMap.get(color) || '';
       const order = MASTER.colorOrder[color] || '';
       const row = new Array(vcH.length).fill('');
-      Object.entries(vcDefaults).forEach(([col, val]) => { if (vcI[col] !== undefined) row[vcI[col]] = val; });
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション1']] = color;
       row[vcI['バリエーション2']] = code ? '-' + code : '';
       row[vcI['表示順']] = String(order);
       row[vcI['商品番号']] = urlCode;
       row[vcI['商品名']] = name;
+      applyFsColumnSettings(csData.vc, vcI, row, prod);
       vcRows.push(row);
     });
 
-    // サイズ行（バリエーション3=サイズ名, バリエーション4=サイズコード）
     sortedSizes.forEach((size, idx) => {
       const code = sizeMap.get(size) || getFsSizeCode(size);
       const sizeOrder = MASTER.colorOrder[size] || (idx + 1);
       const row = new Array(vcH.length).fill('');
-      Object.entries(vcDefaults).forEach(([col, val]) => { if (vcI[col] !== undefined) row[vcI[col]] = val; });
       row[vcI['商品URLコード']] = urlCode;
       row[vcI['バリエーション3']] = size;
       row[vcI['バリエーション4']] = code ? '-' + code : '';
       row[vcI['表示順']] = String(sizeOrder);
       row[vcI['商品番号']] = urlCode;
       row[vcI['商品名']] = name;
+      applyFsColumnSettings(csData.vc, vcI, row, prod);
       vcRows.push(row);
-    });
-  });
-  // 変更ルール適用（goodsVariationConfirm_）
-  const vcCR = migrateChangeRules(fm.changeRules);
-  vcRows.forEach(row => {
-    (vcCR.vc || []).forEach(rule => {
-      const ci = vcI[rule.column]; if (ci === undefined) return;
-      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
-      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
-      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
   });
   sheets.push({ name: 'goodsVariationConfirm_', headers: vcH, rows: vcRows });
@@ -4241,14 +4236,11 @@ function convertToFutureshop() {
   const vdI = {};
   vdH.forEach((h, i) => vdI[h] = i);
   const vdRows = [];
-  const vdDefaults = fm.vdDefaults || {};
-
   prodInfos.forEach(({ prod, colorMap, sizeMap, sortedColors, sortedSizes }) => {
     const fsCatchCopy3 = prod.catchCopy || prod.productPoint || '';
     const name = cleanProductName(fsCatchCopy3) || prod.cleanName || prod.name || '';
     const urlCode = prod.id || prod.number || '';
 
-    // 全色×全サイズの組み合わせを生成
     sortedColors.forEach(color => {
       const cCode = colorMap.get(color) || '';
       sortedSizes.forEach(size => {
@@ -4261,7 +4253,6 @@ function convertToFutureshop() {
         const mgmtNo = urlCode + (cCode ? '-' + cCode : '');
 
         const row = new Array(vdH.length).fill('');
-        Object.entries(vdDefaults).forEach(([col, val]) => { if (vdI[col] !== undefined) row[vdI[col]] = val; });
         row[vdI['商品URLコード']] = urlCode;
         row[vdI['バリエーション1']] = color;
         row[vdI['バリエーション2']] = cCode ? '-' + cCode : '';
@@ -4271,18 +4262,9 @@ function convertToFutureshop() {
         row[vdI['商品管理番号']] = mgmtNo;
         row[vdI['商品名']] = name;
         row[vdI['JANコード']] = jan;
+        applyFsColumnSettings(csData.vd, vdI, row, prod);
         vdRows.push(row);
       });
-    });
-  });
-  // 変更ルール適用（goodsVariationDetail_）
-  const vdCR = migrateChangeRules(fm.changeRules);
-  vdRows.forEach(row => {
-    (vdCR.vd || []).forEach(rule => {
-      const ci = vdI[rule.column]; if (ci === undefined) return;
-      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
-      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
-      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
   });
   sheets.push({ name: 'goodsVariationDetail_', headers: vdH, rows: vdRows });
@@ -4296,7 +4278,6 @@ function convertToFutureshop() {
   const gsI = {};
   gsH.forEach((h, i) => gsI[h] = i);
   const gsRows = [];
-  const gsDefaults = fm.gsDefaults || {};
 
   // 全商品に「レビュー投稿でノベルティを」選択肢を生成
   const reviewOptionName = fm.selectionOptionName || 'レビュー投稿でノベルティを';
@@ -4307,10 +4288,10 @@ function convertToFutureshop() {
     // レビュー投稿オプション（全商品に付与）
     reviewChoices.forEach(choice => {
       const row = new Array(gsH.length).fill('');
-      Object.entries(gsDefaults).forEach(([col, val]) => { if (gsI[col] !== undefined) row[gsI[col]] = val; });
       row[gsI['商品URLコード']] = urlCode;
       row[gsI['セレクト／ラジオボタン用項目名']] = reviewOptionName;
       row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
+      applyFsColumnSettings(csData.gs, gsI, row, prod);
       gsRows.push(row);
     });
     // 追加の商品オプションがあれば出力
@@ -4319,23 +4300,13 @@ function convertToFutureshop() {
       if (opt.name === reviewOptionName) return;
       (opt.choices || []).forEach(choice => {
         const row = new Array(gsH.length).fill('');
-        Object.entries(gsDefaults).forEach(([col, val]) => { if (gsI[col] !== undefined) row[gsI[col]] = val; });
         row[gsI['商品URLコード']] = urlCode;
-        row[gsI['選択肢タイプ']] = opt.type || gsDefaults['選択肢タイプ'] || 's';
+        row[gsI['選択肢タイプ']] = opt.type || 's';
         row[gsI['セレクト／ラジオボタン用項目名']] = opt.name || '';
         row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
+        applyFsColumnSettings(csData.gs, gsI, row, prod);
         gsRows.push(row);
       });
-    });
-  });
-  // 変更ルール適用（goodsSelection_）
-  const gsCR = migrateChangeRules(fm.changeRules);
-  gsRows.forEach(row => {
-    (gsCR.gs || []).forEach(rule => {
-      const ci = gsI[rule.column]; if (ci === undefined) return;
-      if (rule.action === 'prefix') row[ci] = rule.value + row[ci];
-      else if (rule.action === 'suffix') row[ci] = row[ci] + rule.value;
-      else if (rule.action === 'remove') row[ci] = row[ci].split(rule.value).join('');
     });
   });
   sheets.push({ name: 'goodsSelection_', headers: gsH, rows: gsRows });
