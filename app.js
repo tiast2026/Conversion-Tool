@@ -4426,7 +4426,6 @@ function convertToFutureshop() {
           const info = getFsSkuInfo(sku, prod);
           return info.color === color && info.size === size;
         });
-        const jan = matchSku ? (matchSku.jan || matchSku.systemSku || '') : '';
         const mgmtNo = urlCode + (cCode ? '-' + cCode : '');
 
         const row = new Array(vdH.length).fill('');
@@ -4439,7 +4438,6 @@ function convertToFutureshop() {
         row[vdI['商品番号']] = urlCode;
         row[vdI['商品管理番号']] = mgmtNo;
         row[vdI['商品名']] = name;
-        row[vdI['JANコード']] = jan;
         applyFsColumnSettings(csData.vd, vdI, row, prod);
         vdRows.push(row);
         isFirstVariation = false;
