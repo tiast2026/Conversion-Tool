@@ -2194,7 +2194,7 @@ function refreshMallPreview(tabId, mallKey) {
       html += '<h5 style="font-size:13px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
       html += '<span style="font-size:11px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
       html += '</div>';
-      html += buildCsvPreviewTable(file.headers, file.rows, gi);
+      html += buildCsvPreviewTable(file.headers, file.rows);
       html += '</div>';
     });
     area.innerHTML = html;
@@ -2202,7 +2202,7 @@ function refreshMallPreview(tabId, mallKey) {
     let html = '<div style="margin-bottom:8px;">';
     html += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
     html += '</div>';
-    html += buildCsvPreviewTable(result.headers, result.rows, gi);
+    html += buildCsvPreviewTable(result.headers, result.rows);
     area.innerHTML = html;
   } else {
     area.innerHTML = '<p style="color:#999;">データなし</p>';
