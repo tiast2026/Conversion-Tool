@@ -213,6 +213,7 @@ let MASTER = {
       imgCabinetBase: '/shohin/', maxProductImages: 20
     },
     futureshop: { columnSettings: { ccGoods: [], vc: [], vd: [], gs: [] } },
+    tiktok:     { columnMappings: [] },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
     rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '' }
   }
@@ -557,7 +558,7 @@ function markMasterDirty() {
 function syncMasterToProfile() {
   if (!ACTIVE_PROFILE) return;
   // UIからMASTERに値を取り込み（各モール）
-  ['rakuten', 'futureshop', 'zozo', 'rakufashion'].forEach(mall => {
+  ['rakuten', 'futureshop', 'zozo', 'rakufashion', 'tiktok'].forEach(mall => {
     readMallFormToMaster(mall);
   });
   // 変換設定
@@ -789,6 +790,7 @@ function openMaster() {
   loadMallMasterUI('futureshop');
   loadMallMasterUI('zozo');
   loadMallMasterUI('rakufashion');
+  loadMallMasterUI('tiktok');
   initCorsProxyCodeDisplay();
   // GitHub Token を表示
   const ghInput = document.getElementById('gh-token-input');
@@ -858,6 +860,14 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-ne-refresh-token')) el('mall-rakuten-ne-refresh-token').value = m.neRefreshToken || '';
     if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
   }
+  if (mall === 'tiktok') {
+    const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
+    const hasTemplate = !!localStorage.getItem(templateKey);
+    const statusEl = el('tiktok-template-status');
+    if (statusEl) statusEl.textContent = hasTemplate ? '設定済み' : '未設定';
+    _tiktokColumnMappings = ((MASTER.malls.tiktok || {}).columnMappings || []).map(e => Object.assign({}, e));
+    renderTiktokColumnMappings();
+  }
   if (mall === 'futureshop') {
     // レビュー投稿設定
     if (el('mall-fs-selectionOptionName')) el('mall-fs-selectionOptionName').value = m.selectionOptionName || '';
@@ -924,6 +934,119 @@ function switchRakutenTab(id, el) {
 // FutureShop 列マッピング（統合版）
 // ============================================================
 let _fsColumnSettings = { ccGoods: [], vc: [], vd: [], gs: [] };
+let _tiktokColumnMappings = [];
+
+// ============================================================
+// TikTok 列マッピング
+// ============================================================
+const TIKTOK_DEFAULT_SOURCE_MAP = {
+  'category':            { source: 'fixed',       value: '' },
+  'brand':               { source: 'fixed',       value: '' },
+  'product_name':        { source: 'cleanName',   value: '' },
+  'product_description': { source: 'pcDescClean', value: '' },
+  'main_image':          { source: 'img1',        value: '' },
+  'image_2':             { source: 'img2',        value: '' },
+  'image_3':             { source: 'img3',        value: '' },
+  'image_4':             { source: 'img4',        value: '' },
+  'image_5':             { source: 'img5',        value: '' },
+  'image_6':             { source: 'img6',        value: '' },
+  'image_7':             { source: 'img7',        value: '' },
+  'image_8':             { source: 'img8',        value: '' },
+};
+
+function getDefaultTiktokMappings(columns) {
+  return columns.map(col => {
+    const d = TIKTOK_DEFAULT_SOURCE_MAP[col];
+    return d
+      ? { ttColumn: col, source: d.source, action: 'set', value: d.value }
+      : { ttColumn: col, source: 'none', action: 'set', value: '' };
+  });
+}
+
+function handleTiktokTemplateUpload(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const bytes = new Uint8Array(e.target.result);
+    // base64変換
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    const b64 = btoa(binary);
+    const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
+    localStorage.setItem(templateKey, b64);
+    // Template シート1行目から列名を取得
+    const wb = XLSX.read(bytes, { type: 'array' });
+    const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
+    const ws = wb.Sheets[wsName];
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const columns = [];
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+      if (cell?.v) columns.push(String(cell.v));
+    }
+    // 既存マッピングを保持しつつ、新規列をデフォルトで補完
+    const existingMap = {};
+    _tiktokColumnMappings.forEach(e => { existingMap[e.ttColumn] = e; });
+    const defaults = getDefaultTiktokMappings(columns);
+    _tiktokColumnMappings = defaults.map(d => existingMap[d.ttColumn] || d);
+    if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
+    MASTER.malls.tiktok.columnMappings = _tiktokColumnMappings.map(e => Object.assign({}, e));
+    const statusEl = document.getElementById('tiktok-template-status');
+    if (statusEl) statusEl.textContent = file.name;
+    renderTiktokColumnMappings();
+    markMasterDirty();
+    notify('テンプレートを読み込みました（' + columns.length + '列）。マッピングを確認して保存してください。', 'success');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearTiktokTemplate() {
+  const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
+  localStorage.removeItem(templateKey);
+  const statusEl = document.getElementById('tiktok-template-status');
+  if (statusEl) statusEl.textContent = '未設定';
+  notify('テンプレートを削除しました。', 'info');
+}
+
+function renderTiktokColumnMappings() {
+  const container = document.getElementById('tiktok-column-mappings');
+  if (!container) return;
+  const mappings = _tiktokColumnMappings;
+  if (!mappings.length) {
+    container.innerHTML = '<p style="font-size:13px; color:#aaa; margin:6px 0;">テンプレートをアップロードすると列マッピングが表示されます。</p>';
+    return;
+  }
+  const srcOpts = RAKUTEN_SOURCE_FIELDS.map(f => '<option value="' + f.key + '">' + escapeHtml(f.label) + '</option>').join('');
+  const actKeys = Object.keys(COLUMN_ACTION_LABELS);
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">TikTok列</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">ソース</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">操作</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">値</th></tr>';
+  mappings.forEach((entry, i) => {
+    const rowBg = i % 2 === 0 ? '#fff' : '#f7f5f2';
+    html += '<tr style="border-bottom:1px solid #eee; background:' + rowBg + ';">';
+    html += '<td style="padding:4px 6px; font-size:13px; font-weight:500;">' + escapeHtml(entry.ttColumn) + '</td>';
+    html += '<td style="padding:4px 6px;"><select onchange="updateTiktokColumnMapping(' + i + ',\'source\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    html += srcOpts.replace('value="' + entry.source + '"', 'value="' + entry.source + '" selected');
+    html += '</select></td>';
+    html += '<td style="padding:4px 6px;"><select onchange="updateTiktokColumnMapping(' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+    actKeys.forEach(ak => {
+      html += '<option value="' + ak + '"' + (ak === entry.action ? ' selected' : '') + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
+    });
+    html += '</select></td>';
+    html += '<td style="padding:4px 6px;"><input type="text" value="' + escapeHtml(entry.value || '') + '" onchange="updateTiktokColumnMapping(' + i + ',\'value\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;"></td>';
+    html += '</tr>';
+  });
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+function updateTiktokColumnMapping(i, field, val) {
+  if (_tiktokColumnMappings[i]) {
+    _tiktokColumnMappings[i][field] = val;
+    if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
+    MASTER.malls.tiktok.columnMappings = _tiktokColumnMappings.map(e => Object.assign({}, e));
+    markMasterDirty();
+  }
+}
 
 // 楽天商品フィールド（ソース選択肢）
 const RAKUTEN_SOURCE_FIELDS = [
@@ -969,6 +1092,16 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: '_controlCol', label: '楽天: コントロールカラム' },
   { key: 'memo', label: '楽天: メモ' },
   { key: 'tags', label: '楽天: タグ' },
+  { key: 'img1',  label: '楽天: 画像1' },
+  { key: 'img2',  label: '楽天: 画像2' },
+  { key: 'img3',  label: '楽天: 画像3' },
+  { key: 'img4',  label: '楽天: 画像4' },
+  { key: 'img5',  label: '楽天: 画像5' },
+  { key: 'img6',  label: '楽天: 画像6' },
+  { key: 'img7',  label: '楽天: 画像7' },
+  { key: 'img8',  label: '楽天: 画像8' },
+  { key: 'img9',  label: '楽天: 画像9' },
+  { key: 'img10', label: '楽天: 画像10' },
 ];
 
 const COLUMN_ACTION_LABELS = { set: 'セット', prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
@@ -1363,6 +1496,9 @@ function readMallFormToMaster(mall) {
     ['ccGoods','vc','vd','gs'].forEach(sk => {
       m.columnSettings[sk] = (_fsColumnSettings[sk] || []).map(e => Object.assign({}, e));
     });
+  }
+  if (mall === 'tiktok') {
+    m.columnMappings = _tiktokColumnMappings.map(e => Object.assign({}, e));
   }
 }
 
@@ -1822,6 +1958,7 @@ function structureRakuten() {
         const imgPath = col(row, `商品画像パス${img}`);
         if (imgPath) currentProduct.images.push({ type: imgType, path: imgPath });
       }
+      for (let i = 1; i <= 10; i++) currentProduct['img' + i] = currentProduct.images[i - 1]?.path || '';
       prods.push(currentProduct);
     } else if (skuMgmtNo && currentProduct) {
       const sku = {
@@ -3483,6 +3620,20 @@ function downloadMall(mallKey) {
   const bom = '\uFEFF';
   const ts = dateTimeStr();
 
+  // TikTok: xlsx出力
+  if (result.workbook) {
+    const wbOut = XLSX.write(result.workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbOut], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tiktok_${ts}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('TikTokのExcelをダウンロードしました', 'success');
+    return;
+  }
+
   if (result.sheets) {
     // 複数CSV出力（FutureShop等）
     result.sheets.forEach((sheet, i) => {
@@ -4254,32 +4405,69 @@ function convertToFutureshop() {
 }
 
 // ============================================================
-// CONVERSION: TikTok Shop (stub)
+// CONVERSION: TikTok Shop
 // ============================================================
 function convertToTiktok() {
-  // TODO: TikTok Shop CSVフォーマットの実装
-  const ttH = ['商品コード','商品名','販売価格','カラー','サイズ','在庫数','商品説明'];
-  const rows = [];
-  products.forEach(prod => {
-    const name = prod.cleanName || prod.name;
-    prod.skus.forEach(sku => {
-      const r = new Array(ttH.length).fill('');
-      r[0] = prod.id || prod.number || '';
-      r[1] = applyMallName(name, 'tiktok');
-      r[2] = sku.price || '';
-      if (sourceType === 'rakuten') {
-        r[3] = sku.variants?.[0]?.value || '';
-        r[4] = sku.variants?.[1]?.value || '';
-      } else {
-        r[3] = sku.color || '';
-        r[4] = sku.size || '';
-      }
-      r[5] = sku.stock || '';
-      r[6] = prod.pcDesc || '';
-      rows.push(r);
+  const tm = MASTER.malls.tiktok || {};
+  const mappings = tm.columnMappings || [];
+  const templateKey = 'tiktok_template_' + ACTIVE_PROFILE;
+  const templateB64 = localStorage.getItem(templateKey);
+
+  // テンプレートなし: シンプルCSVプレビュー
+  if (!templateB64) {
+    const ttH = mappings.length ? mappings.map(m => m.ttColumn) : ['商品コード', '商品名', '商品説明'];
+    const colIndex = {};
+    ttH.forEach((h, i) => colIndex[h] = i);
+    const rows = products.map(prod => {
+      const row = new Array(ttH.length).fill('');
+      applyTiktokMapping(mappings, colIndex, row, prod);
+      return row;
     });
+    return { headers: ttH, rows };
+  }
+
+  // テンプレートあり: xlsx出力
+  const binary = Uint8Array.from(atob(templateB64), c => c.charCodeAt(0));
+  const wb = XLSX.read(binary, { type: 'array' });
+  const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
+  const ws = wb.Sheets[wsName];
+
+  // 1行目から列インデックスを構築
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const colIndex = {};
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+    if (cell?.v) colIndex[String(cell.v)] = c;
+  }
+
+  // 7行目（index 6）以降に商品データを書き込む
+  const numCols = range.e.c + 1;
+  const dataRows = products.map(prod => {
+    const row = new Array(numCols).fill('');
+    applyTiktokMapping(mappings, colIndex, row, prod);
+    return row;
   });
-  return { headers: ttH, rows };
+  XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: { r: 6, c: 0 } });
+  return { workbook: wb };
+}
+
+function applyTiktokMapping(mappings, colIndex, row, prod) {
+  (mappings || []).forEach(entry => {
+    const ci = colIndex[entry.ttColumn];
+    if (ci === undefined || entry.source === 'none') return;
+    let val;
+    if (entry.source === 'fixed') {
+      val = entry.value;
+    } else if (entry.source === 'current') {
+      val = row[ci] || '';
+    } else {
+      val = String(prod[entry.source] || '');
+    }
+    if (entry.action === 'prefix') row[ci] = entry.value + (row[ci] || '');
+    else if (entry.action === 'suffix') row[ci] = (row[ci] || '') + entry.value;
+    else if (entry.action === 'remove') row[ci] = String(row[ci] || '').split(entry.value).join('');
+    else row[ci] = val;
+  });
 }
 
 // ============================================================
