@@ -1015,7 +1015,8 @@ function renderFsColumnSettings(sheetKey) {
   html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">FutureShop列</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">ソース</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">操作</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-weight:600;">値</th><th style="width:36px;"></th></tr>';
   settings.forEach((entry, i) => {
     const sk = escapeHtml(sheetKey);
-    html += '<tr style="border-bottom:1px solid #eee;">';
+    const rowBg = i % 2 === 0 ? '#fff' : '#f7f5f2';
+    html += '<tr style="border-bottom:1px solid #eee; background:' + rowBg + ';">';
     // FutureShop列 select
     html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'fsColumn\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
     html += colOpts.replace('value="' + escapeHtml(entry.fsColumn) + '"', 'value="' + escapeHtml(entry.fsColumn) + '" selected');
@@ -1370,8 +1371,9 @@ function renderColorOrderTable() {
   }
   let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
   html += '<thead><tr style="background:#f5f3f0; position:sticky; top:0;"><th style="padding:6px 10px; text-align:left; font-weight:600; border-bottom:1px solid var(--border);">カラー／サイズ名</th><th style="padding:6px 10px; text-align:center; font-weight:600; width:80px; border-bottom:1px solid var(--border);">表示順</th><th style="padding:6px 10px; width:40px; border-bottom:1px solid var(--border);"></th></tr></thead><tbody>';
-  entries.forEach(([name, order]) => {
-    html += '<tr style="border-bottom:1px solid #eee;">';
+  entries.forEach(([name, order], idx) => {
+    const rowBg = idx % 2 === 0 ? '#fff' : '#f7f5f2';
+    html += '<tr style="border-bottom:1px solid #eee; background:' + rowBg + ';">';
     html += '<td style="padding:5px 10px;">' + escapeHtml(name) + '</td>';
     html += '<td style="padding:5px 10px; text-align:center;"><input type="number" value="' + order + '" min="0" style="width:60px; padding:2px 4px; border:1px solid var(--border); border-radius:3px; font-size:11px; text-align:center;" onchange="updateColorOrderRow(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\', this.value)"></td>';
     html += '<td style="padding:5px 10px; text-align:center;"><button onclick="deleteColorOrderRow(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\')" style="background:none; border:none; color:#c44; cursor:pointer; font-size:14px;" title="削除">×</button></td>';
