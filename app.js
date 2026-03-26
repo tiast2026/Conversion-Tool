@@ -973,9 +973,12 @@ const TIKTOK_DEFAULT_PACKAGE = { weight: 300, length: 25, width: 20, height: 5 }
 
 function detectTiktokCategory(name) {
   if (!name) return TIKTOK_FALLBACK_CATEGORY;
-  if (name.includes('スカート')) return TIKTOK_SKIRT_CATEGORY;
+  // GAS normalize() 相当: スペース除去 + 小文字化
+  const n = String(name).trim().replace(/\s+/g, '').toLowerCase();
+  // スカート判定（パンツ・デニム・ジーンズとの共存時は除外）
+  if (/スカート/.test(n) && !/パンツ|デニム|ジーンズ/.test(n)) return TIKTOK_SKIRT_CATEGORY;
   for (const rule of TIKTOK_CATEGORY_RULES) {
-    if (rule.keywords.some(kw => name.includes(kw))) return rule.category;
+    if (rule.keywords.some(kw => n.includes(kw.toLowerCase().replace(/\s+/g, '')))) return rule.category;
   }
   return TIKTOK_FALLBACK_CATEGORY;
 }
