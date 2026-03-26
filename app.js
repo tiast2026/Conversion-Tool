@@ -2172,26 +2172,11 @@ function renderRmsPreview() {
       {label:'製品情報', tab:'product'},
       {label:'ページデザイン', tab:'design'},
       {label:'ポイント', tab:'point'},
-      {label:'FutureShop', tab:'mall_futureshop', isMall: true},
-      {label:'TikTok', tab:'mall_tiktok', isMall: true},
-      {label:'ZOZO', tab:'mall_zozo', isMall: true},
-      {label:'楽天ファッション', tab:'mall_rakufashion', isMall: true},
     ];
     html += '<div style="display:flex; align-items:end; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2; flex-wrap:wrap;">';
-    let prevIsMall = false;
     s3tabs.forEach((item, idx) => {
       const isActive = idx === 0;
-      // モールタブの手前にセパレーターを入れる
-      if (item.isMall && !prevIsMall) {
-        html += '<div style="width:1px; height:24px; background:#ccc; margin:0 8px 6px;"></div>';
-        html += '<div style="font-size:9px; color:#888; margin-right:4px; margin-bottom:8px; writing-mode:horizontal-tb;">CSV出力▼</div>';
-      }
-      prevIsMall = !!item.isMall;
-      if (item.isMall) {
-        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:700; border:1px solid ' + (isActive ? '#1565c0' : '#1976d2') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#1565c0' : '#1976d2') + '; color:#fff; margin-left:3px;">' + item.label + '</div>';
-      } else {
-        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
-      }
+      html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
     });
     html += '</div>';
 
@@ -2378,25 +2363,6 @@ function renderRmsPreview() {
     html += '</table>';
     html += '</div>'; // point tab
 
-    // --- モール別CSVプレビュータブ ---
-    const mallPreviews = [
-      { tab: 'mall_futureshop', label: 'FutureShop', convertFn: 'futureshop' },
-      { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
-      { tab: 'mall_zozo', label: 'ZOZO', convertFn: 'zozo' },
-      { tab: 'mall_rakufashion', label: '楽天ファッション', convertFn: 'rakufashion' },
-    ];
-    mallPreviews.forEach(mp => {
-      html += '<div class="s3rms-tab-content" data-tab="' + mp.tab + '" data-gi="' + gi + '" style="padding:20px; display:none;">';
-      html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">';
-      html += '<h4 style="font-size:14px; color:#333; margin:0;">' + mp.label + ' CSV出力プレビュー</h4>';
-      html += '<button onclick="refreshMallPreview(\'' + mp.tab + '\',' + gi + ',\'' + mp.convertFn + '\')" style="font-size:11px; padding:4px 12px; border:1px solid #ccc; border-radius:4px; background:#fff; cursor:pointer;">更新</button>';
-      html += '</div>';
-      html += '<div class="mall-preview-area" data-mall="' + mp.tab + '" data-gi="' + gi + '" style="font-size:12px;">';
-      html += '<p style="color:#999;">タブを選択すると自動的にプレビューを生成します。</p>';
-      html += '</div>';
-      html += '</div>';
-    });
-
     html += '</div>'; // padding
     html += '</div>'; // s3rms-tab-area
     html += '</div>'; // white card wrapper
@@ -2405,6 +2371,41 @@ function renderRmsPreview() {
 
   html += '</div>'; // right panel wrapper
   html += '</div>'; // flex row
+
+  // --- モール別CSV出力プレビュー（全商品共通・商品パネルの外） ---
+  const mallPreviews = [
+    { tab: 'mall_futureshop', label: 'FutureShop', convertFn: 'futureshop' },
+    { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
+    { tab: 'mall_zozo', label: 'ZOZO', convertFn: 'zozo' },
+    { tab: 'mall_rakufashion', label: '楽天ファッション', convertFn: 'rakufashion' },
+  ];
+  html += '<div id="mall-csv-preview-section" style="display:none; flex-direction:column; flex:1; min-height:0; overflow:hidden; border-top:2px solid #1976d2;">';
+  // モールタブバー
+  html += '<div style="display:flex; align-items:center; background:#f5f5f5; border-bottom:1px solid #ddd; padding:0 16px; flex-shrink:0;">';
+  html += '<div style="font-size:13px; font-weight:700; color:#333; padding:10px 0; margin-right:16px;">CSV出力プレビュー</div>';
+  mallPreviews.forEach((mp, idx) => {
+    const isActive = idx === 0;
+    html += '<div class="mall-csv-tab" data-mall-tab="' + mp.tab + '" onclick="switchMallCsvTab(\'' + mp.tab + '\',\'' + mp.convertFn + '\')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:700; border-radius:6px 6px 0 0; margin-bottom:-1px; border:1px solid ' + (isActive ? '#1976d2' : 'transparent') + '; border-bottom:1px solid ' + (isActive ? '#fff' : 'transparent') + '; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#1976d2' : '#666') + ';">' + mp.label + '</div>';
+  });
+  html += '<div style="flex:1;"></div>';
+  html += '<button onclick="closeMallCsvPreview()" style="padding:6px 12px; font-size:12px; border:1px solid #ccc; border-radius:4px; background:#fff; cursor:pointer; color:#666;">閉じる</button>';
+  html += '</div>';
+  // モールコンテンツ
+  mallPreviews.forEach((mp, idx) => {
+    html += '<div class="mall-csv-content" data-mall-tab="' + mp.tab + '" style="flex:1; min-height:0; overflow:auto; padding:20px; display:' + (idx === 0 ? '' : 'none') + ';">';
+    html += '<div class="mall-preview-area" data-mall="' + mp.tab + '" style="font-size:12px;">';
+    html += '<p style="color:#999;">タブを選択すると自動的にプレビューを生成します。</p>';
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // 全商品エリアとCSVプレビューの切替ボタンバー
+  html += '<div style="padding:8px 24px; border-top:1px solid #ddd; background:#fafafa; display:flex; gap:8px; align-items:center; flex-shrink:0;">';
+  mallPreviews.forEach(mp => {
+    html += '<button class="mall-open-btn" onclick="openMallCsvPreview(\'' + mp.tab + '\',\'' + mp.convertFn + '\')" style="padding:6px 16px; font-size:12px; font-weight:600; border:1px solid #1976d2; border-radius:4px; background:#1976d2; color:#fff; cursor:pointer;">' + mp.label + '</button>';
+  });
+  html += '</div>';
 
   // フッター: ナビゲーションボタン
   html += '<div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">';
@@ -2438,31 +2439,50 @@ function switchS3RmsTab(tabId, gi) {
     el.style.display = el.dataset.tab === tabId ? '' : 'none';
   });
   // Step3 タブヘッダー切替
-  const mallTabs = ['mall_futureshop','mall_tiktok','mall_zozo','mall_rakufashion'];
   document.querySelectorAll('.s3rms-side[data-gi="' + gi + '"]').forEach(el => {
     const active = el.dataset.tab === tabId;
-    const isMall = mallTabs.includes(el.dataset.tab);
-    if (isMall) {
-      el.style.border = active ? '1px solid #0d47a1' : '1px solid #1976d2';
-      el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
-      el.style.background = active ? '#0d47a1' : '#1976d2';
-      el.style.color = '#fff';
-    } else {
-      el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
-      el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
-      el.style.background = active ? '#fff' : 'transparent';
-      el.style.color = active ? '#333' : '#888';
-    }
+    el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
+    el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
+    el.style.background = active ? '#fff' : 'transparent';
+    el.style.color = active ? '#333' : '#888';
   });
-  // モール別CSVプレビュー自動生成
-  if (tabId.startsWith('mall_')) {
-    const mallKey = tabId.replace('mall_', '');
-    refreshMallPreview(tabId, gi, mallKey);
-  }
 }
 
-function refreshMallPreview(tabId, gi, mallKey) {
-  const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"][data-gi="' + gi + '"]');
+function openMallCsvPreview(tabId, convertFn) {
+  // 商品編集エリアを非表示、CSVプレビューを表示
+  const editArea = document.querySelector('#rms3-layout-root > div:first-child');
+  const previewSection = document.getElementById('mall-csv-preview-section');
+  if (editArea) editArea.style.display = 'none';
+  if (previewSection) previewSection.style.display = 'flex';
+  switchMallCsvTab(tabId, convertFn);
+}
+
+function closeMallCsvPreview() {
+  const editArea = document.querySelector('#rms3-layout-root > div:first-child');
+  const previewSection = document.getElementById('mall-csv-preview-section');
+  if (editArea) editArea.style.display = '';
+  if (previewSection) previewSection.style.display = 'none';
+}
+
+function switchMallCsvTab(tabId, convertFn) {
+  // タブ切替
+  document.querySelectorAll('.mall-csv-tab').forEach(el => {
+    const active = el.dataset.mallTab === tabId;
+    el.style.border = active ? '1px solid #1976d2' : '1px solid transparent';
+    el.style.borderBottom = active ? '1px solid #fff' : '1px solid transparent';
+    el.style.background = active ? '#fff' : 'transparent';
+    el.style.color = active ? '#1976d2' : '#666';
+  });
+  // コンテンツ切替
+  document.querySelectorAll('.mall-csv-content').forEach(el => {
+    el.style.display = el.dataset.mallTab === tabId ? '' : 'none';
+  });
+  // プレビュー生成
+  refreshMallPreview(tabId, convertFn);
+}
+
+function refreshMallPreview(tabId, mallKey) {
+  const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
   let result;
   try {
