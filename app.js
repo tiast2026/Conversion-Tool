@@ -945,6 +945,7 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: '_catalogId', label: '楽天: カタログID' },
   { key: '_catalogReason', label: '楽天: カタログIDなしの理由' },
   { key: 'pcDesc', label: '楽天: PC用商品説明文' },
+  { key: 'pcDescClean', label: '楽天: PC用商品説明文(クリーン)' },
   { key: 'pcSaleDesc', label: '楽天: PC用販売説明文' },
   { key: 'spDesc', label: '楽天: SP用商品説明文' },
   { key: 'shippingMethod', label: '楽天: 配送方法' },
@@ -1155,7 +1156,7 @@ function getDefaultFsColumnSettings() {
     'バンドル販売': { source: 'fixed', value: '0' },
     '外部連携任意項目': { source: 'fixed', value: '0' },
     '外部連携商品名': { source: 'cleanName', value: '' },
-    '外部連携商品説明': { source: 'catchCopy', value: '' },
+    '外部連携商品説明': { source: 'pcDescClean', value: '' },
     'ページ名(コマースクリエイター)': { source: 'fixed', value: '{% product.name %}' },
     'ページ名表示方法(コマースクリエイター)': { source: 'fixed', value: '0' },
     'キーワード(コマースクリエイター)': { source: 'fixed', value: ',NOAHL,ノアル,レディース' },
@@ -1585,6 +1586,14 @@ function cleanProductName(name) {
   return cleaned.replace(/\s{2,}/g, ' ').trim();
 }
 
+// PC用商品説明文から【商品紹介】セクションを抽出しHTMLタグを除去
+function extractPcDescClean(pcDesc) {
+  if (!pcDesc) return '';
+  const m = pcDesc.match(/【商品紹介】(?:<br\s*\/?>)?\s*([\s\S]*?)\s*【[^】]+】/);
+  if (!m) return '';
+  return m[1].replace(/<br\s*\/?>/gi, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 // ============================================================
 // PRICE CALCULATION
 // ============================================================
@@ -1792,7 +1801,8 @@ function structureRakuten() {
         rowIndex: r, id: productId, number: col(row, '商品番号'),
         name: productName, cleanName: cleanProductName(productName),
         genreId: col(row, 'ジャンルID'), catchCopy: col(row, 'キャッチコピー'),
-        pcDesc: col(row, 'PC用商品説明文'), spDesc: col(row, 'スマートフォン用商品説明文'),
+        pcDesc: col(row, 'PC用商品説明文'), pcDescClean: extractPcDescClean(col(row, 'PC用商品説明文')),
+        spDesc: col(row, 'スマートフォン用商品説明文'),
         pcSaleDesc: col(row, 'PC用販売説明文'),
         warehouse: col(row, '倉庫指定'), searchDisplay: col(row, 'サーチ表示'),
         taxType: col(row, '消費税'), taxRate: col(row, '消費税率'),
