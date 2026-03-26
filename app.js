@@ -4779,7 +4779,12 @@ function convertToTiktok() {
   // Templateシートのインデックスを特定
   const sheetIndex = wb.SheetNames.indexOf(wsName) + 1;
 
-  return { tiktokXlsx: { binary, sheetIndex, dataRows, startRow: 5, numCols } };
+  // プレビュー用 headers/rows + ダウンロード用 tiktokXlsx を両方返す
+  const ttH = mappings.map(m => m.ttColumn);
+  return {
+    headers: ttH, rows: dataRows,
+    tiktokXlsx: { binary, sheetIndex, dataRows, startRow: 5, numCols },
+  };
 }
 
 // JSZipでテンプレートxlsxを直接編集してダウンロード（書式完全保持）
