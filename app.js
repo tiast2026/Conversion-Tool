@@ -1003,22 +1003,22 @@ function renderFsColumnSettings(sheetKey) {
   const countEl = document.getElementById('fs-' + sheetKey + '-count');
   if (countEl) countEl.textContent = settings.length + '項目';
   if (settings.length === 0) {
-    container.innerHTML = '<p style="font-size:11px; color:#aaa; margin:4px 0;">設定なし</p>';
+    container.innerHTML = '<p style="font-size:13px; color:#aaa; margin:6px 0;">設定なし</p>';
     return;
   }
   const srcLabels = {};
   RAKUTEN_SOURCE_FIELDS.forEach(f => srcLabels[f.key] = f.label);
-  let html = '<table style="width:100%; border-collapse:collapse; font-size:11px;">';
-  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">FutureShop列</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">ソース</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">操作</th><th style="text-align:left; padding:3px 6px; border-bottom:1px solid #ddd;">値</th><th style="width:28px;"></th></tr>';
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+  html += '<tr style="background:#f8f8f8;"><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">FutureShop列</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">ソース</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">操作</th><th style="text-align:left; padding:6px 10px; border-bottom:2px solid #ddd; font-size:13px; font-weight:600;">値</th><th style="width:36px;"></th></tr>';
   settings.forEach((entry, i) => {
     const srcLabel = srcLabels[entry.source] || entry.source;
     const actLabel = COLUMN_ACTION_LABELS[entry.action] || 'セット';
     html += '<tr>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace; white-space:nowrap;">' + entry.fsColumn + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-size:10px;">' + srcLabel + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-size:10px;">' + actLabel + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; font-family:monospace;">' + (entry.value || '') + '</td>';
-    html += '<td style="padding:2px 6px; border-bottom:1px solid #f0f0f0; text-align:center;"><button onclick="deleteFsColumnSetting(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:13px;" title="削除">✕</button></td>';
+    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee; white-space:nowrap;">' + entry.fsColumn + '</td>';
+    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee;">' + srcLabel + '</td>';
+    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee;">' + actLabel + '</td>';
+    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee; font-family:monospace;">' + (entry.value || '') + '</td>';
+    html += '<td style="padding:6px 10px; border-bottom:1px solid #eee; text-align:center;"><button onclick="deleteFsColumnSetting(\'' + sheetKey + '\',' + i + ')" style="background:none; border:none; color:#e53935; cursor:pointer; font-size:16px;" title="削除">✕</button></td>';
     html += '</tr>';
   });
   html += '</table>';
