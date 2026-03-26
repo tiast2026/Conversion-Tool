@@ -928,6 +928,7 @@ let _fsColumnSettings = { ccGoods: [], vc: [], vd: [], gs: [] };
 // 楽天商品フィールド（ソース選択肢）
 const RAKUTEN_SOURCE_FIELDS = [
   { key: 'fixed', label: '固定値' },
+  { key: 'none', label: '-' },
   { key: 'current', label: '変換済みの値' },
   { key: 'id', label: '楽天: 商品管理番号' },
   { key: 'number', label: '楽天: 商品番号' },
@@ -1174,18 +1175,21 @@ function getDefaultFsColumnSettings() {
       : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
   });
 
-  // vc: 明示的な値があるものだけ（fixed=''はプログラム側の値を上書きするため含めない）
+  // vc: 明示値あり→その値、なし→'-'（上書きしない）
   const vcDefaults = {
     'コントロールカラム': { source: 'fixed', value: 'n' },
   };
-  const vc = FS_SHEET_HEADERS.vc
-    .filter(col => vcDefaults[col])
-    .map(col => ({ fsColumn: col, source: vcDefaults[col].source, action: 'set', value: vcDefaults[col].value }));
+  const vc = FS_SHEET_HEADERS.vc.map(col => {
+    const d = vcDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'none', action: 'set', value: '' };
+  });
 
-  // vd: プログラム側で全列設定するため固定値なし
-  const vd = [];
+  // vd: 全列'-'（プログラム側で設定済み）
+  const vd = FS_SHEET_HEADERS.vd.map(col => ({ fsColumn: col, source: 'none', action: 'set', value: '' }));
 
-  // gs: 明示的な値があるものだけ
+  // gs: 明示値あり→その値、なし→'-'
   const gsDefaults = {
     'コントロールカラム': { source: 'fixed', value: 'n' },
     '選択肢タイプ': { source: 'fixed', value: 's' },
@@ -1193,9 +1197,12 @@ function getDefaultFsColumnSettings() {
     '項目名位置': { source: 'fixed', value: '0' },
     '項目選択肢表示': { source: 'fixed', value: '0' },
   };
-  const gs = FS_SHEET_HEADERS.gs
-    .filter(col => gsDefaults[col])
-    .map(col => ({ fsColumn: col, source: gsDefaults[col].source, action: 'set', value: gsDefaults[col].value }));
+  const gs = FS_SHEET_HEADERS.gs.map(col => {
+    const d = gsDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'none', action: 'set', value: '' };
+  });
 
   return { ccGoods, vc, vd, gs };
 }
@@ -1214,9 +1221,9 @@ function migrateFsColumnSettings(mallData) {
     const missing = defaults['ccGoods'].filter(e => !existingCols.has(e.fsColumn));
     return {
       ccGoods: [...existingCcGoods, ...missing],
-      vc: (cs['vc'] !== undefined ? cs['vc'] : defaults['vc']).filter(e => !(e.source === 'fixed' && e.value === '')),
-      vd: (cs['vd'] !== undefined ? cs['vd'] : defaults['vd']).filter(e => !(e.source === 'fixed' && e.value === '')),
-      gs: (cs['gs'] !== undefined ? cs['gs'] : defaults['gs']).filter(e => !(e.source === 'fixed' && e.value === '')),
+      vc: (cs['vc'] !== undefined ? cs['vc'] : defaults['vc']).map(e => e.source === 'fixed' && e.value === '' ? { ...e, source: 'none' } : e),
+      vd: (cs['vd'] !== undefined ? cs['vd'] : defaults['vd']).map(e => e.source === 'fixed' && e.value === '' ? { ...e, source: 'none' } : e),
+      gs: (cs['gs'] !== undefined ? cs['gs'] : defaults['gs']).map(e => e.source === 'fixed' && e.value === '' ? { ...e, source: 'none' } : e),
     };
   }
   const result = { ccGoods: [], vc: [], vd: [], gs: [] };
@@ -1248,6 +1255,7 @@ function applyFsColumnSettings(settings, colIndex, row, prod) {
   (settings || []).forEach(entry => {
     const ci = colIndex[entry.fsColumn];
     if (ci === undefined) return;
+    if (entry.source === 'none') return; // 上書きしない
     let baseVal;
     if (entry.source === 'fixed') {
       row[ci] = entry.value;
