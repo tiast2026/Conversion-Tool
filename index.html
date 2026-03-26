@@ -941,6 +941,16 @@
         <p style="font-size:11px; color:var(--text-light); margin-top:8px;">※テンプレートはマスタデータとしてGitHubに保存されます。</p>
       </div>
 
+      <h4 style="font-size:15px; font-weight:700; color:var(--primary-dark); margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">金額マスタ（価格変換テーブル）</h4>
+      <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">楽天価格帯からTikTok販売価格への変換ルールを設定します。範囲外の価格はそのまま使用されます。</p>
+      <div id="tiktok-price-ranges" style="max-height:350px; overflow-y:auto; margin-bottom:16px;"></div>
+      <div style="display:flex; gap:6px; align-items:center; margin-bottom:20px;">
+        <input type="number" id="tiktok-pr-max" placeholder="楽天MAX" style="width:100px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+        <input type="number" id="tiktok-pr-min" placeholder="楽天MIN" style="width:100px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+        <input type="number" id="tiktok-pr-price" placeholder="TikTok価格" style="width:100px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px;">
+        <button class="btn btn-sm btn-outline" onclick="addTiktokPriceRange()">追加</button>
+      </div>
+
       <h4 style="font-size:15px; font-weight:700; color:var(--primary-dark); margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">列マッピング設定</h4>
       <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">TikTok列と楽天フィールドの対応を設定します。テンプレートをアップロードすると列が自動表示されます。マッピングはGitHubに保存されます。</p>
       <div id="tiktok-column-mappings" style="max-height:500px; overflow-y:auto;"></div>

@@ -866,6 +866,7 @@ function loadMallMasterUI(mall) {
     if (statusEl) statusEl.textContent = hasTemplate ? '設定済み' : '未設定';
     _tiktokColumnMappings = ((MASTER.malls.tiktok || {}).columnMappings || []).map(e => Object.assign({}, e));
     renderTiktokColumnMappings();
+    renderTiktokPriceRanges();
   }
   if (mall === 'futureshop') {
     // レビュー投稿設定
@@ -988,7 +989,8 @@ function getTiktokPackageSize(category) {
 }
 
 // TikTok 価格変換テーブル（楽天価格帯 → TikTok価格）
-const TIKTOK_PRICE_RANGES = [
+// ハードコードのフォールバック（マスタ設定が空の場合に使用）
+const TIKTOK_PRICE_RANGES_DEFAULT = [
   { max: 9980, min: 8981, tiktokPrice: 6980 },
   { max: 8980, min: 7981, tiktokPrice: 6480 },
   { max: 7980, min: 6981, tiktokPrice: 5980 },
@@ -1001,7 +1003,9 @@ const TIKTOK_PRICE_RANGES = [
 function convertTiktokPrice(rakutenPrice) {
   const price = parseInt(String(rakutenPrice).replace(/[^0-9]/g, ''), 10);
   if (isNaN(price) || price === 0) return 0;
-  const matched = TIKTOK_PRICE_RANGES.find(r => price >= r.min && price <= r.max);
+  const ranges = (MASTER.malls.tiktok && MASTER.malls.tiktok.priceRanges && MASTER.malls.tiktok.priceRanges.length)
+    ? MASTER.malls.tiktok.priceRanges : TIKTOK_PRICE_RANGES_DEFAULT;
+  const matched = ranges.find(r => price >= r.min && price <= r.max);
   return matched ? matched.tiktokPrice : price;
 }
 
@@ -1091,6 +1095,65 @@ function clearTiktokTemplate() {
   if (statusEl) statusEl.textContent = '未設定';
   markMasterDirty();
   notify('テンプレートを削除しました。', 'info');
+}
+
+// ============================================================
+// TikTok 金額マスタ（価格変換テーブル）UI
+// ============================================================
+function renderTiktokPriceRanges() {
+  const container = document.getElementById('tiktok-price-ranges');
+  if (!container) return;
+  const tm = MASTER.malls.tiktok || {};
+  const ranges = tm.priceRanges || [];
+  if (!ranges.length) {
+    container.innerHTML = '<p style="font-size:13px; color:#aaa;">価格変換ルールが未設定です。デフォルト値が使用されます。</p>';
+    return;
+  }
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+  html += '<thead><tr style="background:var(--bg-light);"><th style="padding:6px 8px; text-align:left; border-bottom:2px solid var(--border);">楽天MAX</th><th style="padding:6px 8px; text-align:left; border-bottom:2px solid var(--border);">楽天MIN</th><th style="padding:6px 8px; text-align:left; border-bottom:2px solid var(--border);">TikTok価格</th><th style="padding:6px 8px; border-bottom:2px solid var(--border); width:50px;"></th></tr></thead><tbody>';
+  ranges.forEach((r, i) => {
+    html += `<tr style="border-bottom:1px solid var(--border);">`;
+    html += `<td style="padding:5px 8px;"><input type="number" value="${r.max}" onchange="updateTiktokPriceRange(${i},'max',this.value)" style="width:80px; padding:3px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px;"></td>`;
+    html += `<td style="padding:5px 8px;"><input type="number" value="${r.min}" onchange="updateTiktokPriceRange(${i},'min',this.value)" style="width:80px; padding:3px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px;"></td>`;
+    html += `<td style="padding:5px 8px;"><input type="number" value="${r.tiktokPrice}" onchange="updateTiktokPriceRange(${i},'tiktokPrice',this.value)" style="width:80px; padding:3px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px;"></td>`;
+    html += `<td style="padding:5px 8px; text-align:center;"><button onclick="deleteTiktokPriceRange(${i})" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:14px;">✕</button></td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function addTiktokPriceRange() {
+  const max = parseInt(document.getElementById('tiktok-pr-max').value);
+  const min = parseInt(document.getElementById('tiktok-pr-min').value);
+  const price = parseInt(document.getElementById('tiktok-pr-price').value);
+  if (!max || !min || !price) { notify('MAX・MIN・TikTok価格を全て入力してください', 'warning'); return; }
+  if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
+  if (!MASTER.malls.tiktok.priceRanges) MASTER.malls.tiktok.priceRanges = [];
+  MASTER.malls.tiktok.priceRanges.push({ max, min, tiktokPrice: price });
+  MASTER.malls.tiktok.priceRanges.sort((a, b) => b.max - a.max);
+  document.getElementById('tiktok-pr-max').value = '';
+  document.getElementById('tiktok-pr-min').value = '';
+  document.getElementById('tiktok-pr-price').value = '';
+  renderTiktokPriceRanges();
+  markMasterDirty();
+}
+
+function updateTiktokPriceRange(i, field, val) {
+  const tm = MASTER.malls.tiktok;
+  if (tm && tm.priceRanges && tm.priceRanges[i]) {
+    tm.priceRanges[i][field] = parseInt(val) || 0;
+    markMasterDirty();
+  }
+}
+
+function deleteTiktokPriceRange(i) {
+  const tm = MASTER.malls.tiktok;
+  if (tm && tm.priceRanges) {
+    tm.priceRanges.splice(i, 1);
+    renderTiktokPriceRanges();
+    markMasterDirty();
+  }
 }
 
 function renderTiktokColumnMappings() {

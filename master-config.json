@@ -1029,6 +1029,15 @@
         },
         "tiktok": {
           "columnMappings": [
+          "priceRanges": [
+            { "max": 9980, "min": 8981, "tiktokPrice": 6980 },
+            { "max": 8980, "min": 7981, "tiktokPrice": 6480 },
+            { "max": 7980, "min": 6981, "tiktokPrice": 5980 },
+            { "max": 6980, "min": 5981, "tiktokPrice": 5480 },
+            { "max": 5980, "min": 4981, "tiktokPrice": 4980 },
+            { "max": 4980, "min": 3981, "tiktokPrice": 4480 },
+            { "max": 3980, "min": 2981, "tiktokPrice": 3480 }
+          ],
             { "ttColumn": "category", "source": "tiktokCategory", "action": "set", "value": "" },
             { "ttColumn": "brand", "source": "fixed", "action": "set", "value": "NOAHL" },
             { "ttColumn": "product_name", "source": "cleanName", "action": "set", "value": "" },
