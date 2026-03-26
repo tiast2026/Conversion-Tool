@@ -227,6 +227,12 @@
                 "source": "fixed",
                 "action": "set",
                 "value": "全てのアイテム"
+              },
+              {
+                "fsColumn": "本体価格",
+                "source": "price",
+                "action": "set",
+                "value": ""
               }
             ],
             "vc": [
