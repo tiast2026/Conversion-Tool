@@ -724,13 +724,13 @@
                 "fsColumn": "レコメンド２：レコメンド表示フラグ(コマースクリエイター)",
                 "source": "fixed",
                 "action": "set",
-                "value": ""
+                "value": "0"
               },
               {
                 "fsColumn": "レコメンド２：レコメンド使用タグ優先設定(コマースクリエイター)",
                 "source": "fixed",
                 "action": "set",
-                "value": ""
+                "value": "0"
               },
               {
                 "fsColumn": "レコメンド２：出力タグ１",
