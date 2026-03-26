@@ -987,6 +987,24 @@ function getTiktokPackageSize(category) {
   return TIKTOK_PACKAGE_SIZE_MAP[category] || TIKTOK_DEFAULT_PACKAGE;
 }
 
+// TikTok 価格変換テーブル（楽天価格帯 → TikTok価格）
+const TIKTOK_PRICE_RANGES = [
+  { max: 9980, min: 8981, tiktokPrice: 6980 },
+  { max: 8980, min: 7981, tiktokPrice: 6480 },
+  { max: 7980, min: 6981, tiktokPrice: 5980 },
+  { max: 6980, min: 5981, tiktokPrice: 5480 },
+  { max: 5980, min: 4981, tiktokPrice: 4980 },
+  { max: 4980, min: 3981, tiktokPrice: 4480 },
+  { max: 3980, min: 2981, tiktokPrice: 3480 },
+];
+
+function convertTiktokPrice(rakutenPrice) {
+  const price = parseInt(String(rakutenPrice).replace(/[^0-9]/g, ''), 10);
+  if (isNaN(price) || price === 0) return 0;
+  const matched = TIKTOK_PRICE_RANGES.find(r => price >= r.min && price <= r.max);
+  return matched ? matched.tiktokPrice : price;
+}
+
 // ============================================================
 // TikTok 列マッピング
 // ============================================================
@@ -1011,7 +1029,7 @@ const TIKTOK_DEFAULT_SOURCE_MAP = {
   'property_name_2':       { source: 'var2Name',           value: '' },
   'property_value_2':      { source: 'var2Value',          value: '' },
   'seller_sku':            { source: 'skuCode',            value: '' },
-  'price':                 { source: 'skuPrice',           value: '' },
+  'price':                 { source: 'tiktokPrice',        value: '' },
   'quantity':              { source: 'stockQty',           value: '' },
   'size_chart':            { source: 'sizeChartImg',       value: '' },
   'parcel_weight':         { source: 'parcelWeight',       value: '' },
@@ -1178,6 +1196,7 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: 'var1Image', label: 'SKU: バリエーション1画像' },
   { key: 'var2Name',       label: 'SKU: バリエーション2名称' },
   { key: 'var2Value',      label: 'SKU: バリエーション2値' },
+  { key: 'tiktokPrice',        label: 'TikTok: 変換価格(楽天→TikTok)' },
   { key: 'stockQty',           label: 'SKU: 在庫数' },
   { key: 'sizeChartImg',       label: '楽天: サイズ表画像(最終画像)' },
   { key: 'tiktokDescWithImgs', label: '楽天: TikTok用説明文(画像タグ含む)' },
@@ -4628,7 +4647,7 @@ function expandProductsToSkuRows(prods) {
         var1Name: varNames[0] || '', var1Value: '', var1Image: '',
         var2Name: varNames[1] || '', var2Value: '',
         stockQty: 0, sizeChartImg, tiktokDescWithImgs,
-        tiktokCategory,
+        tiktokCategory, tiktokPrice: convertTiktokPrice(prod.price),
         parcelWeight: pkg.weight, parcelLength: pkg.length,
         parcelWidth: pkg.width,  parcelHeight: pkg.height,
       }));
@@ -4637,9 +4656,11 @@ function expandProductsToSkuRows(prods) {
         const v1 = sku.variants && sku.variants[0];
         const v2 = sku.variants && sku.variants[1];
         const skuImg = toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
+        const rawPrice = sku.price || prod.price || '';
         flatRows.push(Object.assign({}, prod, imgUrls, {
           skuCode: sku.systemSku || sku.skuMgmtNo || '',
-          skuPrice: sku.price || prod.price || '',
+          skuPrice: rawPrice,
+          tiktokPrice: convertTiktokPrice(rawPrice),
           skuImage: skuImg,
           var1Name:  v1 ? (keyToName[v1.key] || v1.key) : '',
           var1Value: v1 ? v1.value : '',

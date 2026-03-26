@@ -1054,7 +1054,7 @@
             { "ttColumn": "parcel_width", "source": "parcelWidth", "action": "set", "value": "" },
             { "ttColumn": "parcel_height", "source": "parcelHeight", "action": "set", "value": "" },
             { "ttColumn": "delivery", "source": "fixed", "action": "set", "value": "NOAHL送料" },
-            { "ttColumn": "price", "source": "skuPrice", "action": "set", "value": "" },
+            { "ttColumn": "price", "source": "tiktokPrice", "action": "set", "value": "" },
             { "ttColumn": "quantity", "source": "stockQty", "action": "set", "value": "" },
             { "ttColumn": "seller_sku", "source": "skuCode", "action": "set", "value": "" },
             { "ttColumn": "size_chart", "source": "sizeChartImg", "action": "set", "value": "" }
