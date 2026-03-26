@@ -1363,7 +1363,7 @@ function loadDefaultColorOrder() {
 function renderColorOrderTable() {
   const container = document.getElementById('color-order-table');
   if (!container) return;
-  const entries = Object.entries(MASTER.colorOrder).sort((a, b) => a[1] - b[1]);
+  const entries = Object.entries(MASTER.colorOrder).sort((a, b) => b[1] - a[1]);
   if (!entries.length) {
     container.innerHTML = '<p style="padding:12px; color:#999; font-size:12px;">データがありません</p>';
     return;
