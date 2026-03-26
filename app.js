@@ -3858,17 +3858,10 @@ function downloadMall(mallKey) {
   const bom = '\uFEFF';
   const ts = dateTimeStr();
 
-  // TikTok: xlsx出力
-  if (result.workbook) {
-    const wbOut = XLSX.write(result.workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbOut], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tiktok_${ts}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify('TikTokのExcelをダウンロードしました', 'success');
+  // TikTok: JSZipでテンプレートxlsxを直接編集（書式完全保持）
+  if (result.tiktokXlsx) {
+    const { binary, sheetIndex, dataRows, startRow, numCols } = result.tiktokXlsx;
+    downloadTiktokXlsx(binary, sheetIndex, dataRows, startRow, numCols, ts);
     return;
   }
 
@@ -4762,7 +4755,7 @@ function convertToTiktok() {
     return { headers: ttH, rows };
   }
 
-  // テンプレートあり: xlsx出力
+  // テンプレートあり: 列名取得のみSheetJS、出力はJSZip直接操作で書式保持
   const binary = Uint8Array.from(atob(templateB64), c => c.charCodeAt(0));
   const wb = XLSX.read(binary, { type: 'array' });
   const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
@@ -4776,15 +4769,89 @@ function convertToTiktok() {
     if (cell?.v) colIndex[String(cell.v)] = c;
   }
 
-  // 6行目（index 5）以降に商品データを書き込む
   const numCols = range.e.c + 1;
   const dataRows = flatRows.map(prod => {
     const row = new Array(numCols).fill('');
     applyTiktokMapping(mappings, colIndex, row, prod);
     return row;
   });
-  XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: { r: 5, c: 0 } });
-  return { workbook: wb };
+
+  // Templateシートのインデックスを特定
+  const sheetIndex = wb.SheetNames.indexOf(wsName) + 1;
+
+  return { tiktokXlsx: { binary, sheetIndex, dataRows, startRow: 5, numCols } };
+}
+
+// JSZipでテンプレートxlsxを直接編集してダウンロード（書式完全保持）
+async function downloadTiktokXlsx(binary, sheetIndex, dataRows, startRow, numCols, ts) {
+  try {
+    const zip = await JSZip.loadAsync(binary);
+    const sheetPath = `xl/worksheets/sheet${sheetIndex}.xml`;
+    const sheetXml = await zip.file(sheetPath).async('string');
+
+    // 共有文字列（sharedStrings.xml）を読み込み
+    let sst = [];
+    let sstXml = '';
+    const sstFile = zip.file('xl/sharedStrings.xml');
+    if (sstFile) {
+      sstXml = await sstFile.async('string');
+      const matches = sstXml.match(/<si>([\s\S]*?)<\/si>/g) || [];
+      sst = matches.map(m => m);
+    }
+
+    // データ行のXMLを構築（新規共有文字列はインライン文字列として出力）
+    let rowsXml = '';
+    for (let ri = 0; ri < dataRows.length; ri++) {
+      const rowNum = startRow + ri + 1; // 1-indexed
+      let cellsXml = '';
+      for (let ci = 0; ci < dataRows[ri].length; ci++) {
+        const val = dataRows[ri][ci];
+        if (val === '' || val === null || val === undefined) continue;
+        const colLetter = XLSX.utils.encode_col(ci);
+        const ref = `${colLetter}${rowNum}`;
+        if (typeof val === 'number') {
+          cellsXml += `<c r="${ref}"><v>${val}</v></c>`;
+        } else {
+          // インライン文字列で出力（共有文字列テーブルを変更しない）
+          const escaped = String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          cellsXml += `<c r="${ref}" t="inlineStr"><is><t>${escaped}</t></is></c>`;
+        }
+      }
+      rowsXml += `<row r="${rowNum}">${cellsXml}</row>`;
+    }
+
+    // 既存のデータ行（startRow以降）を削除し、新しいデータ行を挿入
+    // sheetDataの終了タグの前にデータ行を追加
+    let newXml = sheetXml;
+
+    // startRow以降の既存行を削除
+    const rowPattern = new RegExp(`<row\\s+r="(\\d+)"[\\s\\S]*?<\\/row>`, 'g');
+    newXml = newXml.replace(rowPattern, (match, rNum) => {
+      return parseInt(rNum) > startRow ? '' : match;
+    });
+
+    // </sheetData> の前にデータ行を挿入
+    newXml = newXml.replace('</sheetData>', rowsXml + '</sheetData>');
+
+    // dimensionを更新
+    const lastRow = startRow + dataRows.length;
+    const lastCol = XLSX.utils.encode_col(numCols - 1);
+    newXml = newXml.replace(/<dimension\s+ref="[^"]*"/, `<dimension ref="A1:${lastCol}${lastRow}"`);
+
+    zip.file(sheetPath, newXml);
+
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tiktok_${ts}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('TikTokのExcelをダウンロードしました', 'success');
+  } catch (e) {
+    console.error('TikTok xlsx生成エラー:', e);
+    notify('Excel生成に失敗しました: ' + e.message, 'error');
+  }
 }
 
 function applyTiktokMapping(mappings, colIndex, row, prod) {
