@@ -3795,10 +3795,12 @@ function renderStep4Download() {
     html += `</div>`;
     html += `<div class="card-body">`;
     if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
-    const dlLabel = key === 'rakuten' ? 'normal-item.csv' : key === 'tiktok' ? 'Excelダウンロード' : 'CSVダウンロード';
-    html += `<button class="btn btn-success" style="background:${mall.color};border-color:${mall.color};" onclick="downloadMall('${key}')">⬇ ${dlLabel}</button>`;
     if (key === 'rakuten') {
-      html += `<button class="btn btn-outline" onclick="downloadItemCat()" style="margin-top:6px; font-size:12px;">⬇ item-cat.csv</button>`;
+      html += `<button class="btn btn-success" style="background:${mall.color};border-color:${mall.color};" onclick="downloadRakutenAll()">⬇ CSVダウンロード</button>`;
+      html += `<div style="font-size:11px;color:var(--text-light);margin-top:6px;">normal-item.csv + item-cat.csv</div>`;
+    } else {
+      const dlLabel = key === 'tiktok' ? 'Excelダウンロード' : 'CSVダウンロード';
+      html += `<button class="btn btn-success" style="background:${mall.color};border-color:${mall.color};" onclick="downloadMall('${key}')">⬇ ${dlLabel}</button>`;
     }
     if (key === 'rakuten' && sourceType === 'jisha') {
       const hasApiCreds = MASTER.malls.rakuten.serviceSecret && MASTER.malls.rakuten.licenseKey;
@@ -5176,6 +5178,11 @@ function convertToItemCat() {
     rows.push(r);
   });
   return { headers: catHeaders, rows };
+}
+
+function downloadRakutenAll() {
+  downloadMall('rakuten');
+  setTimeout(() => downloadItemCat(), 500);
 }
 
 function downloadItemCat() {
