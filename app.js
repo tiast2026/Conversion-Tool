@@ -3788,7 +3788,7 @@ function renderStep4Download() {
     const fmtBg = mall.format === 'Excel' ? '#e8f5e9' : '#e3f2fd';
     html += `<div class="download-card" style="border-color:${mall.color}30;">`;
     html += `<div class="card-header" style="background:${mall.bg};">`;
-    html += `<div class="mall-icon" style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:12px;background:${mall.color};color:#fff;font-weight:800;font-size:18px;letter-spacing:-0.5px;">${mall.icon}</div>`;
+    html += `<div class="mall-icon" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:${mall.color};color:#fff;font-weight:800;font-size:15px;letter-spacing:-0.5px;">${mall.icon}</div>`;
     html += `<div class="mall-name" style="color:${mall.color};">${mall.name}</div>`;
     html += `<div class="mall-desc">${mall.desc}</div>`;
     html += `<span class="mall-format" style="background:${fmtBg};color:${fmtColor};">${mall.format}</span>`;
