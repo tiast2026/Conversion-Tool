@@ -3763,11 +3763,11 @@ function goToStep(n) {
 // STEP 4: DOWNLOAD
 // ============================================================
 const MALLS = {
-  rakuten: { name: '楽天', desc: '楽天市場 商品一括登録CSV' },
-  futureshop: { name: 'FutureShop', desc: 'FutureShop 商品CSV（4ファイル）' },
-  tiktok: { name: 'TikTok', desc: 'TikTok Shop 商品Excel' },
-  zozo: { name: 'ZOZO', desc: 'ZOZO用 商品Excel' },
-  rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品CSV' },
+  rakuten:     { name: '楽天',           desc: '楽天市場 商品一括登録', format: 'CSV',   icon: 'R', color: '#bf0000', bg: '#fff5f5' },
+  futureshop:  { name: 'FutureShop',    desc: 'FutureShop 商品（4ファイル）', format: 'CSV',   icon: 'FS', color: '#2c7be5', bg: '#f0f7ff' },
+  tiktok:      { name: 'TikTok',        desc: 'TikTok Shop 商品',     format: 'Excel', icon: 'TT', color: '#000000', bg: '#f5f5f5' },
+  zozo:        { name: 'ZOZO',          desc: 'ZOZO用 商品',          format: 'Excel', icon: 'ZZ', color: '#00a5bf', bg: '#f0fbfd' },
+  rakufashion: { name: '楽天ファッション', desc: '楽天ファッション 商品', format: 'CSV',   icon: 'RF', color: '#c41e68', bg: '#fef5f9' },
 };
 
 function renderStep4Download() {
@@ -3784,17 +3784,22 @@ function renderStep4Download() {
     : Object.entries(MALLS);
   mallEntries.forEach(([key, mall]) => {
     const isSame = (key === sourceType);
-    html += `<div class="download-card">`;
-    html += `<div class="mall-name">${mall.name}</div>`;
+    const fmtColor = mall.format === 'Excel' ? '#217346' : '#2c7be5';
+    const fmtBg = mall.format === 'Excel' ? '#e8f5e9' : '#e3f2fd';
+    html += `<div class="download-card" style="border-color:${mall.color}30;">`;
+    html += `<div class="card-header" style="background:${mall.bg};">`;
+    html += `<div class="mall-icon" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:${mall.color};color:#fff;font-weight:800;font-size:14px;letter-spacing:-0.5px;">${mall.icon}</div>`;
+    html += `<div class="mall-name" style="color:${mall.color};">${mall.name}</div>`;
     html += `<div class="mall-desc">${mall.desc}</div>`;
+    html += `<span class="mall-format" style="background:${fmtBg};color:${fmtColor};">${mall.format}</span>`;
+    html += `</div>`;
+    html += `<div class="card-body">`;
     if (isSame) html += `<div style="font-size:10px;color:var(--warning);margin-bottom:6px;">（元データと同じ形式）</div>`;
     const dlLabel = key === 'rakuten' ? 'normal-item.csv' : key === 'tiktok' ? 'Excelダウンロード' : 'CSVダウンロード';
-    html += `<button class="btn btn-success" onclick="downloadMall('${key}')">⬇ ${dlLabel}</button>`;
-    // 楽天の場合: item-cat.csvダウンロードボタン
+    html += `<button class="btn btn-success" style="background:${mall.color};border-color:${mall.color};" onclick="downloadMall('${key}')">⬇ ${dlLabel}</button>`;
     if (key === 'rakuten') {
       html += `<button class="btn btn-outline" onclick="downloadItemCat()" style="margin-top:6px; font-size:12px;">⬇ item-cat.csv</button>`;
     }
-    // 楽天 + 自社Excelの場合: API直接登録ボタンを追加
     if (key === 'rakuten' && sourceType === 'jisha') {
       const hasApiCreds = MASTER.malls.rakuten.serviceSecret && MASTER.malls.rakuten.licenseKey;
       html += `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">`;
@@ -3806,7 +3811,7 @@ function renderStep4Download() {
       }
       html += `</div>`;
     }
-    html += `</div>`;
+    html += `</div></div>`;
   });
 
   // ネクストエンジンAPI直接登録カード
