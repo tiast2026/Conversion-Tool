@@ -2283,9 +2283,9 @@ function renderRmsPreview() {
   // モール別CSV出力タブ
   const mallPreviews = [
     { tab: 'mall_futureshop', label: 'FutureShop', convertFn: 'futureshop' },
-    { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
     { tab: 'mall_zozo', label: 'ZOZO', convertFn: 'zozo' },
     { tab: 'mall_rakufashion', label: '楽天ファッション', convertFn: 'rakufashion' },
+    { tab: 'mall_tiktok', label: 'TikTok', convertFn: 'tiktok' },
   ];
 
   let html = '';
@@ -2371,6 +2371,21 @@ function refreshMallPreview(tabId, mallKey) {
     return;
   }
   if (!result) { area.innerHTML = '<p style="color:#999;">変換データがありません。</p>'; return; }
+
+  // workbook（TikTok xlsx等）: Templateシートをプレビュー表示
+  if (result.workbook) {
+    const wb = result.workbook;
+    const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
+    const ws = wb.Sheets[wsName];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (!data || data.length === 0) { area.innerHTML = '<p style="color:#999;">データなし</p>'; return; }
+    const headers = data[0].map(String);
+    const rows = data.slice(6); // 7行目以降がデータ
+    let html = '<div style="margin-bottom:8px;"><span style="font-size:11px; color:#888;">(' + rows.length + '行 × ' + headers.length + '列) ※Templateシート7行目以降</span></div>';
+    html += buildCsvPreviewTable(headers, rows);
+    area.innerHTML = html;
+    return;
+  }
 
   // FutureShopは複数シートを返す
   if (result.sheets) {
