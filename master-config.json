@@ -1187,7 +1187,7 @@
             },
             {
               "ttColumn": "quantity",
-              "source": "stockQty",
+              "source": "fixed",
               "action": "set",
               "value": "0"
             },
