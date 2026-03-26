@@ -233,6 +233,102 @@
                 "source": "price",
                 "action": "set",
                 "value": ""
+              },
+              {
+                "fsColumn": "個別送料表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "オススメ商品商品ページ内表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "オススメ商品表示方法",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "商品価格上部コメントHTMLタグ",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "定価価格前文字",
+                "source": "fixed",
+                "action": "set",
+                "value": "定価"
+              },
+              {
+                "fsColumn": "定価価格後文字",
+                "source": "fixed",
+                "action": "set",
+                "value": "のところ"
+              },
+              {
+                "fsColumn": "販売価格前文字",
+                "source": "fixed",
+                "action": "set",
+                "value": "当店特別価格"
+              },
+              {
+                "fsColumn": "在庫なし表示テキスト表示方法",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "現在在庫数",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "バリエーション横軸名",
+                "source": "fixed",
+                "action": "set",
+                "value": "カラー"
+              },
+              {
+                "fsColumn": "バリエーション縦軸名",
+                "source": "fixed",
+                "action": "set",
+                "value": "サイズ"
+              },
+              {
+                "fsColumn": "会員価格設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "アクセス制限",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "ステータス（他社サービス）",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "サンプル商品設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "サンプル商品同梱設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
               }
             ],
             "vc": [
