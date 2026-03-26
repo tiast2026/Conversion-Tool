@@ -2180,7 +2180,7 @@ function renderRmsPreview() {
       }
       prevIsMall = !!item.isMall;
       if (item.isMall) {
-        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:8px 14px; cursor:pointer; font-size:12px; font-weight:700; border:1px solid ' + (isActive ? '#1565c0' : '#1976d2') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#1565c0' : '#1976d2') + '; color:#fff; margin-left:3px;">' + item.label + '</div>';
+        html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:700; border:1px solid ' + (isActive ? '#1565c0' : '#1976d2') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#1565c0' : '#1976d2') + '; color:#fff; margin-left:3px;">' + item.label + '</div>';
       } else {
         html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">' + item.label + '</div>';
       }
