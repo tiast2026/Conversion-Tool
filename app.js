@@ -1174,23 +1174,18 @@ function getDefaultFsColumnSettings() {
       : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
   });
 
-  // vc: 全列
+  // vc: 明示的な値があるものだけ（fixed=''はプログラム側の値を上書きするため含めない）
   const vcDefaults = {
     'コントロールカラム': { source: 'fixed', value: 'n' },
   };
-  const vc = FS_SHEET_HEADERS.vc.map(col => {
-    const d = vcDefaults[col];
-    return d
-      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
-      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
-  });
+  const vc = FS_SHEET_HEADERS.vc
+    .filter(col => vcDefaults[col])
+    .map(col => ({ fsColumn: col, source: vcDefaults[col].source, action: 'set', value: vcDefaults[col].value }));
 
-  // vd: 全列
-  const vd = FS_SHEET_HEADERS.vd.map(col => {
-    return { fsColumn: col, source: 'fixed', action: 'set', value: '' };
-  });
+  // vd: プログラム側で全列設定するため固定値なし
+  const vd = [];
 
-  // gs: 全列
+  // gs: 明示的な値があるものだけ
   const gsDefaults = {
     'コントロールカラム': { source: 'fixed', value: 'n' },
     '選択肢タイプ': { source: 'fixed', value: 's' },
@@ -1198,12 +1193,9 @@ function getDefaultFsColumnSettings() {
     '項目名位置': { source: 'fixed', value: '0' },
     '項目選択肢表示': { source: 'fixed', value: '0' },
   };
-  const gs = FS_SHEET_HEADERS.gs.map(col => {
-    const d = gsDefaults[col];
-    return d
-      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
-      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
-  });
+  const gs = FS_SHEET_HEADERS.gs
+    .filter(col => gsDefaults[col])
+    .map(col => ({ fsColumn: col, source: gsDefaults[col].source, action: 'set', value: gsDefaults[col].value }));
 
   return { ccGoods, vc, vd, gs };
 }
@@ -1222,9 +1214,9 @@ function migrateFsColumnSettings(mallData) {
     const missing = defaults['ccGoods'].filter(e => !existingCols.has(e.fsColumn));
     return {
       ccGoods: [...existingCcGoods, ...missing],
-      vc: cs['vc'] !== undefined ? cs['vc'] : defaults['vc'],
-      vd: cs['vd'] !== undefined ? cs['vd'] : defaults['vd'],
-      gs: cs['gs'] !== undefined ? cs['gs'] : defaults['gs'],
+      vc: (cs['vc'] !== undefined ? cs['vc'] : defaults['vc']).filter(e => !(e.source === 'fixed' && e.value === '')),
+      vd: (cs['vd'] !== undefined ? cs['vd'] : defaults['vd']).filter(e => !(e.source === 'fixed' && e.value === '')),
+      gs: (cs['gs'] !== undefined ? cs['gs'] : defaults['gs']).filter(e => !(e.source === 'fixed' && e.value === '')),
     };
   }
   const result = { ccGoods: [], vc: [], vd: [], gs: [] };
