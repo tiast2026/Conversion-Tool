@@ -112,9 +112,6 @@
           "neUid": "650ea422cdcf00c612334436cf630c58961a4f7cfb09a7240410446f28e49ab9bfe2f33ee74204fb58fbee4e0d7f7a5f8a53edd19859baf4ddba91697666ad7a"
         },
         "futureshop": {
-          "priceRate": 100,
-          "namePrefix": "",
-          "nameSuffix": "",
           "columnSettings": {
             "ccGoods": [
               {
@@ -133,7 +130,7 @@
                 "fsColumn": "消費税",
                 "source": "fixed",
                 "action": "set",
-                "value": "0"
+                "value": "1"
               },
               {
                 "fsColumn": "送料",
@@ -182,6 +179,54 @@
                 "source": "pcDesc",
                 "action": "set",
                 "value": ""
+              },
+              {
+                "fsColumn": "優先度",
+                "source": "fixed",
+                "action": "set",
+                "value": "10000"
+              },
+              {
+                "fsColumn": "販売期間表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "クール便指定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "送料パターン表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "商品URLコード",
+                "source": "number",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品番号",
+                "source": "number",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品名",
+                "source": "catchCopy",
+                "action": "remove",
+                "value": "【メール便】"
+              },
+              {
+                "fsColumn": "メイングループ",
+                "source": "fixed",
+                "action": "set",
+                "value": "全てのアイテム"
               }
             ],
             "vc": [
@@ -226,6 +271,9 @@
               }
             ]
           },
+          "priceRate": 100,
+          "namePrefix": "",
+          "nameSuffix": "",
           "ccGoodsDefaults": {},
           "vcDefaults": {},
           "vdDefaults": {},
