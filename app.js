@@ -1119,62 +1119,95 @@ function deleteFsColumnSetting(sheetKey, index) {
   markMasterDirty();
 }
 
-// デフォルトの列マッピング設定（実際のFutureShop出力データに基づく）
+// デフォルトの列マッピング設定（全列を表示、実データに基づく値を設定）
 function getDefaultFsColumnSettings() {
-  return {
-    ccGoods: [
-      { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
-      { fsColumn: 'ステータス', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: 'メイングループ', source: 'fixed', action: 'set', value: '全てのアイテム' },
-      { fsColumn: '優先度', source: 'fixed', action: 'set', value: '10000' },
-      { fsColumn: '消費税', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: '販売期間表示', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'クール便指定', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '送料', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '送料パターン表示', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '個別送料表示', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'オススメ商品商品ページ内表示', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: 'オススメ商品表示方法', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '商品価格上部コメントHTMLタグ', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '定価価格前文字', source: 'fixed', action: 'set', value: '定価' },
-      { fsColumn: '定価価格後文字', source: 'fixed', action: 'set', value: 'のところ' },
-      { fsColumn: '販売価格前文字', source: 'fixed', action: 'set', value: '当店特別価格' },
-      { fsColumn: '取消線', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: '定価表示方法', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '在庫管理', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: '在庫数表示設定', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '在庫数表示設定方法', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '在庫数切れメール閾値', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '会員価格設定', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'アクセス制限', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'ポイント付与率設定', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'ステータス（他社サービス）', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'サンプル商品設定', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '入荷お知らせメールボタン表示', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: 'バンドル販売', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '外部連携任意項目', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'ページ名(コマースクリエイター)', source: 'fixed', action: 'set', value: '{% product.name %}' },
-      { fsColumn: 'ページ名表示方法(コマースクリエイター)', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: 'キーワード(コマースクリエイター)', source: 'fixed', action: 'set', value: ',NOAHL,ノアル,レディース' },
-      { fsColumn: 'キーワード表示方法(コマースクリエイター)', source: 'fixed', action: 'set', value: '2' },
-      { fsColumn: 'Description表示方法(コマースクリエイター)', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '外部連携商品説明', source: 'catchCopy', action: 'set', value: '' },
-      { fsColumn: '商品説明（大）', source: 'spDesc', action: 'set', value: '' },
-      { fsColumn: '商品説明（小）', source: 'catchCopy', action: 'set', value: '' },
-      { fsColumn: '配送種別', source: 'fixed', action: 'set', value: '0100' },
-    ],
-    vc: [
-      { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
-    ],
-    vd: [],
-    gs: [
-      { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
-      { fsColumn: '選択肢タイプ', source: 'fixed', action: 'set', value: 's' },
-      { fsColumn: '項目選択肢前改行', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '項目名位置', source: 'fixed', action: 'set', value: '0' },
-      { fsColumn: '項目選択肢表示', source: 'fixed', action: 'set', value: '0' },
-    ]
+  // ccGoods: 既知のデフォルト値マップ
+  const ccGoodsDefaults = {
+    'コントロールカラム': { source: 'fixed', value: 'n' },
+    'ステータス': { source: 'fixed', value: '1' },
+    'メイングループ': { source: 'fixed', value: '全てのアイテム' },
+    '優先度': { source: 'fixed', value: '10000' },
+    '消費税': { source: 'fixed', value: '1' },
+    '販売期間表示': { source: 'fixed', value: '0' },
+    'クール便指定': { source: 'fixed', value: '0' },
+    '送料': { source: 'fixed', value: '0' },
+    '送料パターン表示': { source: 'fixed', value: '0' },
+    '個別送料表示': { source: 'fixed', value: '0' },
+    'オススメ商品商品ページ内表示': { source: 'fixed', value: '1' },
+    'オススメ商品表示方法': { source: 'fixed', value: '0' },
+    '商品価格上部コメントHTMLタグ': { source: 'fixed', value: '0' },
+    '定価価格前文字': { source: 'fixed', value: '定価' },
+    '定価価格後文字': { source: 'fixed', value: 'のところ' },
+    '販売価格前文字': { source: 'fixed', value: '当店特別価格' },
+    '取消線': { source: 'fixed', value: '1' },
+    '定価表示方法': { source: 'fixed', value: '0' },
+    '在庫管理': { source: 'fixed', value: '1' },
+    '在庫数表示設定': { source: 'fixed', value: '0' },
+    '在庫数表示設定方法': { source: 'fixed', value: '0' },
+    '在庫数切れメール閾値': { source: 'fixed', value: '0' },
+    'バリエーション横軸名': { source: 'fixed', value: 'カラー' },
+    'バリエーション縦軸名': { source: 'fixed', value: 'サイズ' },
+    '会員価格設定': { source: 'fixed', value: '0' },
+    'アクセス制限': { source: 'fixed', value: '0' },
+    'ポイント付与率設定': { source: 'fixed', value: '0' },
+    'ステータス（他社サービス）': { source: 'fixed', value: '0' },
+    'サンプル商品設定': { source: 'fixed', value: '0' },
+    '入荷お知らせメールボタン表示': { source: 'fixed', value: '1' },
+    'キャッチコピー': { source: 'cleanName', value: '' },
+    'メール便指定': { source: 'fixed', value: '0' },
+    'バンドル販売': { source: 'fixed', value: '0' },
+    '外部連携任意項目': { source: 'fixed', value: '0' },
+    '外部連携商品名': { source: 'cleanName', value: '' },
+    '外部連携商品説明': { source: 'catchCopy', value: '' },
+    'ページ名(コマースクリエイター)': { source: 'fixed', value: '{% product.name %}' },
+    'ページ名表示方法(コマースクリエイター)': { source: 'fixed', value: '0' },
+    'キーワード(コマースクリエイター)': { source: 'fixed', value: ',NOAHL,ノアル,レディース' },
+    'キーワード表示方法(コマースクリエイター)': { source: 'fixed', value: '2' },
+    'Description表示方法(コマースクリエイター)': { source: 'fixed', value: '0' },
+    '商品説明（大）': { source: 'spDesc', value: '' },
+    '商品説明（小）': { source: 'catchCopy', value: '' },
+    '配送種別': { source: 'fixed', value: '0100' },
   };
+  // 全114列を生成（値がないものはfixed空欄）
+  const ccGoods = FS_SHEET_HEADERS.ccGoods.map(col => {
+    const d = ccGoodsDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
+  });
+
+  // vc: 全列
+  const vcDefaults = {
+    'コントロールカラム': { source: 'fixed', value: 'n' },
+  };
+  const vc = FS_SHEET_HEADERS.vc.map(col => {
+    const d = vcDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
+  });
+
+  // vd: 全列
+  const vd = FS_SHEET_HEADERS.vd.map(col => {
+    return { fsColumn: col, source: 'fixed', action: 'set', value: '' };
+  });
+
+  // gs: 全列
+  const gsDefaults = {
+    'コントロールカラム': { source: 'fixed', value: 'n' },
+    '選択肢タイプ': { source: 'fixed', value: 's' },
+    '項目選択肢前改行': { source: 'fixed', value: '0' },
+    '項目名位置': { source: 'fixed', value: '0' },
+    '項目選択肢表示': { source: 'fixed', value: '0' },
+  };
+  const gs = FS_SHEET_HEADERS.gs.map(col => {
+    const d = gsDefaults[col];
+    return d
+      ? { fsColumn: col, source: d.source, action: 'set', value: d.value }
+      : { fsColumn: col, source: 'fixed', action: 'set', value: '' };
+  });
+
+  return { ccGoods, vc, vd, gs };
 }
 
 // 旧フォーマットからの移行
@@ -4027,36 +4060,33 @@ function convertToFutureshop() {
     const fsCatchCopy = prod.catchCopy || prod.productPoint || '';
     const fsCleanName = cleanProductName(fsCatchCopy) || prod.cleanName || prod.name || '';
     const name = applyMallName(fsCleanName, 'futureshop');
-    const basePrice = prod.sellPrice || prod.skus[0]?.price || '';
-    const price = calcMallPrice(basePrice, 'futureshop');
+
+    // 本体価格: 楽天商品名の末尾数字を逆順にして取得
+    let price = '';
+    if (sourceType === 'rakuten') {
+      const rawName = prod.name || '';
+      const lastNumMatch = rawName.match(/(\d+)\s*$/);
+      if (lastNumMatch) {
+        price = lastNumMatch[1].split('').reverse().join('');
+        // 先頭の0を除去
+        price = price.replace(/^0+/, '') || '0';
+      }
+    }
+    if (!price) {
+      const basePrice = prod.sellPrice || prod.skus[0]?.price || '';
+      price = calcMallPrice(basePrice, 'futureshop');
+    }
+
     const hasColor = sortedColors.length > 0;
     const hasSize = sortedSizes.length > 0;
 
     const row = new Array(ccH.length).fill('');
 
-    // 商品個別の値
+    // 商品個別の値（動的に決まるもの）
     row[ccI['商品URLコード']] = prod.id || prod.number || '';
     row[ccI['商品番号']] = prod.id || prod.number || '';
     row[ccI['商品名']] = name;
     row[ccI['本体価格']] = price;
-    if (hasColor) row[ccI['バリエーション横軸名']] = 'カラー';
-    if (hasSize) row[ccI['バリエーション縦軸名']] = 'サイズ';
-    row[ccI['キャッチコピー']] = fsCleanName;
-    row[ccI['外部連携商品名']] = fsCleanName;
-
-    // 商品説明（大）・（小）: 楽天ソースでは実データを直接使用
-    // 実データ: 商品説明（大）= SP用商品説明文, 商品説明（小）= キャッチコピー/PC用商品説明文
-    if (sourceType === 'rakuten') {
-      row[ccI['商品説明（大）']] = prod.spDesc || prod.pcSaleDesc || '';
-      row[ccI['商品説明（小）']] = prod.catchCopy || prod.pcDesc || '';
-    } else {
-      row[ccI['商品説明（大）']] = fm.descLargeTpl
-        ? applyDescTemplate(fm.descLargeTpl, prod)
-        : applyDescTemplate(rm.saleDescTpl, prod);
-      row[ccI['商品説明（小）']] = fm.descSmallTpl
-        ? applyDescTemplate(fm.descSmallTpl, prod)
-        : applyDescTemplate(rm.pcDescTpl, prod);
-    }
 
     // メール便指定（配送方法またはキャッチコピーから判定）
     const shippingHint = prod.shippingMethod || fsCatchCopy || prod.name || '';
@@ -4065,7 +4095,7 @@ function convertToFutureshop() {
       row[ccI['メール便同梱数']] = '0';
     }
 
-    // 列マッピング適用（ccGoods_）
+    // 列マッピング適用（ccGoods_）- マスタ設定の値で上書き
     applyFsColumnSettings(csData.ccGoods, ccI, row, prod);
 
     ccRows.push(row);
