@@ -939,18 +939,29 @@ let _tiktokColumnMappings = [];
 // TikTok 列マッピング
 // ============================================================
 const TIKTOK_DEFAULT_SOURCE_MAP = {
-  'category':            { source: 'fixed',       value: '' },
-  'brand':               { source: 'fixed',       value: '' },
-  'product_name':        { source: 'cleanName',   value: '' },
-  'product_description': { source: 'pcDescClean', value: '' },
-  'main_image':          { source: 'img1',        value: '' },
-  'image_2':             { source: 'img2',        value: '' },
-  'image_3':             { source: 'img3',        value: '' },
-  'image_4':             { source: 'img4',        value: '' },
-  'image_5':             { source: 'img5',        value: '' },
-  'image_6':             { source: 'img6',        value: '' },
-  'image_7':             { source: 'img7',        value: '' },
-  'image_8':             { source: 'img8',        value: '' },
+  'category':              { source: 'fixed',      value: '' },
+  'brand':                 { source: 'fixed',      value: '' },
+  'product_name':          { source: 'cleanName',  value: '' },
+  'product_description':   { source: 'tiktokDesc', value: '' },
+  'main_image':            { source: 'img1',       value: '' },
+  'image_2':               { source: 'img2',       value: '' },
+  'image_3':               { source: 'img3',       value: '' },
+  'image_4':               { source: 'img4',       value: '' },
+  'image_5':               { source: 'img5',       value: '' },
+  'image_6':               { source: 'img6',       value: '' },
+  'image_7':               { source: 'img7',       value: '' },
+  'image_8':               { source: 'img8',       value: '' },
+  'image_9':               { source: 'img9',       value: '' },
+  // SKU / バリエーション
+  'property_name':         { source: 'var1Name',   value: '' },
+  'property_value_1':      { source: 'var1Value',  value: '' },
+  'property_value_1_image':{ source: 'var1Image',  value: '' },
+  'property_value_2_name': { source: 'var2Name',   value: '' },
+  'property_value_2':      { source: 'var2Value',  value: '' },
+  'seller_sku':            { source: 'skuCode',    value: '' },
+  'sku_seller_sku':        { source: 'skuCode',    value: '' },
+  'price':                 { source: 'skuPrice',   value: '' },
+  'sku_price':             { source: 'skuPrice',   value: '' },
 };
 
 function getDefaultTiktokMappings(columns) {
@@ -1069,6 +1080,7 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: '_catalogReason', label: '楽天: カタログIDなしの理由' },
   { key: 'pcDesc', label: '楽天: PC用商品説明文' },
   { key: 'pcDescClean', label: '楽天: PC用商品説明文(クリーン)' },
+  { key: 'tiktokDesc', label: '楽天: TikTok用説明文(商品紹介+素材+備考)' },
   { key: 'pcSaleDesc', label: '楽天: PC用販売説明文' },
   { key: 'spDesc', label: '楽天: SP用商品説明文' },
   { key: 'shippingMethod', label: '楽天: 配送方法' },
@@ -1101,6 +1113,14 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: 'img8',  label: '楽天: 画像8' },
   { key: 'img9',  label: '楽天: 画像9' },
   { key: 'img10', label: '楽天: 画像10' },
+  { key: 'skuCode',   label: 'SKU: SKU番号' },
+  { key: 'skuPrice',  label: 'SKU: 価格' },
+  { key: 'skuImage',  label: 'SKU: SKU画像' },
+  { key: 'var1Name',  label: 'SKU: バリエーション1名称' },
+  { key: 'var1Value', label: 'SKU: バリエーション1値' },
+  { key: 'var1Image', label: 'SKU: バリエーション1画像' },
+  { key: 'var2Name',  label: 'SKU: バリエーション2名称' },
+  { key: 'var2Value', label: 'SKU: バリエーション2値' },
 ];
 
 const COLUMN_ACTION_LABELS = { set: 'セット', prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
@@ -1730,6 +1750,61 @@ function extractPcDescClean(pcDesc) {
   return m[1].replace(/<br\s*\/?>/gi, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// TikTok用説明文生成: table形式・【】形式の両方に対応
+// 商品紹介・素材とカラー・備考を整形し、※注意書きを末尾に追加
+function buildTiktokDesc(html) {
+  if (!html) return '';
+  function decodeEntities(s) {
+    return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+  }
+  function splitNotices(text) {
+    const biko = [], notices = [];
+    text.split('\n').forEach(ln => { const t = ln.trim(); if (!t) return; (/^※/.test(t) ? notices : biko).push(t); });
+    return { biko: biko.join('\n'), notices: notices.join('\n') };
+  }
+  let intro = '', material = '', color = '', biko = '', notices = '';
+  const isTable = /<table[\s>]/i.test(html) && /<th[^>]*>[\s\S]*?商品紹介/i.test(html);
+  if (isTable) {
+    const pat = /<th[^>]*>([\s\S]*?)<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>/gi;
+    let m;
+    while ((m = pat.exec(html)) !== null) {
+      const hd = m[1].replace(/<[^>]+>/g,'').trim();
+      const ct = decodeEntities(m[2].replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'')).trim();
+      if (/商品紹介/.test(hd)) intro = ct;
+      else if (/素材/.test(hd)) material = ct;
+      else if (/カラー/.test(hd)) color = ct;
+      else if (/備考/.test(hd)) { const sp = splitNotices(ct); biko = sp.biko; notices = sp.notices; }
+    }
+  } else {
+    let t = html;
+    const si = t.search(/【商品紹介】|商品紹介/);
+    if (si === -1) return extractPcDescClean(html);
+    t = decodeEntities(t.substring(si).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,''));
+    const sections = {};
+    let cur = '';
+    t.split('\n').forEach(rawLn => {
+      const ln = rawLn.trim(); if (!ln) return;
+      const hm = ln.match(/^【(.+?)】/);
+      if (hm) { cur = hm[1]; const rest = ln.replace(/^【.+?】/,'').trim(); if (rest) (sections[cur] = sections[cur]||[]).push(rest); }
+      else if (cur) (sections[cur] = sections[cur]||[]).push(ln);
+    });
+    intro = (sections['商品紹介']||[]).join('\n');
+    material = (sections['素材']||[]).join('\n');
+    color = (sections['カラー']||[]).join('\n');
+    if (sections['備考']) { const sp = splitNotices(sections['備考'].join('\n')); biko = sp.biko; notices = sp.notices; }
+  }
+  const parts = [];
+  if (intro) parts.push('【商品紹介】\n' + intro);
+  if (material || color) {
+    parts.push('\n【素材とカラー】');
+    if (material) parts.push('素材：' + material);
+    if (color) parts.push('カラー：' + color);
+  }
+  if (biko) parts.push('\n【備考】\n' + biko);
+  if (notices) parts.push('\n' + notices);
+  return parts.join('\n').trim();
+}
+
 // ============================================================
 // PRICE CALCULATION
 // ============================================================
@@ -1938,6 +2013,7 @@ function structureRakuten() {
         name: productName, cleanName: cleanProductName(productName),
         genreId: col(row, 'ジャンルID'), catchCopy: col(row, 'キャッチコピー'),
         pcDesc: col(row, 'PC用商品説明文'), pcDescClean: extractPcDescClean(col(row, 'PC用商品説明文')),
+        tiktokDesc: buildTiktokDesc(col(row, 'PC用商品説明文') || col(row, 'スマートフォン用商品説明文')),
         spDesc: col(row, 'スマートフォン用商品説明文'),
         pcSaleDesc: col(row, 'PC用販売説明文'),
         warehouse: col(row, '倉庫指定'), searchDisplay: col(row, 'サーチ表示'),
@@ -4421,17 +4497,63 @@ function convertToFutureshop() {
 // ============================================================
 // CONVERSION: TikTok Shop
 // ============================================================
+
+// 商品をSKUごとに展開し、バリエーション情報をフラット化
+function expandProductsToSkuRows(prods) {
+  const rm = MASTER.malls.rakuten || {};
+  const shopId = rm.shopId || '';
+  function toFullUrl(path) {
+    if (!path) return '';
+    if (/^https?:\/\//.test(path)) return path;
+    if (!shopId) return path;
+    return 'https://image.rakuten.co.jp/' + shopId + '/cabinet' + (path.startsWith('/') ? path : '/' + path);
+  }
+  const flatRows = [];
+  prods.forEach(prod => {
+    const varKeys = (prod.varDef && prod.varDef.keys ? prod.varDef.keys : '').split('|').filter(Boolean);
+    const varNames = (prod.varDef && prod.varDef.names ? prod.varDef.names : '').split('|').filter(Boolean);
+    const keyToName = {};
+    varKeys.forEach((k, i) => { keyToName[k] = varNames[i] || k; });
+    if (!prod.skus || prod.skus.length === 0) {
+      flatRows.push(Object.assign({}, prod, {
+        skuCode: prod.id || '', skuPrice: prod.price || '',
+        skuImage: toFullUrl(prod.img1),
+        var1Name: varNames[0] || '', var1Value: '', var1Image: '',
+        var2Name: varNames[1] || '', var2Value: '',
+      }));
+    } else {
+      prod.skus.forEach(sku => {
+        const v1 = sku.variants && sku.variants[0];
+        const v2 = sku.variants && sku.variants[1];
+        const skuImg = toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
+        flatRows.push(Object.assign({}, prod, {
+          skuCode: sku.systemSku || sku.skuMgmtNo || '',
+          skuPrice: sku.price || prod.price || '',
+          skuImage: skuImg,
+          var1Name:  v1 ? (keyToName[v1.key] || v1.key) : '',
+          var1Value: v1 ? v1.value : '',
+          var1Image: toFullUrl(sku.skuImgPath) || '',
+          var2Name:  v2 ? (keyToName[v2.key] || v2.key) : '',
+          var2Value: v2 ? v2.value : '',
+        }));
+      });
+    }
+  });
+  return flatRows;
+}
+
 function convertToTiktok() {
   const tm = MASTER.malls.tiktok || {};
   const mappings = tm.columnMappings || [];
-  const templateB64 = (MASTER.malls.tiktok || {}).templateData || '';
+  const templateB64 = tm.templateData || '';
+  const flatRows = expandProductsToSkuRows(products);
 
   // テンプレートなし: シンプルCSVプレビュー
   if (!templateB64) {
     const ttH = mappings.length ? mappings.map(m => m.ttColumn) : ['商品コード', '商品名', '商品説明'];
     const colIndex = {};
     ttH.forEach((h, i) => colIndex[h] = i);
-    const rows = products.map(prod => {
+    const rows = flatRows.map(prod => {
       const row = new Array(ttH.length).fill('');
       applyTiktokMapping(mappings, colIndex, row, prod);
       return row;
@@ -4455,7 +4577,7 @@ function convertToTiktok() {
 
   // 7行目（index 6）以降に商品データを書き込む
   const numCols = range.e.c + 1;
-  const dataRows = products.map(prod => {
+  const dataRows = flatRows.map(prod => {
     const row = new Array(numCols).fill('');
     applyTiktokMapping(mappings, colIndex, row, prod);
     return row;
