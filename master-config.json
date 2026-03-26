@@ -121,94 +121,16 @@
                 "value": "n"
               },
               {
-                "fsColumn": "ステータス",
-                "source": "fixed",
-                "action": "set",
-                "value": "1"
-              },
-              {
-                "fsColumn": "消費税",
-                "source": "fixed",
-                "action": "set",
-                "value": "1"
-              },
-              {
-                "fsColumn": "送料",
-                "source": "fixed",
-                "action": "set",
-                "value": "0"
-              },
-              {
-                "fsColumn": "在庫管理",
-                "source": "fixed",
-                "action": "set",
-                "value": "1"
-              },
-              {
-                "fsColumn": "在庫数表示設定",
-                "source": "fixed",
-                "action": "set",
-                "value": "0"
-              },
-              {
-                "fsColumn": "ポイント付与率設定",
-                "source": "fixed",
-                "action": "set",
-                "value": "0"
-              },
-              {
-                "fsColumn": "入荷お知らせメールボタン表示",
-                "source": "fixed",
-                "action": "set",
-                "value": "1"
-              },
-              {
-                "fsColumn": "JANコード",
-                "source": "jan",
-                "action": "set",
-                "value": ""
-              },
-              {
-                "fsColumn": "商品説明（大）",
-                "source": "pcSaleDesc",
-                "action": "set",
-                "value": ""
-              },
-              {
-                "fsColumn": "商品説明（小）",
-                "source": "pcDesc",
-                "action": "set",
-                "value": ""
-              },
-              {
-                "fsColumn": "優先度",
-                "source": "fixed",
-                "action": "set",
-                "value": "10000"
-              },
-              {
-                "fsColumn": "販売期間表示",
-                "source": "fixed",
-                "action": "set",
-                "value": "0"
-              },
-              {
-                "fsColumn": "クール便指定",
-                "source": "fixed",
-                "action": "set",
-                "value": "0"
-              },
-              {
-                "fsColumn": "送料パターン表示",
-                "source": "fixed",
-                "action": "set",
-                "value": "0"
-              },
-              {
                 "fsColumn": "商品URLコード",
                 "source": "number",
                 "action": "set",
                 "value": ""
+              },
+              {
+                "fsColumn": "ステータス",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
               },
               {
                 "fsColumn": "商品番号",
@@ -229,6 +151,78 @@
                 "value": "全てのアイテム"
               },
               {
+                "fsColumn": "優先度",
+                "source": "fixed",
+                "action": "set",
+                "value": "10000"
+              },
+              {
+                "fsColumn": "本体価格",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "定価",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "消費税",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "販売期間(From)",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "販売期間(to)",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "販売期間表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "クール便指定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "送料",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "送料パターン",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "送料パターン表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "送料個別金額",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
                 "fsColumn": "個別送料表示",
                 "source": "fixed",
                 "action": "set",
@@ -241,6 +235,12 @@
                 "value": "0"
               },
               {
+                "fsColumn": "オススメ商品リスト",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
                 "fsColumn": "オススメ商品表示方法",
                 "source": "fixed",
                 "action": "set",
@@ -251,6 +251,12 @@
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
+              },
+              {
+                "fsColumn": "商品価格上部コメント",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
               },
               {
                 "fsColumn": "定価価格前文字",
@@ -271,6 +277,48 @@
                 "value": "当店特別価格"
               },
               {
+                "fsColumn": "取消線",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "定価表示方法",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "在庫管理",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "在庫数表示設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "在庫数表示設定方法",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "在庫僅少表示閾値",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "在庫なし表示テキスト",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
                 "fsColumn": "在庫なし表示テキスト表示方法",
                 "source": "fixed",
                 "action": "set",
@@ -278,6 +326,18 @@
               },
               {
                 "fsColumn": "現在在庫数",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "調整在庫数",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "在庫数切れメール閾値",
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
@@ -301,10 +361,28 @@
                 "value": "0"
               },
               {
+                "fsColumn": "会員価格",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
                 "fsColumn": "アクセス制限",
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
+              },
+              {
+                "fsColumn": "ポイント付与率設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "ポイント付与率",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
               },
               {
                 "fsColumn": "ステータス（他社サービス）",
@@ -325,19 +403,85 @@
                 "value": "0"
               },
               {
-                "fsColumn": "取消線",
+                "fsColumn": "最大購入制限個数",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "入荷お知らせメールボタン表示",
                 "source": "fixed",
                 "action": "set",
                 "value": "1"
               },
               {
-                "fsColumn": "定価表示方法",
+                "fsColumn": "JANコード",
+                "source": "jan",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "キャッチコピー",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：行動履歴収集タグ出力フラグ",
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
               },
               {
-                "fsColumn": "キャッチコピー",
+                "fsColumn": "レコメンド２：レコメンド商品出力フラグ",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "レコメンド２：レコメンド表示フラグ",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "レコメンド２：レコメンド使用タグ優先設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "レコメンド２：商品ページ上部コメントの上",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：商品ページ上部コメントの下",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：商品ページ下部コメントの上",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：商品ページ下部コメントの下",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：商品ページおすすめ商品の上",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：商品ページおすすめ商品の下",
                 "source": "fixed",
                 "action": "set",
                 "value": ""
@@ -347,6 +491,312 @@
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
+              },
+              {
+                "fsColumn": "メール便指定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "メール便同梱数",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バンドル販売",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "外部連携任意項目",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "おすすめ商品表示パターン設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "おすすめ商品表示パターン(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "外部連携商品名",
+                "source": "catchCopy",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "外部連携商品説明",
+                "source": "catchCopy",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レイアウト割当名",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "ページ名(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": "{% product.name %}"
+              },
+              {
+                "fsColumn": "ページ名表示方法(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "キーワード(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": ",NOAHL,ノアル,レディース"
+              },
+              {
+                "fsColumn": "キーワード表示方法(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": "2"
+              },
+              {
+                "fsColumn": "Description(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "Description表示方法(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "商品一言説明(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品説明（大）",
+                "source": "pcSaleDesc",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品説明（小）",
+                "source": "pcDesc",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（1）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（2）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（3）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（4）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（5）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（6）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（7）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（8）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（9）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（10）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（11）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（12）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（13）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（14）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（15）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（16）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（17）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（18）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（19）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "独自コメント（20）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：レコメンド表示フラグ(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：レコメンド使用タグ優先設定(コマースクリエイター)",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：出力タグ１",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：出力タグ２",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：出力タグ３",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：出力タグ４",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：出力タグ５",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "レコメンド２：出力タグ６",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "配送種別",
+                "source": "fixed",
+                "action": "set",
+                "value": "0100"
+              },
+              {
+                "fsColumn": "メール便同梱可能数（upgrade）",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品リードタイム",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "登録日時",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "最終更新日時",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
               }
             ],
             "vc": [
@@ -355,9 +805,142 @@
                 "source": "fixed",
                 "action": "set",
                 "value": "n"
+              },
+              {
+                "fsColumn": "商品URLコード",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション1",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション2",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション3",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション4",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "表示順",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品番号",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品名",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "最終更新日時",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
               }
             ],
-            "vd": [],
+            "vd": [
+              {
+                "fsColumn": "商品URLコード",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション1",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション2",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション3",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "バリエーション4",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "代表バリエーション",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "在庫閾値",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "在庫切れメール",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品番号",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品管理番号",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品名",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "JANコード",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "最終更新日付",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              }
+            ],
             "gs": [
               {
                 "fsColumn": "コントロールカラム",
@@ -366,10 +949,28 @@
                 "value": "n"
               },
               {
+                "fsColumn": "商品URLコード",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
                 "fsColumn": "選択肢タイプ",
                 "source": "fixed",
                 "action": "set",
                 "value": "s"
+              },
+              {
+                "fsColumn": "セレクト／ラジオボタン用項目名",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "セレクト／ラジオボタン用選択肢",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
               },
               {
                 "fsColumn": "項目選択肢前改行",
@@ -388,6 +989,18 @@
                 "source": "fixed",
                 "action": "set",
                 "value": "0"
+              },
+              {
+                "fsColumn": "テキスト幅",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "最終更新日時",
+                "source": "fixed",
+                "action": "set",
+                "value": ""
               }
             ]
           },
