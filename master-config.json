@@ -33,20 +33,10 @@
         "ブラック": 9999,
         "スミクロ": 9999,
         "クリームイエロー": 6,
-        "ダークブラウン": 21,
-        "クリーム×ブラウン": 9999,
-        "ベージュ×ホワイト": 9999,
-        "ミント×ブラック": 9999,
-        "ライトグレー×ホワイト": 9999,
-        "ライトグレー": 9999,
-        "アイボリー×イエローベージュ": 9999,
-        "ベージュ×イエロー": 9999,
-        "ミント×オフホワイト": 9999,
-        "オレンジ×アイボリー": 9999
+        "ダークブラウン": 21
       },
       "nameCleanPatterns": [
         "《[^》]*》",
-        "（[^）]*(?:クーポン|%OFF|P×|倍)[^）]*）",
         "【メール便】",
         "\\s*\\d{6}$"
       ],
@@ -125,58 +115,135 @@
           "priceRate": 100,
           "namePrefix": "",
           "nameSuffix": "",
+          "columnSettings": {
+            "ccGoods": [
+              {
+                "fsColumn": "コントロールカラム",
+                "source": "fixed",
+                "action": "set",
+                "value": "n"
+              },
+              {
+                "fsColumn": "ステータス",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "消費税",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "送料",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "在庫管理",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "在庫数表示設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "ポイント付与率設定",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "入荷お知らせメールボタン表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "1"
+              },
+              {
+                "fsColumn": "JANコード",
+                "source": "jan",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品説明（大）",
+                "source": "pcSaleDesc",
+                "action": "set",
+                "value": ""
+              },
+              {
+                "fsColumn": "商品説明（小）",
+                "source": "pcDesc",
+                "action": "set",
+                "value": ""
+              }
+            ],
+            "vc": [
+              {
+                "fsColumn": "コントロールカラム",
+                "source": "fixed",
+                "action": "set",
+                "value": "n"
+              }
+            ],
+            "vd": [],
+            "gs": [
+              {
+                "fsColumn": "コントロールカラム",
+                "source": "fixed",
+                "action": "set",
+                "value": "n"
+              },
+              {
+                "fsColumn": "選択肢タイプ",
+                "source": "fixed",
+                "action": "set",
+                "value": "s"
+              },
+              {
+                "fsColumn": "項目選択肢前改行",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "項目名位置",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              },
+              {
+                "fsColumn": "項目選択肢表示",
+                "source": "fixed",
+                "action": "set",
+                "value": "0"
+              }
+            ]
+          },
+          "ccGoodsDefaults": {},
+          "vcDefaults": {},
+          "vdDefaults": {},
+          "gsDefaults": {},
+          "changeRules": {
+            "ccGoods": [],
+            "vc": [],
+            "vd": [],
+            "gs": []
+          },
           "groupName": "全てのアイテム",
-          "priority": "10000",
           "priceBeforeText": "定価のところ",
           "salePriceBeforeText": "当店特別価格",
           "keywords": "0,NOAHL,ノアル,レディース",
-          "ccGoodsDefaults": {
-            "コントロールカラム": "n",
-            "ステータス": "1",
-            "消費税": "1",
-            "販売期間表示": "0",
-            "クール便指定": "0",
-            "送料": "0",
-            "送料パターン表示": "0",
-            "個別送料表示": "0",
-            "オススメ商品商品ページ内表示": "0",
-            "オススメ商品表示方法": "1",
-            "商品価格上部コメントHTMLタグ": "0",
-            "取消線定価表示方法": "1",
-            "在庫管理": "0",
-            "在庫数表示設定": "1",
-            "在庫数表示設定方法": "0",
-            "在庫僅少表示閾値": "0",
-            "在庫なし表示テキスト表示方法": "0",
-            "現在在庫数": "0",
-            "調整在庫数": "0",
-            "会員価格設定": "0",
-            "アクセス制限": "0",
-            "ポイント付与率設定": "0",
-            "ポイント付与率": "0",
-            "サンプル商品設定": "0",
-            "サンプル商品同梱設定": "0",
-            "入荷お知らせメールボタン表示": "0",
-            "レコメンド２：行動履歴収集タグ出力フラグ": "1",
-            "レコメンド２：レコメンド商品出力フラグ": "0",
-            "レコメンド２：レコメンド表示フラグ": "0",
-            "商品一言説明(コマースクリエイター)": "{% product.name %}",
-            "キーワード表示方法(コマースクリエイター)": "2",
-            "配送種別": "0100"
-          },
-          "vcDefaults": {
-            "コントロールカラム": "n"
-          },
-          "vdDefaults": {},
-          "gsDefaults": {
-            "コントロールカラム": "n",
-            "選択肢タイプ": "s",
-            "項目選択肢前改行": "0",
-            "項目名位置": "0",
-            "項目選択肢表示": "0"
-          },
-          "selectionOptionName": "レビュー投稿でノベルティを",
-          "selectionChoices": ["GETする", "GETしない"]
+          "priority": "20",
+          "descLargeTpl": "",
+          "descSmallTpl": "",
+          "selectionOptionName": ""
         },
         "zozo": {
           "priceRate": 100,
