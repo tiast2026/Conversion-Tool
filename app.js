@@ -1215,16 +1215,17 @@ function migrateFsColumnSettings(mallData) {
     const cs = mallData.columnSettings;
     const isEmpty = ['ccGoods','vc','vd','gs'].every(k => !(cs[k] || []).length);
     if (isEmpty) return getDefaultFsColumnSettings();
-    // 既存設定にない列をデフォルトから補完（FS_SHEET_HEADERSに追加された列に対応）
+    // ccGoodsのみ: 既存設定にない列をデフォルトから補完（FS_SHEET_HEADERSに追加された列に対応）
     const defaults = getDefaultFsColumnSettings();
-    const result = {};
-    ['ccGoods','vc','vd','gs'].forEach(sheet => {
-      const existing = cs[sheet] || [];
-      const existingCols = new Set(existing.map(e => e.fsColumn));
-      const missing = (defaults[sheet] || []).filter(e => !existingCols.has(e.fsColumn));
-      result[sheet] = [...existing, ...missing];
-    });
-    return result;
+    const existingCcGoods = cs['ccGoods'] || [];
+    const existingCols = new Set(existingCcGoods.map(e => e.fsColumn));
+    const missing = defaults['ccGoods'].filter(e => !existingCols.has(e.fsColumn));
+    return {
+      ccGoods: [...existingCcGoods, ...missing],
+      vc: cs['vc'] || [],
+      vd: cs['vd'] || [],
+      gs: cs['gs'] || [],
+    };
   }
   const result = { ccGoods: [], vc: [], vd: [], gs: [] };
   // 旧 defaults → fixed source
