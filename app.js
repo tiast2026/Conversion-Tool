@@ -1111,21 +1111,49 @@ function deleteFsColumnSetting(sheetKey, index) {
   markMasterDirty();
 }
 
-// デフォルトの列マッピング設定（現在のハードコードロジックに基づく）
+// デフォルトの列マッピング設定（実際のFutureShop出力データに基づく）
 function getDefaultFsColumnSettings() {
   return {
     ccGoods: [
       { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
       { fsColumn: 'ステータス', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: '消費税', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'メイングループ', source: 'fixed', action: 'set', value: '全てのアイテム' },
+      { fsColumn: '優先度', source: 'fixed', action: 'set', value: '10000' },
+      { fsColumn: '消費税', source: 'fixed', action: 'set', value: '1' },
+      { fsColumn: '販売期間表示', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'クール便指定', source: 'fixed', action: 'set', value: '0' },
       { fsColumn: '送料', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '送料パターン表示', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '個別送料表示', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'オススメ商品商品ページ内表示', source: 'fixed', action: 'set', value: '1' },
+      { fsColumn: 'オススメ商品表示方法', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '商品価格上部コメントHTMLタグ', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '定価価格前文字', source: 'fixed', action: 'set', value: '定価' },
+      { fsColumn: '定価価格後文字', source: 'fixed', action: 'set', value: 'のところ' },
+      { fsColumn: '販売価格前文字', source: 'fixed', action: 'set', value: '当店特別価格' },
+      { fsColumn: '取消線', source: 'fixed', action: 'set', value: '1' },
+      { fsColumn: '定価表示方法', source: 'fixed', action: 'set', value: '0' },
       { fsColumn: '在庫管理', source: 'fixed', action: 'set', value: '1' },
       { fsColumn: '在庫数表示設定', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '在庫数表示設定方法', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '在庫数切れメール閾値', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '会員価格設定', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'アクセス制限', source: 'fixed', action: 'set', value: '0' },
       { fsColumn: 'ポイント付与率設定', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'ステータス（他社サービス）', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'サンプル商品設定', source: 'fixed', action: 'set', value: '0' },
       { fsColumn: '入荷お知らせメールボタン表示', source: 'fixed', action: 'set', value: '1' },
-      { fsColumn: 'JANコード', source: 'jan', action: 'set', value: '' },
-      { fsColumn: '商品説明（大）', source: 'pcSaleDesc', action: 'set', value: '' },
-      { fsColumn: '商品説明（小）', source: 'pcDesc', action: 'set', value: '' },
+      { fsColumn: 'バンドル販売', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '外部連携任意項目', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'ページ名(コマースクリエイター)', source: 'fixed', action: 'set', value: '{% product.name %}' },
+      { fsColumn: 'ページ名表示方法(コマースクリエイター)', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: 'キーワード(コマースクリエイター)', source: 'fixed', action: 'set', value: ',NOAHL,ノアル,レディース' },
+      { fsColumn: 'キーワード表示方法(コマースクリエイター)', source: 'fixed', action: 'set', value: '2' },
+      { fsColumn: 'Description表示方法(コマースクリエイター)', source: 'fixed', action: 'set', value: '0' },
+      { fsColumn: '外部連携商品説明', source: 'catchCopy', action: 'set', value: '' },
+      { fsColumn: '商品説明（大）', source: 'spDesc', action: 'set', value: '' },
+      { fsColumn: '商品説明（小）', source: 'catchCopy', action: 'set', value: '' },
+      { fsColumn: '配送種別', source: 'fixed', action: 'set', value: '0100' },
     ],
     vc: [
       { fsColumn: 'コントロールカラム', source: 'fixed', action: 'set', value: 'n' },
@@ -4303,9 +4331,10 @@ function convertToFutureshop() {
     row[ccI['外部連携商品名']] = fsCleanName;
 
     // 商品説明（大）・（小）: 楽天ソースでは実データを直接使用
+    // 実データ: 商品説明（大）= SP用商品説明文, 商品説明（小）= キャッチコピー/PC用商品説明文
     if (sourceType === 'rakuten') {
-      row[ccI['商品説明（大）']] = prod.pcSaleDesc || '';
-      row[ccI['商品説明（小）']] = prod.pcDesc || '';
+      row[ccI['商品説明（大）']] = prod.spDesc || prod.pcSaleDesc || '';
+      row[ccI['商品説明（小）']] = prod.catchCopy || prod.pcDesc || '';
     } else {
       row[ccI['商品説明（大）']] = fm.descLargeTpl
         ? applyDescTemplate(fm.descLargeTpl, prod)
