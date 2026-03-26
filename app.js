@@ -1213,7 +1213,17 @@ function migrateFsColumnSettings(mallData) {
     // 全シートが空の場合はデフォルトを返す
     const cs = mallData.columnSettings;
     const isEmpty = ['ccGoods','vc','vd','gs'].every(k => !(cs[k] || []).length);
-    return isEmpty ? getDefaultFsColumnSettings() : cs;
+    if (isEmpty) return getDefaultFsColumnSettings();
+    // 既存設定にない列をデフォルトから補完（FS_SHEET_HEADERSに追加された列に対応）
+    const defaults = getDefaultFsColumnSettings();
+    const result = {};
+    ['ccGoods','vc','vd','gs'].forEach(sheet => {
+      const existing = cs[sheet] || [];
+      const existingCols = new Set(existing.map(e => e.fsColumn));
+      const missing = (defaults[sheet] || []).filter(e => !existingCols.has(e.fsColumn));
+      result[sheet] = [...existing, ...missing];
+    });
+    return result;
   }
   const result = { ccGoods: [], vc: [], vd: [], gs: [] };
   // 旧 defaults → fixed source
