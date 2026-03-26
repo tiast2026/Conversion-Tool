@@ -939,29 +939,29 @@ let _tiktokColumnMappings = [];
 // TikTok 列マッピング
 // ============================================================
 const TIKTOK_DEFAULT_SOURCE_MAP = {
-  'category':              { source: 'fixed',      value: '' },
-  'brand':                 { source: 'fixed',      value: '' },
-  'product_name':          { source: 'cleanName',  value: '' },
-  'product_description':   { source: 'tiktokDesc', value: '' },
-  'main_image':            { source: 'img1',       value: '' },
-  'image_2':               { source: 'img2',       value: '' },
-  'image_3':               { source: 'img3',       value: '' },
-  'image_4':               { source: 'img4',       value: '' },
-  'image_5':               { source: 'img5',       value: '' },
-  'image_6':               { source: 'img6',       value: '' },
-  'image_7':               { source: 'img7',       value: '' },
-  'image_8':               { source: 'img8',       value: '' },
-  'image_9':               { source: 'img9',       value: '' },
-  // SKU / バリエーション
-  'property_name':         { source: 'var1Name',   value: '' },
-  'property_value_1':      { source: 'var1Value',  value: '' },
-  'property_value_1_image':{ source: 'var1Image',  value: '' },
-  'property_value_2_name': { source: 'var2Name',   value: '' },
-  'property_value_2':      { source: 'var2Value',  value: '' },
-  'seller_sku':            { source: 'skuCode',    value: '' },
-  'sku_seller_sku':        { source: 'skuCode',    value: '' },
-  'price':                 { source: 'skuPrice',   value: '' },
-  'sku_price':             { source: 'skuPrice',   value: '' },
+  'category':              { source: 'fixed',              value: '' },
+  'brand':                 { source: 'fixed',              value: '' },
+  'product_name':          { source: 'cleanName',          value: '' },
+  'product_description':   { source: 'tiktokDescWithImgs', value: '' },
+  'main_image':            { source: 'skuImage',           value: '' },
+  'image_2':               { source: 'img1',               value: '' },
+  'image_3':               { source: 'img2',               value: '' },
+  'image_4':               { source: 'img3',               value: '' },
+  'image_5':               { source: 'img4',               value: '' },
+  'image_6':               { source: 'img5',               value: '' },
+  'image_7':               { source: 'img6',               value: '' },
+  'image_8':               { source: 'img7',               value: '' },
+  'image_9':               { source: 'img8',               value: '' },
+  // SKU / バリエーション（実テンプレート列名に合わせる）
+  'property_name_1':       { source: 'var1Name',           value: '' },
+  'property_value_1':      { source: 'var1Value',          value: '' },
+  'property_1_image':      { source: 'var1Image',          value: '' },
+  'property_name_2':       { source: 'var2Name',           value: '' },
+  'property_value_2':      { source: 'var2Value',          value: '' },
+  'seller_sku':            { source: 'skuCode',            value: '' },
+  'price':                 { source: 'skuPrice',           value: '' },
+  'quantity':              { source: 'stockQty',           value: '' },
+  'size_chart':            { source: 'sizeChartImg',       value: '' },
 };
 
 function getDefaultTiktokMappings(columns) {
@@ -1119,8 +1119,11 @@ const RAKUTEN_SOURCE_FIELDS = [
   { key: 'var1Name',  label: 'SKU: バリエーション1名称' },
   { key: 'var1Value', label: 'SKU: バリエーション1値' },
   { key: 'var1Image', label: 'SKU: バリエーション1画像' },
-  { key: 'var2Name',  label: 'SKU: バリエーション2名称' },
-  { key: 'var2Value', label: 'SKU: バリエーション2値' },
+  { key: 'var2Name',       label: 'SKU: バリエーション2名称' },
+  { key: 'var2Value',      label: 'SKU: バリエーション2値' },
+  { key: 'stockQty',       label: 'SKU: 在庫数' },
+  { key: 'sizeChartImg',   label: '楽天: サイズ表画像(最終画像)' },
+  { key: 'tiktokDescWithImgs', label: '楽天: TikTok用説明文(画像タグ含む)' },
 ];
 
 const COLUMN_ACTION_LABELS = { set: 'セット', prefix: '先頭に追加', suffix: '末尾に追加', remove: 'テキスト除去' };
@@ -4508,25 +4511,64 @@ function expandProductsToSkuRows(prods) {
     if (!shopId) return path;
     return 'https://image.rakuten.co.jp/' + shopId + '/cabinet' + (path.startsWith('/') ? path : '/' + path);
   }
+
+  // 説明文テキストに商品・SKU画像の <img> タグを挿入する（※注意書きの前）
+  function buildDescWithImgs(prod) {
+    const usedUrls = new Set();
+    const imgUrls = [];
+    const addImg = (url) => { if (url && !usedUrls.has(url)) { usedUrls.add(url); imgUrls.push(url); } };
+    // 商品画像1・2
+    if (prod.img1) addImg(toFullUrl(prod.img1));
+    if (prod.img2) addImg(toFullUrl(prod.img2));
+    // 全SKU画像
+    (prod.skus || []).forEach(sku => { if (sku.skuImgPath) addImg(toFullUrl(sku.skuImgPath)); });
+    // 後ろから2番目の商品画像（詳細/サイズ感画像）
+    if (prod.images && prod.images.length >= 2) addImg(toFullUrl(prod.images[prod.images.length - 2].path));
+
+    const base = prod.tiktokDesc || '';
+    if (!imgUrls.length) return base;
+    const imgHtml = '<br>\n' + imgUrls.map(u => `<img src="${u}">`).join('<br>');
+    // 最初の ※ 行の前に <img> タグを挿入
+    const lines = base.split('\n');
+    const noticeStart = lines.findIndex(l => l.trim().startsWith('※'));
+    if (noticeStart === -1) return base + '\n' + imgHtml;
+    const before = lines.slice(0, noticeStart).join('\n').trimEnd();
+    const notices = lines.slice(noticeStart).join('\n');
+    return before + '\n' + imgHtml + '\n<br>\n' + notices;
+  }
+
   const flatRows = [];
   prods.forEach(prod => {
     const varKeys = (prod.varDef && prod.varDef.keys ? prod.varDef.keys : '').split('|').filter(Boolean);
     const varNames = (prod.varDef && prod.varDef.names ? prod.varDef.names : '').split('|').filter(Boolean);
     const keyToName = {};
     varKeys.forEach((k, i) => { keyToName[k] = varNames[i] || k; });
+
+    // img1〜img10 をフルURLに変換（パスのまま出力されるバグを修正）
+    const imgUrls = {};
+    for (let i = 1; i <= 10; i++) imgUrls['img' + i] = toFullUrl(prod['img' + i]);
+
+    // サイズ表画像 = 最終画像
+    const sizeChartImg = (prod.images && prod.images.length > 0)
+      ? toFullUrl(prod.images[prod.images.length - 1].path) : '';
+
+    // 説明文（画像タグ含む）= 商品単位で1回計算
+    const tiktokDescWithImgs = buildDescWithImgs(prod);
+
     if (!prod.skus || prod.skus.length === 0) {
-      flatRows.push(Object.assign({}, prod, {
+      flatRows.push(Object.assign({}, prod, imgUrls, {
         skuCode: prod.id || '', skuPrice: prod.price || '',
         skuImage: toFullUrl(prod.img1),
         var1Name: varNames[0] || '', var1Value: '', var1Image: '',
         var2Name: varNames[1] || '', var2Value: '',
+        stockQty: 0, sizeChartImg, tiktokDescWithImgs,
       }));
     } else {
       prod.skus.forEach(sku => {
         const v1 = sku.variants && sku.variants[0];
         const v2 = sku.variants && sku.variants[1];
         const skuImg = toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
-        flatRows.push(Object.assign({}, prod, {
+        flatRows.push(Object.assign({}, prod, imgUrls, {
           skuCode: sku.systemSku || sku.skuMgmtNo || '',
           skuPrice: sku.price || prod.price || '',
           skuImage: skuImg,
@@ -4535,6 +4577,8 @@ function expandProductsToSkuRows(prods) {
           var1Image: toFullUrl(sku.skuImgPath) || '',
           var2Name:  v2 ? (keyToName[v2.key] || v2.key) : '',
           var2Value: v2 ? v2.value : '',
+          stockQty: parseInt(sku.stock) || 0,
+          sizeChartImg, tiktokDescWithImgs,
         }));
       });
     }
@@ -4575,14 +4619,14 @@ function convertToTiktok() {
     if (cell?.v) colIndex[String(cell.v)] = c;
   }
 
-  // 7行目（index 6）以降に商品データを書き込む
+  // 6行目（index 5）以降に商品データを書き込む
   const numCols = range.e.c + 1;
   const dataRows = flatRows.map(prod => {
     const row = new Array(numCols).fill('');
     applyTiktokMapping(mappings, colIndex, row, prod);
     return row;
   });
-  XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: { r: 6, c: 0 } });
+  XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: { r: 5, c: 0 } });
   return { workbook: wb };
 }
 
