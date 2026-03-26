@@ -1222,9 +1222,9 @@ function migrateFsColumnSettings(mallData) {
     const missing = defaults['ccGoods'].filter(e => !existingCols.has(e.fsColumn));
     return {
       ccGoods: [...existingCcGoods, ...missing],
-      vc: cs['vc'] || [],
-      vd: cs['vd'] || [],
-      gs: cs['gs'] || [],
+      vc: cs['vc'] !== undefined ? cs['vc'] : defaults['vc'],
+      vd: cs['vd'] !== undefined ? cs['vd'] : defaults['vd'],
+      gs: cs['gs'] !== undefined ? cs['gs'] : defaults['gs'],
     };
   }
   const result = { ccGoods: [], vc: [], vd: [], gs: [] };
