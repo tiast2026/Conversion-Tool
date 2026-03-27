@@ -5283,15 +5283,21 @@ function copyCorsProxyCode() {
 // ネクストエンジンAPI連携
 // ============================================================
 // ネクストエンジン認証情報をGoogle Sheetsから自動取得
-const NE_CREDENTIALS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/18MC3yguhDFXAQ67Um9p6YCejtIDtOWLmwZvgp_59IYg/export?format=csv&gid=1386414046';
+const NE_CREDENTIALS_SHEET_ID = '18MC3yguhDFXAQ67Um9p6YCejtIDtOWLmwZvgp_59IYg';
+const NE_CREDENTIALS_SHEET_GID = '1386414046';
 
 async function fetchNeCredentialsFromSheet() {
   const statusEl = document.getElementById('ne-credentials-status');
   if (statusEl) statusEl.textContent = 'シートから取得中...';
   try {
     const proxy = (MASTER.malls.rakuten?.corsProxy || '').replace(/\/$/, '');
-    const url = proxy ? proxy + '/' + NE_CREDENTIALS_SHEET_URL : NE_CREDENTIALS_SHEET_URL;
-    const res = await fetch(url);
+    if (!proxy) throw new Error('CORSプロキシが未設定です（楽天タブで設定してください）');
+    // プロキシ経由でGoogle Sheets CSVエクスポートを取得
+    const path = `/spreadsheets/d/${NE_CREDENTIALS_SHEET_ID}/export?format=csv&gid=${NE_CREDENTIALS_SHEET_GID}`;
+    const res = await fetch(proxy + path, {
+      headers: { 'X-Target-Host': 'docs.google.com' },
+      redirect: 'follow',
+    });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
     const rows = csv.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
