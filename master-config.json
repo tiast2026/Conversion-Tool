@@ -963,9 +963,9 @@
               },
               {
                 "fsColumn": "セレクト／ラジオボタン用項目名",
-                "source": "none",
+                "source": "fixed",
                 "action": "set",
-                "value": ""
+                "value": "レビュー投稿でノベルティを"
               },
               {
                 "fsColumn": "セレクト／ラジオボタン用選択肢",
