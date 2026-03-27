@@ -981,7 +981,33 @@
       </div>
 
       <h4 style="font-size:15px; font-weight:700; color:var(--primary-dark); margin-top:20px; margin-bottom:12px; border-bottom:2px solid var(--primary); padding-bottom:6px;">CSV列マッピング設定</h4>
-      <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">各シートの列マッピング（楽天フィールド → FutureShop列 → 変換）を設定します。</p>
+      <p style="font-size:13px; color:var(--text-light); margin-bottom:8px;">各シートの列マッピング（楽天フィールド → FutureShop列 → 変換）を設定します。</p>
+      <details style="margin-bottom:16px; background:#f8f7f5; border:1px solid var(--border); border-radius:8px; padding:2px;">
+        <summary style="cursor:pointer; padding:10px 14px; font-size:13px; font-weight:600; color:var(--primary-dark);">ソース設定ガイド</summary>
+        <div style="padding:8px 14px 14px; font-size:12px; line-height:1.8; color:var(--text);">
+          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+            <thead><tr style="background:#eee;"><th style="padding:5px 8px; text-align:left; border-bottom:1px solid var(--border);">ソース</th><th style="padding:5px 8px; text-align:left; border-bottom:1px solid var(--border);">値</th><th style="padding:5px 8px; text-align:left; border-bottom:1px solid var(--border);">出力結果</th></tr></thead>
+            <tbody>
+              <tr><td style="padding:4px 8px;"><b>固定値</b></td><td style="padding:4px 8px;">NOAHL</td><td style="padding:4px 8px;">全行に「NOAHL」を出力</td></tr>
+              <tr style="background:#fafafa;"><td style="padding:4px 8px;"><b>固定値</b></td><td style="padding:4px 8px;">（空白）</td><td style="padding:4px 8px;">空文字を出力（既存値をクリア）</td></tr>
+              <tr><td style="padding:4px 8px;"><b>楽天フィールド</b></td><td style="padding:4px 8px;">—</td><td style="padding:4px 8px;">楽天CSVの該当列の値を出力</td></tr>
+              <tr style="background:#fafafa;"><td style="padding:4px 8px;"><b>-（上書きしない）</b></td><td style="padding:4px 8px;">—</td><td style="padding:4px 8px;">プログラムの自動変換値を使用</td></tr>
+              <tr><td style="padding:4px 8px;"><b>マスタに未登録</b></td><td style="padding:4px 8px;">—</td><td style="padding:4px 8px;">「-」と同じ（自動変換値を使用）</td></tr>
+            </tbody>
+          </table>
+          <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:10px 12px;">
+            <div style="font-weight:600; margin-bottom:6px;">プログラム自動変換の例（ccGoods_）:</div>
+            <span style="color:var(--text-light);">
+              商品URLコード → 楽天の商品管理番号<br>
+              商品番号 → 楽天の商品管理番号<br>
+              商品名 → 楽天の商品名（クリーン＋プレフィックス/サフィックス適用）<br>
+              本体価格 → 楽天の販売価格から自動計算<br>
+              メール便指定 → 配送方法に「メール便/ネコポス」含む場合は1<br>
+              上記以外の列 → 空文字
+            </span>
+          </div>
+        </div>
+      </details>
 
       <!-- ===== ccGoods_ ===== -->
       <div class="fs-defaults-section" style="margin-bottom:16px;">
