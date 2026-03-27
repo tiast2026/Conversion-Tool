@@ -853,12 +853,7 @@ function loadMallMasterUI(mall) {
       });
       el('mall-rakuten-shop-category-map').value = lines.join('\n');
     }
-    // ネクストエンジンAPI
-    if (el('mall-rakuten-ne-client-id')) el('mall-rakuten-ne-client-id').value = m.neClientId || '';
-    if (el('mall-rakuten-ne-client-secret')) el('mall-rakuten-ne-client-secret').value = m.neClientSecret || '';
-    if (el('mall-rakuten-ne-access-token')) el('mall-rakuten-ne-access-token').value = m.neAccessToken || '';
-    if (el('mall-rakuten-ne-refresh-token')) el('mall-rakuten-ne-refresh-token').value = m.neRefreshToken || '';
-    if (el('mall-rakuten-ne-uid')) el('mall-rakuten-ne-uid').value = m.neUid || '';
+    // ネクストエンジンAPI（認証情報はシートから自動取得のため、UIフォームへの反映は不要）
   }
   if (mall === 'tiktok') {
     const hasTemplate = !!(MASTER.malls.tiktok || {}).templateData;
@@ -1661,11 +1656,7 @@ function readMallFormToMaster(mall) {
       }
     });
     m.shopCategoryMap = catMapObj;
-    m.neClientId = el('mall-rakuten-ne-client-id')?.value?.trim() || '';
-    m.neClientSecret = el('mall-rakuten-ne-client-secret')?.value?.trim() || '';
-    m.neAccessToken = el('mall-rakuten-ne-access-token')?.value?.trim() || '';
-    m.neRefreshToken = el('mall-rakuten-ne-refresh-token')?.value?.trim() || '';
-    m.neUid = el('mall-rakuten-ne-uid')?.value?.trim() || '';
+    // ネクストエンジン認証情報はシートから自動取得のため、フォーム読み取り不要（既存値を保持）
   }
   if (mall === 'futureshop') {
     // レビュー投稿設定
@@ -5291,12 +5282,55 @@ function copyCorsProxyCode() {
 // ============================================================
 // ネクストエンジンAPI連携
 // ============================================================
+// ネクストエンジン認証情報をGoogle Sheetsから自動取得
+const NE_CREDENTIALS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/18MC3yguhDFXAQ67Um9p6YCejtIDtOWLmwZvgp_59IYg/export?format=csv&gid=1386414046';
+
+async function fetchNeCredentialsFromSheet() {
+  const statusEl = document.getElementById('ne-credentials-status');
+  if (statusEl) statusEl.textContent = 'シートから取得中...';
+  try {
+    const proxy = (MASTER.malls.rakuten?.corsProxy || '').replace(/\/$/, '');
+    const url = proxy ? proxy + '/' + NE_CREDENTIALS_SHEET_URL : NE_CREDENTIALS_SHEET_URL;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const csv = await res.text();
+    const rows = csv.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+    const map = {};
+    rows.forEach(r => { if (r[0]) map[r[0]] = r[1] || ''; });
+
+    const m = MASTER.malls.rakuten;
+    if (map['ACCESS_TOKEN']) m.neAccessToken = map['ACCESS_TOKEN'];
+    if (map['REFRESH_TOKEN']) m.neRefreshToken = map['REFRESH_TOKEN'];
+    if (map['CLIENT_ID']) m.neClientId = map['CLIENT_ID'];
+    if (map['CLIENT_SECRET']) m.neClientSecret = map['CLIENT_SECRET'];
+    if (map['UID']) m.neUid = map['UID'];
+
+    if (statusEl) statusEl.innerHTML = '<span style="color:green;">取得成功 — ACCESS_TOKEN: ...'+  (m.neAccessToken||'').slice(-8) + ' / REFRESH_TOKEN: ...' + (m.neRefreshToken||'').slice(-8) + '</span>';
+    markMasterDirty();
+    return true;
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:red;">取得エラー: ' + e.message + '</span>';
+    return false;
+  }
+}
+
+// ネクストエンジンAPI呼び出し前に常にシートから最新トークンを取得
+async function ensureNeCredentials() {
+  return await fetchNeCredentialsFromSheet();
+}
+
 async function testNextEngineApi() {
   const resultEl = document.getElementById('ne-test-result');
+  if (resultEl) resultEl.textContent = '認証情報を取得中...';
+
+  // まずシートから最新の認証情報を取得
+  const ok = await ensureNeCredentials();
+  if (!ok) {
+    if (resultEl) resultEl.innerHTML = '<span style="color:red;">シートからの認証情報取得に失敗しました。</span>';
+    return;
+  }
   if (resultEl) resultEl.textContent = '接続テスト中...';
 
-  // フォームから最新値を読み取り
-  readMallFormToMaster('rakuten');
   const m = MASTER.malls.rakuten;
   const proxy = m.corsProxy;
   const accessToken = m.neAccessToken;
@@ -5333,11 +5367,9 @@ async function testNextEngineApi() {
       // トークンが更新された場合は保存
       if (data.access_token && data.access_token !== accessToken) {
         m.neAccessToken = data.access_token;
-        document.getElementById('mall-rakuten-ne-access-token').value = data.access_token;
       }
       if (data.refresh_token && data.refresh_token !== refreshToken) {
         m.neRefreshToken = data.refresh_token;
-        document.getElementById('mall-rakuten-ne-refresh-token').value = data.refresh_token;
       }
       const companyName = data.company_name || '(取得成功)';
       if (resultEl) resultEl.innerHTML = `<span style="color:green;">接続成功！ 企業名: ${companyName}</span>`;

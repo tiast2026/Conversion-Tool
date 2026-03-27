@@ -873,47 +873,13 @@
           ネクストエンジンAPI 連携
         </summary>
         <div style="padding:16px;">
-          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">ネクストエンジンAPIと連携して商品データを同期します。</p>
-          <table class="rms-form" style="margin:0;">
-            <tr>
-              <th style="width:200px;">クライアントID</th>
-              <td>
-                <input type="text" id="mall-rakuten-ne-client-id" class="rms-input" style="width:340px;" placeholder="ネクストエンジンのクライアントID">
-              </td>
-            </tr>
-            <tr>
-              <th>クライアントシークレット</th>
-              <td>
-                <input type="password" id="mall-rakuten-ne-client-secret" class="rms-input" style="width:340px;" placeholder="ネクストエンジンのクライアントシークレット">
-                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
-              </td>
-            </tr>
-            <tr>
-              <th>アクセストークン</th>
-              <td>
-                <input type="password" id="mall-rakuten-ne-access-token" class="rms-input" style="width:500px;" placeholder="ネクストエンジンのアクセストークン">
-                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
-              </td>
-            </tr>
-            <tr>
-              <th>リフレッシュトークン</th>
-              <td>
-                <input type="password" id="mall-rakuten-ne-refresh-token" class="rms-input" style="width:500px;" placeholder="ネクストエンジンのリフレッシュトークン">
-                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
-              </td>
-            </tr>
-            <tr>
-              <th>UID</th>
-              <td>
-                <input type="password" id="mall-rakuten-ne-uid" class="rms-input" style="width:500px;" placeholder="ネクストエンジンのユーザーID">
-                <button class="btn btn-sm btn-outline" style="margin-left:6px;" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">表示</button>
-              </td>
-            </tr>
-          </table>
-          <div style="margin-top:12px;">
+          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">ネクストエンジンAPIの認証情報はGoogle Sheetsから自動取得されます。</p>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <button class="btn btn-primary" onclick="fetchNeCredentialsFromSheet()">シートから認証情報を取得</button>
             <button class="btn btn-primary" onclick="testNextEngineApi()">接続テスト</button>
-            <span id="ne-test-result" style="margin-left:12px; font-size:12px;"></span>
+            <span id="ne-test-result" style="font-size:12px;"></span>
           </div>
+          <div id="ne-credentials-status" style="font-size:12px; color:var(--text-light);"></div>
         </div>
       </details>
     </div>
