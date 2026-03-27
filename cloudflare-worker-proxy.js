@@ -20,7 +20,8 @@ const ALLOWED_ORIGINS = [
 // 許可するAPIホスト
 const ALLOWED_HOSTS = {
   'api.rms.rakuten.co.jp': 'https://api.rms.rakuten.co.jp',
-  'api.next-engine.org': 'https://api.next-engine.org'
+  'api.next-engine.org': 'https://api.next-engine.org',
+  'docs.google.com': 'https://docs.google.com'
 };
 
 export default {
@@ -61,11 +62,12 @@ export default {
     }
 
     try {
-      // APIにリクエストを転送
+      // APIにリクエストを転送（リダイレクトを自動フォロー）
       const response = await fetch(targetUrl, {
         method: request.method,
         headers: headers,
-        body: ['GET', 'HEAD'].includes(request.method) ? null : request.body
+        body: ['GET', 'HEAD'].includes(request.method) ? null : request.body,
+        redirect: 'follow'
       });
 
       // レスポンスにCORSヘッダーを追加
