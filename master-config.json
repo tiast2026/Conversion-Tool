@@ -1181,7 +1181,7 @@
             },
             {
               "ttColumn": "price",
-              "source": "skuPrice",
+              "source": "tiktokPrice",
               "action": "set",
               "value": ""
             },
