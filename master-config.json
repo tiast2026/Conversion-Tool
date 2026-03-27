@@ -159,7 +159,7 @@
               },
               {
                 "fsColumn": "本体価格",
-                "source": "tiktokPrice",
+                "source": "none",
                 "action": "set",
                 "value": ""
               },
