@@ -1175,11 +1175,17 @@ function renderTiktokColumnMappings() {
     html += '<td style="padding:4px 6px;"><select onchange="updateTiktokColumnMapping(' + i + ',\'source\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
     html += srcOpts.replace('value="' + entry.source + '"', 'value="' + entry.source + '" selected');
     html += '</select></td>';
-    html += '<td style="padding:4px 6px;"><select onchange="updateTiktokColumnMapping(' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
-    actKeys.forEach(ak => {
-      html += '<option value="' + ak + '"' + (ak === entry.action ? ' selected' : '') + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
-    });
-    html += '</select></td>';
+    html += '<td style="padding:4px 6px;">';
+    if (entry.source === 'none') {
+      html += '<span style="font-size:12px; color:#888; padding:4px 6px;">自動変換</span>';
+    } else {
+      html += '<select onchange="updateTiktokColumnMapping(' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+      actKeys.forEach(ak => {
+        html += '<option value="' + ak + '"' + (ak === entry.action ? ' selected' : '') + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
+      });
+      html += '</select>';
+    }
+    html += '</td>';
     html += '<td style="padding:4px 6px;"><input type="text" value="' + escapeHtml(entry.value || '') + '" onchange="updateTiktokColumnMapping(' + i + ',\'value\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;"></td>';
     html += '</tr>';
   });
@@ -1193,6 +1199,7 @@ function updateTiktokColumnMapping(i, field, val) {
     if (!MASTER.malls.tiktok) MASTER.malls.tiktok = {};
     MASTER.malls.tiktok.columnMappings = _tiktokColumnMappings.map(e => Object.assign({}, e));
     markMasterDirty();
+    if (field === 'source') renderTiktokColumnMappings();
   }
 }
 
@@ -1373,12 +1380,18 @@ function renderFsColumnSettings(sheetKey) {
     html += srcOpts.replace('value="' + entry.source + '"', 'value="' + entry.source + '" selected');
     html += '</select></td>';
     // 操作 select
-    html += '<td style="padding:4px 6px;"><select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
-    actKeys.forEach(ak => {
-      const sel = ak === entry.action ? ' selected' : '';
-      html += '<option value="' + ak + '"' + sel + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
-    });
-    html += '</select></td>';
+    html += '<td style="padding:4px 6px;">';
+    if (entry.source === 'none') {
+      html += '<span style="font-size:12px; color:#888; padding:4px 6px;">自動変換</span>';
+    } else {
+      html += '<select onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'action\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">';
+      actKeys.forEach(ak => {
+        const sel = ak === entry.action ? ' selected' : '';
+        html += '<option value="' + ak + '"' + sel + '>' + COLUMN_ACTION_LABELS[ak] + '</option>';
+      });
+      html += '</select>';
+    }
+    html += '</td>';
     // 値 input
     html += '<td style="padding:4px 6px;"><input type="text" value="' + escapeHtml(entry.value || '') + '" onchange="updateFsColumnSetting(\'' + sk + '\',' + i + ',\'value\',this.value)" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;"></td>';
     // 削除
@@ -1393,6 +1406,8 @@ function updateFsColumnSetting(sheetKey, index, field, value) {
   if (!_fsColumnSettings[sheetKey] || !_fsColumnSettings[sheetKey][index]) return;
   _fsColumnSettings[sheetKey][index][field] = value;
   markMasterDirty();
+  // ソース変更時は操作列の表示を切り替えるため再描画
+  if (field === 'source') renderFsColumnSettings(sheetKey);
 }
 
 function addFsColumnSetting(sheetKey) {
