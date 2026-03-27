@@ -4622,20 +4622,6 @@ function convertToFutureshop() {
       applyFsColumnSettings(csData.gs, gsI, row, prod);
       gsRows.push(row);
     });
-    // 追加の商品オプションがあれば出力
-    const opts = prod._options || prod.options || [];
-    opts.forEach(opt => {
-      if (opt.name === reviewOptionName) return;
-      (opt.choices || []).forEach(choice => {
-        const row = new Array(gsH.length).fill('');
-        row[gsI['商品URLコード']] = urlCode;
-        row[gsI['選択肢タイプ']] = opt.type || 's';
-        row[gsI['セレクト／ラジオボタン用項目名']] = opt.name || '';
-        row[gsI['セレクト／ラジオボタン用選択肢']] = choice;
-        applyFsColumnSettings(csData.gs, gsI, row, prod);
-        gsRows.push(row);
-      });
-    });
   });
   sheets.push({ name: 'goodsSelection_', headers: gsH, rows: gsRows });
 
