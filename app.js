@@ -1947,12 +1947,12 @@ function guessSeasonFromDate(dateStr) {
   return '';
 }
 
-// メモから末尾の数字を抽出
+// メモの金額を逆順にする（4980 → 0894）
 function extractMemoNumber(memo) {
   if (!memo) return '';
   const s = String(memo).trim();
   const m = s.match(/(\d+)\s*$/);
-  return m ? m[1] : s;
+  return m ? m[1].split('').reverse().join('') : s;
 }
 
 // モール別の価格計算
@@ -2861,12 +2861,16 @@ function renderStep3JishaRms() {
     // 配送設定
     html += '<h4 style="font-size:16px; color:#333; margin:20px 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">配送設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
-    let shipSetVal = prod._shippingSet !== undefined ? prod._shippingSet : (rm.shippingSet || '');
-    let shipNameVal = prod._shippingName !== undefined ? prod._shippingName : (rm.shippingName || '');
-    if (!shipSetVal && prod.shippingMethod && rm.shippingSets && rm.shippingSets.length > 0) {
-      const method = prod.shippingMethod.trim();
-      const found = rm.shippingSets.find(s => s.name === method || method.includes(s.name) || s.name.includes(method));
-      if (found) { shipSetVal = found.num; shipNameVal = found.name; }
+    let shipSetVal = prod._shippingSet !== undefined ? prod._shippingSet : '';
+    if (!shipSetVal && sourceType === 'jisha') {
+      shipSetVal = (prod.shippingMethod && prod.shippingMethod.includes('ネコポス')) ? '2' : '1';
+    } else if (!shipSetVal) {
+      shipSetVal = rm.shippingSet || '';
+    }
+    let shipNameVal = prod._shippingName || '';
+    if (!shipNameVal && rm.shippingSets && rm.shippingSets.length > 0) {
+      const found = rm.shippingSets.find(s => s.num === shipSetVal);
+      if (found) shipNameVal = found.name;
     }
     const shipFeeVal = prod._shippingFee !== undefined ? prod._shippingFee : (rm.shippingFee || '0');
     const shipFeeLabel = shipFeeVal === '0' ? '送料込み' : shipFeeVal === '1' ? '送料別' : shipFeeVal === '2' ? '送料無料' : shipFeeVal;
@@ -3494,13 +3498,16 @@ function renderStep2Rms() {
     html += '<h4 style="font-size:16px; color:#333; margin:20px 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">配送設定</h4>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
     const rmShip = MASTER.malls.rakuten;
-    let shipSetVal = (prod.skus[0] && prod.skus[0].shippingSet) ? prod.skus[0].shippingSet : rmShip.shippingSet || '';
-    let shipNameVal = (prod.skus[0] && prod.skus[0].shippingName) ? prod.skus[0].shippingName : rmShip.shippingName || '';
-    // 自社Excelの配送方法から自動解決
-    if (!shipSetVal && prod.shippingMethod && rmShip.shippingSets && rmShip.shippingSets.length > 0) {
-      const method = prod.shippingMethod.trim();
-      const found = rmShip.shippingSets.find(s => s.name === method || method.includes(s.name) || s.name.includes(method));
-      if (found) { shipSetVal = found.num; shipNameVal = found.name; }
+    let shipSetVal = (prod.skus[0] && prod.skus[0].shippingSet) ? prod.skus[0].shippingSet : '';
+    if (!shipSetVal && sourceType === 'jisha') {
+      shipSetVal = (prod.shippingMethod && prod.shippingMethod.includes('ネコポス')) ? '2' : '1';
+    } else if (!shipSetVal) {
+      shipSetVal = rmShip.shippingSet || '';
+    }
+    let shipNameVal = (prod.skus[0] && prod.skus[0].shippingName) ? prod.skus[0].shippingName : '';
+    if (!shipNameVal && rmShip.shippingSets && rmShip.shippingSets.length > 0) {
+      const found = rmShip.shippingSets.find(s => s.num === shipSetVal);
+      if (found) shipNameVal = found.name;
     }
     const shipFeeVal = (prod.skus[0] && prod.skus[0].shipping) ? prod.skus[0].shipping : rmShip.shippingFee || '';
     const shipFeeLabel = shipFeeVal === '0' ? '送料込み' : shipFeeVal === '1' ? '送料別' : shipFeeVal === '2' ? '送料無料' : shipFeeVal;
