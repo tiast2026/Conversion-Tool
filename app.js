@@ -2372,14 +2372,13 @@ function generateRakutenImageUrls(prod) {
   // 1枚目: メイン画像
   urls.push(`${urlBase}-1r.jpg`);
 
-  // カラバリ枚数の計算: 全体 - 固定3枚(1r, -10, -11)
+  // カラバリ枚数の計算: 全体 - 固定3枚(1r, -10, -11) を色数で均等割り
   const colorSlots = maxImages - 3;
   const perColor = Math.floor(colorSlots / colorCodes.length);
-  const extraSlots = colorSlots - perColor * colorCodes.length;
 
-  // カラーバリエーション画像（余り枠は先頭の色から順に1枚ずつ追加）
+  // カラーバリエーション画像（均等割り、余り枠は使わない）
   colorCodes.forEach((code, idx) => {
-    const count = perColor + (idx < extraSlots ? 1 : 0);
+    const count = perColor;
     for (let i = 1; i <= count; i++) {
       urls.push(`${urlBase}-${code}${i}.jpg`);
     }
