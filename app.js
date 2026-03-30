@@ -4360,7 +4360,8 @@ function formatMeasureSize(measureStr) {
     const end = (i + 1 < matches.length) ? matches[i + 1].start - matches[i + 1].label.length - 2 : measureStr.length;
     const text = measureStr.substring(matches[i].start, end).trim();
     const items = text.split(/\s*\/\s*/);
-    lines.push(label + '<br>');
+    if (lines.length > 0) lines.push('<br>');
+    lines.push('≪' + label + 'サイズ≫<br>');
     items.forEach(item => {
       const m = item.match(/^([^：:]+?)\s*(?:\([^)]*\))?\s*[：:]\s*(.+)$/);
       if (m) {
