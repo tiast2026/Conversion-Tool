@@ -1896,12 +1896,12 @@ function applyNameTemplate(tpl, prod) {
     .replace(/\{季節\}/g, guessSeasonFromDate(prod.saleStartDate))
     .replace(/\{販売日\}/g, formatDateYYMMDD(prod.saleStartDate))
     .replace(/\{メモ末尾\}/g, extractMemoNumber(prod.memo));
-  // 配送別バナータグ置換（マスタ設定）
+  // 配送別バナータグ置換（商品名用: HTMLではなく【タグ名】に変換）
   (rm.shippingBanners || []).forEach(rule => {
     if (!rule.tag) return;
     const tagRegex = new RegExp('\\{' + rule.tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\}', 'g');
     const match = prod.shippingMethod && rule.keyword && prod.shippingMethod.includes(rule.keyword);
-    result = result.replace(tagRegex, match ? (rule.html || '') : '');
+    result = result.replace(tagRegex, match ? '【' + rule.tag + '】' : '');
   });
   return result.replace(/\s{2,}/g, ' ').trim();
 }
