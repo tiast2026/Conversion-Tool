@@ -4216,15 +4216,77 @@ const MALLS = {
 function renderStep4Download() {
   const totalProducts = products.length;
   const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
+
+  if (sourceType === 'jisha') {
+    // 自社Excel→楽天: 専用レイアウト
+    document.getElementById('summary-cards-dl').innerHTML = '';
+    const rm = MASTER.malls.rakuten;
+    const hasApiCreds = rm.serviceSecret && rm.licenseKey;
+    const hasNeCreds = rm.corsProxy && rm.neAccessToken && rm.neRefreshToken;
+    let html = '';
+    html += '<div style="max-width:640px; margin:0 auto; padding:20px 0;">';
+    // サマリー
+    html += '<div style="display:flex; gap:16px; margin-bottom:24px;">';
+    html += '<div style="flex:1; text-align:center; padding:16px; background:#fff5f5; border-radius:10px; border:1px solid #f0ddd8;"><div style="font-size:28px; font-weight:700; color:#bf0000;">' + totalProducts + '</div><div style="font-size:12px; color:#888;">商品</div></div>';
+    html += '<div style="flex:1; text-align:center; padding:16px; background:#fff5f5; border-radius:10px; border:1px solid #f0ddd8;"><div style="font-size:28px; font-weight:700; color:#bf0000;">' + totalSkus + '</div><div style="font-size:12px; color:#888;">SKU</div></div>';
+    html += '</div>';
+    // 楽天CSVダウンロード
+    html += '<div style="background:#fff; border:1px solid #e0d6d0; border-radius:12px; padding:24px; margin-bottom:16px;">';
+    html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">';
+    html += '<div style="width:44px; height:44px; border-radius:10px; background:#bf0000; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px;">R</div>';
+    html += '<div><div style="font-size:16px; font-weight:700; color:#333;">楽天市場 商品一括登録</div>';
+    html += '<div style="font-size:12px; color:#888;">normal-item.csv + item-cat.csv</div></div>';
+    html += '<span style="background:#e3f2fd; color:#2c7be5; font-size:11px; padding:3px 10px; border-radius:10px; font-weight:600;">CSV</span>';
+    html += '</div>';
+    html += '<button class="btn btn-success" style="width:100%; background:#bf0000; border-color:#bf0000; padding:12px; font-size:15px;" onclick="downloadRakutenAll()">⬇ CSVダウンロード</button>';
+    html += '</div>';
+    // API登録
+    html += '<div style="display:flex; gap:12px; margin-bottom:16px;">';
+    // 楽天API
+    html += '<div style="flex:1; background:#fff; border:1px solid #e0d6d0; border-radius:12px; padding:20px; text-align:center;">';
+    html += '<div style="font-size:13px; font-weight:600; color:#bf0000; margin-bottom:10px;">楽天RMS API</div>';
+    if (hasApiCreds) {
+      html += '<button class="btn" onclick="registerToRakutenApi()" style="background:#c45c5c; color:#fff; border:none; width:100%; padding:10px;">🔗 直接登録</button>';
+    } else {
+      html += '<button class="btn btn-outline" disabled style="opacity:0.4; width:100%;">🔗 直接登録</button>';
+      html += '<div style="font-size:10px; color:#999; margin-top:6px;">API認証未設定</div>';
+    }
+    html += '</div>';
+    // NE API
+    html += '<div style="flex:1; background:#fff; border:1px solid #f5e6cc; border-radius:12px; padding:20px; text-align:center;">';
+    html += '<div style="font-size:13px; font-weight:600; color:#e67e22; margin-bottom:10px;">ネクストエンジン</div>';
+    if (hasNeCreds) {
+      html += '<button class="btn" onclick="registerToNextEngineApi()" style="background:#e67e22; color:#fff; border:none; width:100%; padding:10px;">🔗 直接登録</button>';
+    } else {
+      html += '<button class="btn btn-outline" disabled style="opacity:0.4; width:100%;">🔗 直接登録</button>';
+      html += '<div style="font-size:10px; color:#999; margin-top:6px;">API認証未設定</div>';
+    }
+    html += '</div>';
+    html += '</div>';
+    // 進捗エリア
+    html += '<div id="api-register-status" style="display:none; border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px;">';
+    html += '<div style="font-weight:600; margin-bottom:8px; color:var(--primary-dark);">楽天API登録 進捗</div>';
+    html += '<div id="api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>';
+    html += '<div id="api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>';
+    html += '</div>';
+    html += '<div id="ne-api-register-status" style="display:none; border:1px solid #f39c12; border-radius:10px; padding:16px; margin-bottom:12px;">';
+    html += '<div style="font-weight:600; margin-bottom:8px; color:#e67e22;">ネクストエンジンAPI登録 進捗</div>';
+    html += '<div id="ne-api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>';
+    html += '<div id="ne-api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>';
+    html += '</div>';
+    html += '</div>';
+    document.getElementById('download-grid').innerHTML = html;
+    return;
+  }
+
+  // 楽天CSV→他モール: 従来レイアウト
   document.getElementById('summary-cards-dl').innerHTML = `
     <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
     <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
-    <div class="summary-card"><div class="num">${sourceType === 'jisha' ? 1 : Object.keys(MALLS).length}</div><div class="label">出力先モール</div></div>
+    <div class="summary-card"><div class="num">${Object.keys(MALLS).length}</div><div class="label">出力先モール</div></div>
   `;
   let html = '';
-  const mallEntries = sourceType === 'jisha'
-    ? [['rakuten', MALLS.rakuten]]
-    : Object.entries(MALLS);
+  const mallEntries = Object.entries(MALLS);
   mallEntries.forEach(([key, mall]) => {
     const isSame = (key === sourceType);
     const fmtColor = mall.format === 'Excel' ? '#217346' : '#2c7be5';
@@ -4245,52 +4307,8 @@ function renderStep4Download() {
       const dlLabel = key === 'tiktok' ? 'Excelダウンロード' : 'CSVダウンロード';
       html += `<button class="btn btn-success" style="background:${mall.color};border-color:${mall.color};" onclick="downloadMall('${key}')">⬇ ${dlLabel}</button>`;
     }
-    if (key === 'rakuten' && sourceType === 'jisha') {
-      const hasApiCreds = MASTER.malls.rakuten.serviceSecret && MASTER.malls.rakuten.licenseKey;
-      html += `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">`;
-      if (hasApiCreds) {
-        html += `<button class="btn btn-primary" onclick="registerToRakutenApi()" style="background:#c45c5c;">🔗 楽天APIで直接登録</button>`;
-      } else {
-        html += `<button class="btn btn-outline" disabled style="opacity:0.5; cursor:not-allowed;">🔗 楽天APIで直接登録</button>`;
-        html += `<div style="font-size:11px; color:#999; margin-top:4px;">マスタ設定でRMS API認証情報を設定してください</div>`;
-      }
-      html += `</div>`;
-    }
     html += `</div></div>`;
   });
-
-  // ネクストエンジンAPI直接登録カード
-  if (sourceType === 'jisha') {
-    const hasNeCreds = MASTER.malls.rakuten.corsProxy && MASTER.malls.rakuten.neAccessToken && MASTER.malls.rakuten.neRefreshToken;
-    html += `<div class="download-card" style="border-color:#f39c12;">`;
-    html += `<div class="mall-name" style="color:#e67e22;">ネクストエンジン</div>`;
-    html += `<div class="mall-desc">NE APIで商品マスタを直接登録</div>`;
-    if (hasNeCreds) {
-      html += `<button class="btn btn-primary" onclick="registerToNextEngineApi()" style="background:#e67e22; border-color:#e67e22;">🔗 NE APIで直接登録</button>`;
-    } else {
-      html += `<button class="btn btn-outline" disabled style="opacity:0.5; cursor:not-allowed;">🔗 NE APIで直接登録</button>`;
-      html += `<div style="font-size:11px; color:#999; margin-top:4px;">マスタ設定でNE API認証情報を設定してください</div>`;
-    }
-    html += `</div>`;
-  }
-
-  // 楽天API登録の進捗表示エリア
-  if (sourceType === 'jisha') {
-    html += `<div id="api-register-status" style="display:none; grid-column:1/-1; border:1px solid var(--border); border-radius:10px; padding:16px;">`;
-    html += `<div style="font-weight:600; margin-bottom:8px; color:var(--primary-dark);">楽天API登録 進捗</div>`;
-    html += `<div id="api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>`;
-    html += `<div id="api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>`;
-    html += `</div>`;
-  }
-
-  // NE API登録の進捗表示エリア
-  if (sourceType === 'jisha') {
-    html += `<div id="ne-api-register-status" style="display:none; grid-column:1/-1; border:1px solid #f39c12; border-radius:10px; padding:16px;">`;
-    html += `<div style="font-weight:600; margin-bottom:8px; color:#e67e22;">ネクストエンジンAPI登録 進捗</div>`;
-    html += `<div id="ne-api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>`;
-    html += `<div id="ne-api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>`;
-    html += `</div>`;
-  }
   document.getElementById('download-grid').innerHTML = html;
 }
 
