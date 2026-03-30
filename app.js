@@ -2565,6 +2565,352 @@ function renderRmsPreview() {
   switchMallCsvTab('mall_futureshop', 'futureshop');
 }
 
+// ============================================================
+// STEP 3: 自社Excel → 楽天RMS風 編集ビュー
+// ============================================================
+function renderStep3JishaRms() {
+  const container = document.getElementById('rms-preview-container');
+  if (!container) return;
+
+  const panel3 = document.getElementById('panel-3');
+  if (panel3) {
+    const h2 = panel3.querySelector('h2');
+    const desc = panel3.querySelector('.desc');
+    const actions = panel3.querySelector('.actions');
+    if (h2) h2.style.display = 'none';
+    if (desc) desc.style.display = 'none';
+    if (actions) actions.style.display = 'none';
+    panel3.style.padding = '0';
+  }
+
+  if (products.length === 0) {
+    container.innerHTML = '<p style="color:#999; text-align:center; padding:40px;">データがありません。</p>';
+    return;
+  }
+
+  const rm = MASTER.malls.rakuten;
+  const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
+  let html = '';
+
+  html += '<div id="s3rms-layout-root" style="display:flex; flex-direction:column; overflow:hidden; padding:0 8px 8px 0; width:100%; box-sizing:border-box;">';
+  html += '<div style="display:grid; grid-template-columns:240px 1fr; flex:1; min-height:0; overflow:hidden;">';
+
+  // === 左: 商品リスト ===
+  html += '<div style="background:#f7f5f3; border:1px solid var(--border); border-radius:8px 0 0 8px; overflow-y:auto; overflow-x:hidden; min-height:0;">';
+  html += '<div style="padding:8px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#f7f5f3; z-index:1;">';
+  html += '<div style="font-size:13px; font-weight:700; color:#bf0000; margin-bottom:4px;">楽天RMS 編集 (' + products.length + ')</div>';
+  html += '<div style="display:flex; gap:6px; font-size:10px; color:#888;">';
+  html += '<span style="background:#ece8e3; padding:1px 6px; border-radius:8px;"><strong>' + totalSkus + '</strong> SKU</span>';
+  html += '</div></div>';
+  products.forEach((p, i) => {
+    const thumbUrl = generateRakutenImageUrls(p)[0] || '';
+    const label = p.number || p.id || '';
+    const shortName = (p.cleanName || p.name || '').substring(0, 18);
+    html += '<div class="s3rms-prod-item" data-idx="' + i + '" onclick="switchStep3JishaProduct(' + i + ')" style="padding:10px 12px; cursor:pointer; border-bottom:1px solid #ece8e3; display:flex; align-items:center; gap:10px;' + (i === 0 ? ' background:#e8e2dc; border-left:3px solid #bf0000;' : ' border-left:3px solid transparent;') + '">';
+    html += '<div style="width:50px; height:50px; flex-shrink:0; border:1px solid #ddd; border-radius:4px; background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center;">';
+    if (thumbUrl) html += '<img src="' + esc(thumbUrl) + '" style="max-width:100%; max-height:100%; object-fit:cover;" onerror="this.style.display=\'none\'" loading="lazy">';
+    else html += '<span style="font-size:10px; color:#ccc;">-</span>';
+    html += '</div>';
+    html += '<div style="min-width:0; flex:1;">';
+    html += '<div style="font-size:12px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(label) + '</div>';
+    html += '<div style="font-size:11px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">' + esc(shortName) + '</div>';
+    html += '<div style="font-size:10px; color:#aaa; margin-top:2px;">SKU:' + p.skus.length + '</div>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  // === 右: 商品詳細パネル ===
+  html += '<div style="min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden;">';
+
+  products.forEach((prod, gi) => {
+    const rakutenName = applyMallName(prod.cleanName || prod.name, 'rakuten');
+    const genreId = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
+    const catchCopy = prod._catchCopy || prod.productPoint || '';
+    const imgUrl = generateRakutenImageUrls(prod)[0] || '';
+
+    html += '<div class="s3rms-panel" data-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden;">';
+    html += '<div style="flex:1; min-width:0; min-height:0; border:1px solid #ddd; border-radius:6px; background:#fff; display:flex; flex-direction:column; overflow:hidden;">';
+
+    // スクロール領域
+    html += '<div class="s3rms-tab-area" data-gi="' + gi + '" style="flex:1; min-height:0; overflow-y:scroll; overflow-x:hidden;">';
+
+    // パンくず
+    html += '<div style="padding:10px 20px; font-size:13px; color:#888; border-bottom:1px solid #eee;">自社Excel → <span style="color:#bf0000; font-weight:600;">楽天RMS編集</span> &gt; <span style="color:#333; font-weight:600;">' + esc(prod.number || prod.id || '') + '</span></div>';
+
+    // 基本情報ヘッダー
+    html += '<div style="padding:16px 24px;">';
+    html += '<div style="display:flex; gap:16px; align-items:flex-start;">';
+    html += '<div style="flex-shrink:0; text-align:center;">';
+    html += '<div style="width:80px; height:80px; border:1px solid #ddd; border-radius:4px; background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center;">';
+    if (imgUrl) html += '<img src="' + esc(imgUrl) + '" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML=\'<div style=color:#ccc;font-size:10px>No Image</div>\'">';
+    else html += '<div style="color:#ccc; font-size:10px;">No Image</div>';
+    html += '</div></div>';
+    html += '<div style="flex:1; min-width:0;">';
+    // 商品管理番号 / 商品番号 / コントロールカラム
+    html += '<div style="display:flex; gap:24px; margin-bottom:10px; font-size:13px;">';
+    html += '<div><span style="color:#666;">商品管理番号（商品URL）</span>';
+    html += '<div contenteditable="true" data-rms-field="number" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="margin-top:2px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; background:#fff; min-width:150px; font-weight:600; outline:none;">' + esc(prod.number || prod.id || '') + '</div></div>';
+    html += '<div><span style="color:#666;">商品番号</span>';
+    html += '<div contenteditable="true" data-rms-field="productNo" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="margin-top:2px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; background:#fff; min-width:120px; outline:none;">' + esc(prod._productNo || prod.number || '') + '</div></div>';
+    html += '<div><span style="color:#666;">コントロールカラム</span>';
+    html += '<div contenteditable="true" data-rms-field="controlCol" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="margin-top:2px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; background:#fff; min-width:40px; text-align:center; outline:none;">' + esc(prod._controlCol || rm.controlCol || 'n') + '</div></div>';
+    html += '</div>';
+    // 商品名
+    html += '<div style="margin-bottom:8px;">';
+    html += '<div style="font-size:13px; color:#666; margin-bottom:2px;">商品名 <span style="background:#bf0000; color:#fff; font-size:10px; padding:1px 6px; border-radius:3px; margin-left:4px;">必須</span></div>';
+    html += '<div contenteditable="true" data-rms-field="cleanName" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="padding:6px 10px; border:1px solid #ddd; border-radius:4px; background:#fff; font-size:13px; line-height:1.5; word-break:break-all; outline:none;">' + esc(rakutenName) + '</div>';
+    html += '</div>';
+    // キャッチコピー
+    html += '<div style="margin-bottom:10px;">';
+    html += '<div style="font-size:13px; color:#666; margin-bottom:2px;">キャッチコピー</div>';
+    html += '<div contenteditable="true" data-rms-field="catchCopy" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="padding:6px 10px; border:1px solid #ddd; border-radius:4px; background:#fff; font-size:13px; outline:none;">' + esc(catchCopy) + '</div>';
+    html += '</div>';
+    // 倉庫指定
+    const warehouse = prod._warehouse || prod.warehouse || '0';
+    html += '<div style="display:flex; gap:24px; align-items:center; font-size:13px;">';
+    html += '<div style="display:flex; align-items:center; gap:6px;"><span style="color:#666;">倉庫指定</span>';
+    html += '<span style="background:' + (warehouse === '0' ? '#4caf50' : '#ff9800') + '; color:white; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:600;">' + (warehouse === '0' ? '販売中' : '倉庫') + '</span></div>';
+    html += '</div>';
+    html += '</div></div></div>';
+
+    // === 横タブ（楽天RMS風） ===
+    const tabItems = [
+      {label:'バリエーション', tab:'s3var'},
+      {label:'販売・価格', tab:'s3price'},
+      {label:'在庫・配送', tab:'s3stock'},
+      {label:'製品情報', tab:'s3product'},
+      {label:'ページデザイン', tab:'s3design'},
+    ];
+    html += '<div style="display:flex; border-bottom:2px solid #ccc; padding:0 16px; background:#fafafa; position:sticky; top:0; z-index:2;">';
+    tabItems.forEach((item, idx) => {
+      const isActive = idx === 0;
+      html += '<div class="s3rms-side" data-tab="' + item.tab + '" data-gi="' + gi + '" onclick="switchS3RmsTab(\'' + item.tab + '\',' + gi + ')" style="padding:10px 20px; cursor:pointer; font-size:13px; font-weight:600; border:1px solid ' + (isActive ? '#ccc' : 'transparent') + '; border-bottom:' + (isActive ? '2px solid #fff' : '2px solid transparent') + '; margin-bottom:-2px; border-radius:6px 6px 0 0; background:' + (isActive ? '#fff' : 'transparent') + '; color:' + (isActive ? '#333' : '#888') + ';">';
+      html += item.label + '</div>';
+    });
+    html += '</div>';
+
+    // === タブコンテンツ ===
+    html += '<div style="padding:16px 24px 24px;">';
+
+    // --- バリエーション ---
+    html += '<div class="s3rms-tab" data-tab="s3var" data-gi="' + gi + '" style="padding:16px 0;">';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">バリエーション設定</h4>';
+    if (prod.skus.length > 0) {
+      let varKeyNames = [];
+      if (prod.skus[0].variants && prod.skus[0].variants.length > 0) {
+        varKeyNames = prod.skus[0].variants.map(v => v.key);
+      }
+      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
+      html += '<thead><tr>';
+      varKeyNames.forEach(kn => { html += '<th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">' + esc(kn) + '</th>'; });
+      html += '<th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">SKU管理番号</th>';
+      html += '<th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">システム連携用SKU番号</th>';
+      html += '<th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">JAN</th>';
+      html += '</tr></thead><tbody>';
+      prod.skus.forEach((sku, si) => {
+        html += '<tr style="background:' + (si % 2 === 0 ? '#fff' : '#fafafa') + ';">';
+        if (sku.variants) {
+          sku.variants.forEach(v => { html += '<td style="padding:8px 10px; border:1px solid #ddd;">' + esc(v.value || '') + '</td>'; });
+          for (let vi = sku.variants.length; vi < varKeyNames.length; vi++) html += '<td style="padding:8px 10px; border:1px solid #ddd;"></td>';
+        }
+        html += '<td contenteditable="true" data-rms-sku="skuMgmt" onfocus="onRmsFocus(this)" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" style="padding:8px 10px; border:1px solid #ddd; outline:none;">' + esc(sku._skuMgmtOverride !== undefined ? sku._skuMgmtOverride : (sku.skuMgmtNo || '')) + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="systemSku" onfocus="onRmsFocus(this)" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" style="padding:8px 10px; border:1px solid #ddd; outline:none;">' + esc(sku._systemSkuOverride !== undefined ? sku._systemSkuOverride : (sku.systemSku || '')) + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="jan" onfocus="onRmsFocus(this)" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" style="padding:8px 10px; border:1px solid #ddd; outline:none;">' + esc(sku.jan || '') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<p style="color:#999; font-size:14px;">バリエーションなし</p>';
+    }
+    html += '</div>';
+
+    // --- 販売・価格 ---
+    html += '<div class="s3rms-tab" data-tab="s3price" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">価格設定</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">通常購入販売価格</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><div contenteditable="true" data-rms-field="sellPrice" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="outline:none; min-width:80px; display:inline-block;">' + esc(prod.sellPrice || '') + '</div> 円</td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">消費税</td>';
+    const taxType = prod._taxType || rm.taxType || '0';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(taxType === '0' ? '税込み' : taxType) + '</td></tr>';
+    html += '</table>';
+    // SKU別価格
+    if (prod.skus.length > 1) {
+      html += '<h4 style="font-size:14px; color:#333; margin:16px 0 8px; border-bottom:1px solid #ddd; padding-bottom:6px;">SKU別価格</h4>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
+      html += '<thead><tr><th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">SKU管理番号</th><th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">バリエーション</th><th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">販売価格</th></tr></thead><tbody>';
+      prod.skus.forEach((sku, si) => {
+        const vars = sku.variants ? sku.variants.map(v => v.value).filter(Boolean).join(' / ') : '';
+        html += '<tr style="background:' + (si % 2 === 0 ? '#fff' : '#fafafa') + ';">';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(sku.skuMgmtNo || '') + '</td>';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;">' + esc(vars) + '</td>';
+        html += '<td contenteditable="true" data-rms-sku="price" onfocus="onRmsFocus(this)" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" style="padding:7px 10px; border:1px solid #ddd; text-align:right; outline:none;">' + esc(sku.price || prod.sellPrice || '') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    // ポイント変倍
+    html += '<h4 style="font-size:16px; color:#333; margin:16px 0 10px; border-bottom:2px solid #333; padding-bottom:8px;">商品別ポイント変倍</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ポイント変倍率</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><div contenteditable="true" data-rms-field="pointRate" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="outline:none; min-width:40px; display:inline-block;">' + esc(prod._pointRate !== undefined ? prod._pointRate : String(rm.pointRate || 1)) + '</div> 倍</td></tr>';
+    html += '</table>';
+    html += '</div>';
+
+    // --- 在庫・配送 ---
+    html += '<div class="s3rms-tab" data-tab="s3stock" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">在庫数</h4>';
+    if (prod.skus.length > 0) {
+      html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
+      html += '<thead><tr><th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600;">SKU / バリエーション</th><th style="background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; font-weight:600; width:120px;">在庫数</th></tr></thead><tbody>';
+      prod.skus.forEach((sku, si) => {
+        const vars = sku.variants ? sku.variants.map(v => v.value).filter(Boolean).join(' / ') : '';
+        html += '<tr style="background:' + (si % 2 === 0 ? '#fff' : '#fafafa') + ';">';
+        html += '<td style="padding:7px 10px; border:1px solid #ddd;"><div style="font-weight:600;">' + esc(sku.skuMgmtNo || '') + '</div>';
+        if (vars) html += '<div style="font-size:12px; color:#666;">' + esc(vars) + '</div>';
+        html += '</td>';
+        html += '<td contenteditable="true" data-rms-sku="stock" onfocus="onRmsFocus(this)" onblur="onRmsSkuEdit(this,' + gi + ',' + si + ')" style="padding:7px 10px; border:1px solid #ddd; text-align:center; outline:none;">' + esc(sku._stock || '0') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    // 配送設定
+    html += '<h4 style="font-size:16px; color:#333; margin:20px 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">配送設定</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+    let shipSetVal = prod._shippingSet !== undefined ? prod._shippingSet : (rm.shippingSet || '');
+    let shipNameVal = prod._shippingName !== undefined ? prod._shippingName : (rm.shippingName || '');
+    if (!shipSetVal && prod.shippingMethod && rm.shippingSets && rm.shippingSets.length > 0) {
+      const method = prod.shippingMethod.trim();
+      const found = rm.shippingSets.find(s => s.name === method || method.includes(s.name) || s.name.includes(method));
+      if (found) { shipSetVal = found.num; shipNameVal = found.name; }
+    }
+    const shipFeeVal = prod._shippingFee !== undefined ? prod._shippingFee : (rm.shippingFee || '0');
+    const shipFeeLabel = shipFeeVal === '0' ? '送料込み' : shipFeeVal === '1' ? '送料別' : shipFeeVal === '2' ? '送料無料' : shipFeeVal;
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">配送方法セット</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(shipSetVal + (shipNameVal ? ' (' + shipNameVal + ')' : '')) + '</td></tr>';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">送料</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(shipFeeLabel) + '</td></tr>';
+    html += '</table>';
+    html += '</div>';
+
+    // --- 製品情報 ---
+    html += '<div class="s3rms-tab" data-tab="s3product" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">製品情報</h4>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; width:200px; font-weight:600;">ジャンルID <span style="background:#bf0000; color:#fff; font-size:10px; padding:1px 6px; border-radius:3px;">必須</span></td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><div contenteditable="true" data-rms-field="genreId" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="outline:none; min-width:100px; display:inline-block; font-weight:600;">' + esc(genreId) + '</div>';
+    const genrePath = GENRE_MAP[genreId] || '';
+    if (genrePath) html += ' <span style="font-size:12px; color:#1565c0; margin-left:8px;">' + esc(genrePath) + '</span>';
+    html += '</td></tr>';
+    const catReason = prod._catalogReason || rm.catalogReason || '3';
+    html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カタログIDなしの理由</td>';
+    html += '<td style="padding:10px 14px; border:1px solid #ddd;"><div contenteditable="true" data-rms-field="catalogReason" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="outline:none; display:inline-block;">' + esc(catReason) + '</div> <span style="font-size:12px; color:#888;">(' + esc(catalogReasonLabel(catReason)) + ')</span></td></tr>';
+    if (prod.material) {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">素材</td>';
+      html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.material) + '</td></tr>';
+    }
+    if (prod.spec) {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">仕様</td>';
+      html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.spec) + '</td></tr>';
+    }
+    if (prod.laundryLabel) {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">洗濯表記</td>';
+      html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.laundryLabel) + '</td></tr>';
+    }
+    if (prod.category) {
+      html += '<tr><td style="padding:10px 14px; background:#f5f5f5; border:1px solid #ddd; font-weight:600;">カテゴリ</td>';
+      html += '<td style="padding:10px 14px; border:1px solid #ddd;">' + esc(prod.category) + '</td></tr>';
+    }
+    html += '</table>';
+    html += '</div>';
+
+    // --- ページデザイン ---
+    html += '<div class="s3rms-tab" data-tab="s3design" data-gi="' + gi + '" style="padding:16px 0; display:none;">';
+    // 画像URL
+    const imgUrls = generateRakutenImageUrls(prod);
+    if (imgUrls.length > 0) {
+      html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品画像URL（自動生成: ' + imgUrls.length + '枚）</h4>';
+      html += '<div style="background:#fafafa; border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:20px; max-height:300px; overflow-y:auto;">';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:12px; font-family:monospace;">';
+      imgUrls.forEach((url, i) => {
+        const lbl = i === 0 ? 'メイン(-1r)' : (i === imgUrls.length - 1 ? '最後(-11)' : (i === imgUrls.length - 2 ? '最後-1(-10)' : 'カラバリ'));
+        html += '<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 8px; color:#888; width:24px;">' + (i + 1) + '</td><td style="padding:4px 8px; color:#999; width:70px; font-size:11px;">' + lbl + '</td><td style="padding:4px 8px; word-break:break-all;"><a href="' + esc(url) + '" target="_blank" style="color:#1565c0; text-decoration:none;">' + esc(url) + '</a></td></tr>';
+      });
+      html += '</table></div>';
+    }
+    // 説明文（editable textarea）
+    html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品説明文</h4>';
+    const pcDesc = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
+    const spDesc = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
+    const saleDesc = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
+    [['PC用商品説明文', 'pcDesc', pcDesc], ['スマートフォン用商品説明文', 'spDesc', spDesc], ['PC用販売説明文', 'saleDesc', saleDesc]].forEach(([label, field, val]) => {
+      html += '<div style="margin-bottom:14px;">';
+      html += '<div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:#333; margin-bottom:6px;">' + esc(label);
+      if (val) html += ' <button class="btn btn-sm btn-outline" style="font-size:11px; padding:2px 8px;" onclick="previewHtml(decodeURIComponent(\'' + encodeURIComponent(val) + '\'), \'' + esc(label) + '\')">確認</button>';
+      html += '</div>';
+      html += '<textarea data-rms-field="' + field + '" onfocus="onRmsFocus(this)" onblur="onRmsEdit(this,' + gi + ')" style="width:100%; min-height:120px; padding:10px; border:1px solid #ccc; border-radius:4px; font-size:12px; font-family:monospace; resize:vertical; box-sizing:border-box;">' + esc(val || '') + '</textarea>';
+      if (val) html += '<div style="font-size:11px; color:#888; margin-top:3px;">' + val.length + '文字</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '</div>'; // tab content padding
+    html += '</div>'; // scroll area
+    html += '</div>'; // content
+    html += '</div>'; // panel
+  });
+
+  html += '</div>'; // right column
+  html += '</div>'; // grid
+
+  // フッター
+  html += '<div style="padding:12px 24px; border-top:1px solid #ddd; background:#fff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">';
+  html += '<button class="btn btn-outline" onclick="goToStep(2)">← 戻る</button>';
+  html += '<div style="font-size:13px; color:#666;">' + products.length + '商品 / ' + totalSkus + ' SKU / 自社Excel → 楽天</div>';
+  html += '<button class="btn btn-primary" onclick="goToStep(4)">ダウンロードへ →</button>';
+  html += '</div>';
+  html += '</div>'; // layout root
+
+  container.innerHTML = html;
+
+  // 高さ調整
+  const root = document.getElementById('s3rms-layout-root');
+  if (root) {
+    const adjustHeight = () => {
+      const top = root.getBoundingClientRect().top;
+      root.style.height = (window.innerHeight - top) + 'px';
+    };
+    adjustHeight();
+    window._rms3ResizeHandler = adjustHeight;
+    window.addEventListener('resize', adjustHeight);
+  }
+}
+
+function switchStep3JishaProduct(idx) {
+  document.querySelectorAll('.s3rms-panel').forEach(p => p.style.display = 'none');
+  const panel = document.querySelectorAll('.s3rms-panel')[idx];
+  if (panel) panel.style.display = 'flex';
+  document.querySelectorAll('.s3rms-prod-item').forEach((el, i) => {
+    el.style.background = i === idx ? '#e8e2dc' : '';
+    el.style.borderLeft = i === idx ? '3px solid #bf0000' : '3px solid transparent';
+  });
+}
+
+function switchS3RmsTab(tabId, gi) {
+  document.querySelectorAll('.s3rms-tab[data-gi="' + gi + '"]').forEach(el => {
+    el.style.display = el.dataset.tab === tabId ? '' : 'none';
+  });
+  const tabArea = document.querySelector('.s3rms-tab-area[data-gi="' + gi + '"]');
+  if (tabArea) tabArea.scrollTop = 0;
+  document.querySelectorAll('.s3rms-side[data-gi="' + gi + '"]').forEach(el => {
+    const active = el.dataset.tab === tabId;
+    el.style.background = active ? '#fff' : 'transparent';
+    el.style.color = active ? '#333' : '#888';
+    el.style.border = active ? '1px solid #ccc' : '1px solid transparent';
+    el.style.borderBottom = active ? '2px solid #fff' : '2px solid transparent';
+  });
+}
+
 
 function switchMallCsvTab(tabId, convertFn) {
   // タブ切替
@@ -3761,7 +4107,7 @@ function goToStep(n) {
     else if (sn < n) s.classList.add('done');
   });
   if (n === 2 && products.length > 0) renderStep2();
-  if (n === 3) renderRmsPreview();
+  if (n === 3) { if (sourceType === 'jisha') renderStep3JishaRms(); else renderRmsPreview(); }
   if (n === 4) renderStep4Download();
 }
 
@@ -4101,8 +4447,8 @@ function convertToRakuten() {
       pRow[RI['倉庫指定']] = prod._warehouse !== undefined ? prod._warehouse : (prod.warehouse || '0');
       pRow[RI['サーチ表示']] = prod._searchDisplay !== undefined ? prod._searchDisplay : (prod.searchDisplay || '0');
       pRow[RI['消費税']] = prod._taxType !== undefined ? prod._taxType : (rm.taxType || '0');
-      pRow[RI['販売期間指定（開始日時）']] = prod._salePeriodStart !== undefined ? prod._salePeriodStart : (prod.saleStartDate || '');
-      pRow[RI['販売期間指定（終了日時）']] = prod._salePeriodEnd !== undefined ? prod._salePeriodEnd : (prod.saleEndDate || '');
+      pRow[RI['販売期間指定（開始日時）']] = prod._salePeriodStart !== undefined ? prod._salePeriodStart : (sourceType === 'jisha' ? '' : (prod.saleStartDate || ''));
+      pRow[RI['販売期間指定（終了日時）']] = prod._salePeriodEnd !== undefined ? prod._salePeriodEnd : (sourceType === 'jisha' ? '' : (prod.saleEndDate || ''));
       pRow[RI['ポイント変倍率']] = prod._pointRate !== undefined ? prod._pointRate : String(rm.pointRate || 1);
       pRow[RI['ポイント変倍率適用期間（開始日時）']] = prod._pointStart !== undefined ? prod._pointStart : (rm.pointStart || '');
       pRow[RI['ポイント変倍率適用期間（終了日時）']] = prod._pointEnd !== undefined ? prod._pointEnd : (rm.pointEnd || '');
