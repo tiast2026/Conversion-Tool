@@ -4688,11 +4688,11 @@ function convertToRakuten() {
 
         // 配送
         // 自社Excelの配送方法からセット管理番号を自動解決
-        let resolvedShippingSet = prod._shippingSet !== undefined ? prod._shippingSet : (rm.shippingSet || '');
-        if (!resolvedShippingSet && prod.shippingMethod && rm.shippingSets && rm.shippingSets.length > 0) {
-          const method = prod.shippingMethod.trim();
-          const found = rm.shippingSets.find(s => s.name === method || method.includes(s.name) || s.name.includes(method));
-          if (found) resolvedShippingSet = found.num;
+        let resolvedShippingSet = prod._shippingSet !== undefined ? prod._shippingSet : '';
+        if (!resolvedShippingSet && sourceType === 'jisha') {
+          resolvedShippingSet = (prod.shippingMethod && prod.shippingMethod.includes('ネコポス')) ? '2' : '1';
+        } else if (!resolvedShippingSet) {
+          resolvedShippingSet = rm.shippingSet || '';
         }
         sRow[RI['配送方法セット管理番号']] = resolvedShippingSet;
         sRow[RI['送料']] = prod._shippingFee !== undefined ? prod._shippingFee : (rm.shippingFee || '0');
