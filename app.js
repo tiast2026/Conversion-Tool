@@ -2841,8 +2841,8 @@ function renderStep3JishaRms() {
     // 説明文（editable textarea）
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品説明文</h4>';
     const pcDesc = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
-    const spDesc = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
-    const saleDesc = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
+    const spDesc = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod, 'sp');
+    const saleDesc = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod, 'sale');
     [['PC用商品説明文', 'pcDesc', pcDesc], ['スマートフォン用商品説明文', 'spDesc', spDesc], ['PC用販売説明文', 'saleDesc', saleDesc]].forEach(([label, field, val]) => {
       html += '<div style="margin-bottom:14px;">';
       html += '<div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:#333; margin-bottom:6px;">' + esc(label);
@@ -3534,8 +3534,8 @@ function renderStep2Rms() {
     // 自社Excelの場合はマスタテンプレートから生成、楽天CSVの場合は既存データを使用
     const rm = MASTER.malls.rakuten;
     const s2pcDesc = prod.pcDesc || applyDescTemplate(rm.pcDescTpl, prod);
-    const s2spDesc = prod.spDesc || applyDescTemplate(rm.spDescTpl, prod);
-    const s2saleDesc = prod.pcSaleDesc || applyDescTemplate(rm.saleDescTpl, prod);
+    const s2spDesc = prod.spDesc || applyDescTemplate(rm.spDescTpl, prod, 'sp');
+    const s2saleDesc = prod.pcSaleDesc || applyDescTemplate(rm.saleDescTpl, prod, 'sale');
     [['PC用商品説明文', s2pcDesc], ['スマートフォン用商品説明文', s2spDesc], ['PC用販売説明文', s2saleDesc]].forEach(([label, val]) => {
       html += '<div style="margin-bottom:14px;"><div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:#333; margin-bottom:6px;">' + esc(label);
       if (val) {
@@ -4301,7 +4301,7 @@ function formatSpec(spec) {
 }
 
 // テンプレート置換: {商品名} {素材} 等を実データに置換
-function applyDescTemplate(tpl, prod) {
+function applyDescTemplate(tpl, prod, descType) {
   if (!tpl) return '';
   // 画像URLリストを生成
   const imageUrls = generateRakutenImageUrls(prod);
@@ -4357,6 +4357,10 @@ function applyDescTemplate(tpl, prod) {
   result = result.replace(/\{(\d+)色目img画像\}/g, (match, colorNum) => {
     return colorImgUrlMap[parseInt(colorNum)] || '';
   });
+  // ネコポス配送: SP用商品説明文・PC用販売説明文にメール便バナーを追加
+  if (sourceType === 'jisha' && (descType === 'sp' || descType === 'sale') && prod.shippingMethod && prod.shippingMethod.includes('ネコポス')) {
+    result += '<!-- メール便 -->\n<IMG src="https://image.rakuten.co.jp/noahl/cabinet/banner/06559841/mailbin-1.jpg"><br><br>\n';
+  }
   return result;
 }
 
@@ -4455,8 +4459,8 @@ function convertToRakuten() {
       pRow[RI['ジャンルID']] = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
       pRow[RI['キャッチコピー']] = prod._catchCopy || prod.name || rakutenName;
       pRow[RI['PC用商品説明文']] = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
-      pRow[RI['スマートフォン用商品説明文']] = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
-      pRow[RI['PC用販売説明文']] = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
+      pRow[RI['スマートフォン用商品説明文']] = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod, 'sp');
+      pRow[RI['PC用販売説明文']] = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod, 'sale');
 
       // 商品画像（CABINET形式）
       const imageUrls = generateRakutenImageUrls(prod);
@@ -5839,9 +5843,9 @@ function buildRakutenApiItem(prod) {
     tagline: catchCopy,
     productDescription: {
       pc: applyDescTemplate(rm.pcDescTpl, prod) || undefined,
-      sp: applyDescTemplate(rm.spDescTpl, prod) || undefined
+      sp: applyDescTemplate(rm.spDescTpl, prod, 'sp') || undefined
     },
-    salesDescription: applyDescTemplate(rm.saleDescTpl, prod) || undefined,
+    salesDescription: applyDescTemplate(rm.saleDescTpl, prod, 'sale') || undefined,
     taxType: parseInt(rm.taxType) || 0,
     postageSegment1: rm.shippingCat1 ? parseInt(rm.shippingCat1) : undefined,
     postageSegment2: rm.shippingCat2 ? parseInt(rm.shippingCat2) : undefined,
