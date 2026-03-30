@@ -2843,8 +2843,8 @@ function renderStep3JishaRms() {
     // 説明文（editable textarea）
     html += '<h4 style="font-size:16px; color:#333; margin:0 0 14px; border-bottom:2px solid #333; padding-bottom:8px;">商品説明文</h4>';
     const pcDesc = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
-    const spDesc = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod, 'sp');
-    const saleDesc = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod, 'sale');
+    const spDesc = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
+    const saleDesc = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
     [['PC用商品説明文', 'pcDesc', pcDesc], ['スマートフォン用商品説明文', 'spDesc', spDesc], ['PC用販売説明文', 'saleDesc', saleDesc]].forEach(([label, field, val]) => {
       html += '<div style="margin-bottom:14px;">';
       html += '<div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:#333; margin-bottom:6px;">' + esc(label);
@@ -3536,8 +3536,8 @@ function renderStep2Rms() {
     // 自社Excelの場合はマスタテンプレートから生成、楽天CSVの場合は既存データを使用
     const rm = MASTER.malls.rakuten;
     const s2pcDesc = prod.pcDesc || applyDescTemplate(rm.pcDescTpl, prod);
-    const s2spDesc = prod.spDesc || applyDescTemplate(rm.spDescTpl, prod, 'sp');
-    const s2saleDesc = prod.pcSaleDesc || applyDescTemplate(rm.saleDescTpl, prod, 'sale');
+    const s2spDesc = prod.spDesc || applyDescTemplate(rm.spDescTpl, prod);
+    const s2saleDesc = prod.pcSaleDesc || applyDescTemplate(rm.saleDescTpl, prod);
     [['PC用商品説明文', s2pcDesc], ['スマートフォン用商品説明文', s2spDesc], ['PC用販売説明文', s2saleDesc]].forEach(([label, val]) => {
       html += '<div style="margin-bottom:14px;"><div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:#333; margin-bottom:6px;">' + esc(label);
       if (val) {
@@ -4316,27 +4316,19 @@ function renderShippingBannerUI(banners) {
 function addShippingBannerRow(wrap, rule, idx) {
   if (!wrap) wrap = document.getElementById('shipping-banner-list');
   if (!wrap) return;
-  if (!rule) rule = { keyword: '', html: '', targets: ['sp', 'sale'], position: 'end' };
+  if (!rule) rule = { keyword: '', tag: '', html: '' };
   const div = document.createElement('div');
   div.className = 'shipping-banner-rule';
   div.style.cssText = 'border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:10px; background:#fafafa;';
-  const targets = rule.targets || ['sp', 'sale'];
   div.innerHTML = '<div style="display:flex; gap:12px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">'
     + '<div><label style="font-size:12px; font-weight:600; color:#555;">配送キーワード</label>'
     + '<input type="text" class="sb-keyword rms-input" value="' + esc(rule.keyword || '') + '" style="width:160px; display:block; margin-top:2px;" placeholder="例: ネコポス"></div>'
-    + '<div><label style="font-size:12px; font-weight:600; color:#555;">挿入位置</label>'
-    + '<select class="sb-position rms-input" style="display:block; margin-top:2px;">'
-    + '<option value="end"' + (rule.position !== 'start' ? ' selected' : '') + '>末尾</option>'
-    + '<option value="start"' + (rule.position === 'start' ? ' selected' : '') + '>先頭</option></select></div>'
-    + '<div><label style="font-size:12px; font-weight:600; color:#555;">対象</label>'
-    + '<div style="display:flex; gap:8px; margin-top:4px; font-size:12px;">'
-    + '<label><input type="checkbox" class="sb-tgt-pc" ' + (targets.includes('pc') ? 'checked' : '') + '> PC商品説明文</label>'
-    + '<label><input type="checkbox" class="sb-tgt-sp" ' + (targets.includes('sp') ? 'checked' : '') + '> SP商品説明文</label>'
-    + '<label><input type="checkbox" class="sb-tgt-sale" ' + (targets.includes('sale') ? 'checked' : '') + '> PC販売説明文</label>'
-    + '</div></div>'
+    + '<div><label style="font-size:12px; font-weight:600; color:#555;">タグ名</label>'
+    + '<input type="text" class="sb-tag rms-input" value="' + esc(rule.tag || '') + '" style="width:160px; display:block; margin-top:2px;" placeholder="例: メール便バナー">'
+    + '<div style="font-size:10px; color:#888; margin-top:2px;">テンプレート内で <code>{タグ名}</code> として使用</div></div>'
     + '<button class="btn btn-sm" style="background:#e53935; color:#fff; border:none; align-self:flex-start; margin-top:16px;" onclick="this.closest(\'.shipping-banner-rule\').remove()">削除</button>'
     + '</div>'
-    + '<label style="font-size:12px; font-weight:600; color:#555;">挿入HTML</label>'
+    + '<label style="font-size:12px; font-weight:600; color:#555;">置換HTML（配送キーワードに一致した場合のみ挿入、不一致時は空になる）</label>'
     + '<textarea class="sb-html rms-textarea" style="height:60px; margin-top:2px; font-size:11px; font-family:monospace;" placeholder="<!-- バナーHTML -->">' + esc(rule.html || '') + '</textarea>';
   wrap.appendChild(div);
 }
@@ -4345,18 +4337,14 @@ function readShippingBannerUI() {
   const rules = [];
   document.querySelectorAll('.shipping-banner-rule').forEach(div => {
     const keyword = div.querySelector('.sb-keyword')?.value?.trim() || '';
+    const tag = div.querySelector('.sb-tag')?.value?.trim() || '';
     const html = div.querySelector('.sb-html')?.value || '';
-    const position = div.querySelector('.sb-position')?.value || 'end';
-    const targets = [];
-    if (div.querySelector('.sb-tgt-pc')?.checked) targets.push('pc');
-    if (div.querySelector('.sb-tgt-sp')?.checked) targets.push('sp');
-    if (div.querySelector('.sb-tgt-sale')?.checked) targets.push('sale');
-    if (keyword || html) rules.push({ keyword, html, targets, position });
+    if (tag) rules.push({ keyword, tag, html });
   });
   return rules;
 }
 
-function applyDescTemplate(tpl, prod, descType) {
+function applyDescTemplate(tpl, prod) {
   if (!tpl) return '';
   // 画像URLリストを生成
   const imageUrls = generateRakutenImageUrls(prod);
@@ -4412,17 +4400,14 @@ function applyDescTemplate(tpl, prod, descType) {
   result = result.replace(/\{(\d+)色目img画像\}/g, (match, colorNum) => {
     return colorImgUrlMap[parseInt(colorNum)] || '';
   });
-  // 配送別バナー挿入（マスタ設定）
-  if (sourceType === 'jisha' && descType && prod.shippingMethod) {
-    const banners = (MASTER.malls.rakuten.shippingBanners || []);
-    banners.forEach(rule => {
-      if (!rule.keyword || !rule.html) return;
-      if (!prod.shippingMethod.includes(rule.keyword)) return;
-      if (rule.targets && !rule.targets.includes(descType)) return;
-      if (rule.position === 'start') result = rule.html + '\n' + result;
-      else result += '\n' + rule.html;
-    });
-  }
+  // 配送別バナータグ置換（マスタ設定）
+  const banners = (MASTER.malls.rakuten.shippingBanners || []);
+  banners.forEach(rule => {
+    if (!rule.tag) return;
+    const tagRegex = new RegExp('\\{' + rule.tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\}', 'g');
+    const match = sourceType === 'jisha' && prod.shippingMethod && rule.keyword && prod.shippingMethod.includes(rule.keyword);
+    result = result.replace(tagRegex, match ? (rule.html || '') : '');
+  });
   return result;
 }
 
@@ -4521,8 +4506,8 @@ function convertToRakuten() {
       pRow[RI['ジャンルID']] = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
       pRow[RI['キャッチコピー']] = prod._catchCopy || prod.name || rakutenName;
       pRow[RI['PC用商品説明文']] = prod._pcDesc !== undefined ? prod._pcDesc : applyDescTemplate(rm.pcDescTpl, prod);
-      pRow[RI['スマートフォン用商品説明文']] = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod, 'sp');
-      pRow[RI['PC用販売説明文']] = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod, 'sale');
+      pRow[RI['スマートフォン用商品説明文']] = prod._spDesc !== undefined ? prod._spDesc : applyDescTemplate(rm.spDescTpl, prod);
+      pRow[RI['PC用販売説明文']] = prod._saleDesc !== undefined ? prod._saleDesc : applyDescTemplate(rm.saleDescTpl, prod);
 
       // 商品画像（CABINET形式）
       const imageUrls = generateRakutenImageUrls(prod);
@@ -5905,9 +5890,9 @@ function buildRakutenApiItem(prod) {
     tagline: catchCopy,
     productDescription: {
       pc: applyDescTemplate(rm.pcDescTpl, prod) || undefined,
-      sp: applyDescTemplate(rm.spDescTpl, prod, 'sp') || undefined
+      sp: applyDescTemplate(rm.spDescTpl, prod) || undefined
     },
-    salesDescription: applyDescTemplate(rm.saleDescTpl, prod, 'sale') || undefined,
+    salesDescription: applyDescTemplate(rm.saleDescTpl, prod) || undefined,
     taxType: parseInt(rm.taxType) || 0,
     postageSegment1: rm.shippingCat1 ? parseInt(rm.shippingCat1) : undefined,
     postageSegment2: rm.shippingCat2 ? parseInt(rm.shippingCat2) : undefined,
