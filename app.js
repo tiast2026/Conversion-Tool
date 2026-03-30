@@ -210,7 +210,8 @@ let MASTER = {
       shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', shippingSets: [], asuraku: '', deliveryInfo: '', noshi: '0',
       pcDescTpl: '', spDescTpl: '', saleDescTpl: '',
       imgCabinet: '', imgType: '0',
-      imgCabinetBase: '/shohin/', maxProductImages: 20
+      imgCabinetBase: '/shohin/', maxProductImages: 20,
+      shippingBanners: []
     },
     futureshop: { columnSettings: { ccGoods: [], vc: [], vd: [], gs: [] } },
     tiktok:     { columnMappings: [], templateData: '' },
@@ -837,6 +838,7 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-img-cabinet-base')) el('mall-rakuten-img-cabinet-base').value = m.imgCabinetBase || '/shohin/';
     if (el('mall-rakuten-max-images')) el('mall-rakuten-max-images').value = m.maxProductImages || 20;
     if (el('mall-rakuten-img-type')) el('mall-rakuten-img-type').value = m.imgType || '0';
+    renderShippingBannerUI(m.shippingBanners || []);
     if (el('mall-rakuten-service-secret')) el('mall-rakuten-service-secret').value = m.serviceSecret || '';
     if (el('mall-rakuten-license-key')) el('mall-rakuten-license-key').value = m.licenseKey || '';
     if (el('mall-rakuten-cors-proxy')) el('mall-rakuten-cors-proxy').value = m.corsProxy || '';
@@ -1637,6 +1639,7 @@ function readMallFormToMaster(mall) {
     m.imgCabinetBase = el('mall-rakuten-img-cabinet-base')?.value?.trim() || '/shohin/';
     m.maxProductImages = parseInt(el('mall-rakuten-max-images')?.value) || 20;
     m.imgType = el('mall-rakuten-img-type')?.value || '0';
+    m.shippingBanners = readShippingBannerUI();
     m.serviceSecret = el('mall-rakuten-service-secret')?.value?.trim() || '';
     m.licenseKey = el('mall-rakuten-license-key')?.value?.trim() || '';
     m.corsProxy = el('mall-rakuten-cors-proxy')?.value?.trim() || '';
@@ -4301,6 +4304,59 @@ function formatSpec(spec) {
 }
 
 // テンプレート置換: {商品名} {素材} 等を実データに置換
+// ============================================================
+// 配送別バナー マスタUI
+// ============================================================
+function renderShippingBannerUI(banners) {
+  const wrap = document.getElementById('shipping-banner-list');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  (banners || []).forEach((rule, i) => addShippingBannerRow(wrap, rule, i));
+}
+
+function addShippingBannerRow(wrap, rule, idx) {
+  if (!wrap) wrap = document.getElementById('shipping-banner-list');
+  if (!wrap) return;
+  if (!rule) rule = { keyword: '', html: '', targets: ['sp', 'sale'], position: 'end' };
+  const div = document.createElement('div');
+  div.className = 'shipping-banner-rule';
+  div.style.cssText = 'border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:10px; background:#fafafa;';
+  const targets = rule.targets || ['sp', 'sale'];
+  div.innerHTML = '<div style="display:flex; gap:12px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">'
+    + '<div><label style="font-size:12px; font-weight:600; color:#555;">配送キーワード</label>'
+    + '<input type="text" class="sb-keyword rms-input" value="' + esc(rule.keyword || '') + '" style="width:160px; display:block; margin-top:2px;" placeholder="例: ネコポス"></div>'
+    + '<div><label style="font-size:12px; font-weight:600; color:#555;">挿入位置</label>'
+    + '<select class="sb-position rms-input" style="display:block; margin-top:2px;">'
+    + '<option value="end"' + (rule.position !== 'start' ? ' selected' : '') + '>末尾</option>'
+    + '<option value="start"' + (rule.position === 'start' ? ' selected' : '') + '>先頭</option></select></div>'
+    + '<div><label style="font-size:12px; font-weight:600; color:#555;">対象</label>'
+    + '<div style="display:flex; gap:8px; margin-top:4px; font-size:12px;">'
+    + '<label><input type="checkbox" class="sb-tgt-pc" ' + (targets.includes('pc') ? 'checked' : '') + '> PC商品説明文</label>'
+    + '<label><input type="checkbox" class="sb-tgt-sp" ' + (targets.includes('sp') ? 'checked' : '') + '> SP商品説明文</label>'
+    + '<label><input type="checkbox" class="sb-tgt-sale" ' + (targets.includes('sale') ? 'checked' : '') + '> PC販売説明文</label>'
+    + '</div></div>'
+    + '<button class="btn btn-sm" style="background:#e53935; color:#fff; border:none; align-self:flex-start; margin-top:16px;" onclick="this.closest(\'.shipping-banner-rule\').remove()">削除</button>'
+    + '</div>'
+    + '<label style="font-size:12px; font-weight:600; color:#555;">挿入HTML</label>'
+    + '<textarea class="sb-html rms-textarea" style="height:60px; margin-top:2px; font-size:11px; font-family:monospace;" placeholder="<!-- バナーHTML -->">' + esc(rule.html || '') + '</textarea>';
+  wrap.appendChild(div);
+}
+
+function readShippingBannerUI() {
+  const rules = [];
+  document.querySelectorAll('.shipping-banner-rule').forEach(div => {
+    const keyword = div.querySelector('.sb-keyword')?.value?.trim() || '';
+    const html = div.querySelector('.sb-html')?.value || '';
+    const position = div.querySelector('.sb-position')?.value || 'end';
+    const targets = [];
+    if (div.querySelector('.sb-tgt-pc')?.checked) targets.push('pc');
+    if (div.querySelector('.sb-tgt-sp')?.checked) targets.push('sp');
+    if (div.querySelector('.sb-tgt-sale')?.checked) targets.push('sale');
+    if (keyword || html) rules.push({ keyword, html, targets, position });
+  });
+  return rules;
+}
+
 function applyDescTemplate(tpl, prod, descType) {
   if (!tpl) return '';
   // 画像URLリストを生成
@@ -4357,9 +4413,16 @@ function applyDescTemplate(tpl, prod, descType) {
   result = result.replace(/\{(\d+)色目img画像\}/g, (match, colorNum) => {
     return colorImgUrlMap[parseInt(colorNum)] || '';
   });
-  // ネコポス配送: SP用商品説明文・PC用販売説明文にメール便バナーを追加
-  if (sourceType === 'jisha' && (descType === 'sp' || descType === 'sale') && prod.shippingMethod && prod.shippingMethod.includes('ネコポス')) {
-    result += '<!-- メール便 -->\n<IMG src="https://image.rakuten.co.jp/noahl/cabinet/banner/06559841/mailbin-1.jpg"><br><br>\n';
+  // 配送別バナー挿入（マスタ設定）
+  if (sourceType === 'jisha' && descType && prod.shippingMethod) {
+    const banners = (MASTER.malls.rakuten.shippingBanners || []);
+    banners.forEach(rule => {
+      if (!rule.keyword || !rule.html) return;
+      if (!prod.shippingMethod.includes(rule.keyword)) return;
+      if (rule.targets && !rule.targets.includes(descType)) return;
+      if (rule.position === 'start') result = rule.html + '\n' + result;
+      else result += '\n' + rule.html;
+    });
   }
   return result;
 }
