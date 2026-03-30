@@ -208,7 +208,7 @@ let MASTER = {
       namePrefix: 'NOAHL｜', nameSuffix: '',
       priceRate: 40, taxType: '0', pointRate: 1, pointStart: '', pointEnd: '',
       shippingFee: '1', indivShipping: 0, shippingSet: '', shippingName: '', shippingSets: [], asuraku: '', deliveryInfo: '', noshi: '0',
-      pcDescTpl: '', spDescTpl: '', saleDescTpl: '',
+      pcDescTpl: '', spDescTpl: '', saleDescTpl: '', nameTpl: '',
       imgCabinet: '', imgType: '0',
       imgCabinetBase: '/shohin/', maxProductImages: 20,
       shippingBanners: []
@@ -831,6 +831,7 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-okihai')) el('mall-rakuten-okihai').value = m.okihai || '';
     if (el('mall-rakuten-delivery-info')) el('mall-rakuten-delivery-info').value = m.deliveryInfo || '';
     if (el('mall-rakuten-noshi')) el('mall-rakuten-noshi').value = m.noshi || '0';
+    if (el('mall-rakuten-name-tpl')) el('mall-rakuten-name-tpl').value = m.nameTpl || '';
     if (el('mall-rakuten-pc-desc-tpl')) el('mall-rakuten-pc-desc-tpl').value = m.pcDescTpl || '';
     if (el('mall-rakuten-sp-desc-tpl')) el('mall-rakuten-sp-desc-tpl').value = m.spDescTpl || '';
     if (el('mall-rakuten-sale-desc-tpl')) el('mall-rakuten-sale-desc-tpl').value = m.saleDescTpl || '';
@@ -1632,6 +1633,7 @@ function readMallFormToMaster(mall) {
     m.okihai = el('mall-rakuten-okihai')?.value || '';
     m.deliveryInfo = el('mall-rakuten-delivery-info')?.value?.trim() || '';
     m.noshi = el('mall-rakuten-noshi')?.value || '0';
+    m.nameTpl = el('mall-rakuten-name-tpl')?.value || '';
     m.pcDescTpl = el('mall-rakuten-pc-desc-tpl')?.value || '';
     m.spDescTpl = el('mall-rakuten-sp-desc-tpl')?.value || '';
     m.saleDescTpl = el('mall-rakuten-sale-desc-tpl')?.value || '';
@@ -1872,6 +1874,85 @@ function applyMallName(name, mallKey) {
   const m = MASTER.malls[mallKey];
   if (!m) return name;
   return (m.namePrefix || '') + name + (m.nameSuffix || '');
+}
+
+// 楽天商品名テンプレート展開（自社Excel→楽天用）
+function applyNameTemplate(tpl, prod) {
+  if (!tpl) return prod.cleanName || prod.name || '';
+  const rm = MASTER.malls.rakuten;
+  // カラバリ: 全SKUのユニークカラー名スペース区切り
+  const colors = [];
+  const colorSeen = new Set();
+  prod.skus.forEach(sku => {
+    if (sku.color && !colorSeen.has(sku.color)) {
+      colorSeen.add(sku.color);
+      colors.push(sku.color);
+    }
+  });
+  let result = tpl
+    .replace(/\{商品名\}/g, prod.cleanName || prod.name || '')
+    .replace(/\{カテゴリ\}/g, prod.category || '')
+    .replace(/\{カラバリスペース\}/g, colors.join(' '))
+    .replace(/\{季節\}/g, guessSeasonFromDate(prod.saleStartDate))
+    .replace(/\{販売日\}/g, formatDateYYMMDD(prod.saleStartDate))
+    .replace(/\{メモ末尾\}/g, extractMemoNumber(prod.memo));
+  // 配送別バナータグ置換（マスタ設定）
+  (rm.shippingBanners || []).forEach(rule => {
+    if (!rule.tag) return;
+    const tagRegex = new RegExp('\\{' + rule.tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\}', 'g');
+    const match = prod.shippingMethod && rule.keyword && prod.shippingMethod.includes(rule.keyword);
+    result = result.replace(tagRegex, match ? (rule.html || '') : '');
+  });
+  return result.replace(/\s{2,}/g, ' ').trim();
+}
+
+// 販売日からYYMMDD形式にフォーマット
+function formatDateYYMMDD(dateStr) {
+  if (!dateStr) return '';
+  // Excel serial number
+  if (/^\d{5}$/.test(String(dateStr).trim())) {
+    const d = new Date((parseInt(dateStr) - 25569) * 86400000);
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return yy + mm + dd;
+  }
+  // 2026/2/11 or 2026-02-11
+  const m = String(dateStr).match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+  if (m) {
+    const yy = m[1].slice(2);
+    const mm = m[2].padStart(2, '0');
+    const dd = m[3].padStart(2, '0');
+    return yy + mm + dd;
+  }
+  return String(dateStr).replace(/\D/g, '');
+}
+
+// 販売日の月から季節を推測
+function guessSeasonFromDate(dateStr) {
+  if (!dateStr) return '';
+  let month = 0;
+  if (/^\d{5}$/.test(String(dateStr).trim())) {
+    const d = new Date((parseInt(dateStr) - 25569) * 86400000);
+    month = d.getMonth() + 1;
+  } else {
+    const m = String(dateStr).match(/(\d{4})[\/\-年](\d{1,2})/);
+    if (m) month = parseInt(m[2]);
+  }
+  if (!month) return '';
+  if (month >= 1 && month <= 3) return '春 秋';
+  if (month >= 4 && month <= 6) return '夏';
+  if (month >= 7 && month <= 9) return '秋';
+  if (month >= 10 && month <= 12) return '冬';
+  return '';
+}
+
+// メモから末尾の数字を抽出
+function extractMemoNumber(memo) {
+  if (!memo) return '';
+  const s = String(memo).trim();
+  const m = s.match(/(\d+)\s*$/);
+  return m ? m[1] : s;
 }
 
 // モール別の価格計算
@@ -2625,9 +2706,10 @@ function renderStep3JishaRms() {
   html += '<div style="min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden;">';
 
   products.forEach((prod, gi) => {
-    const rakutenName = applyMallName(prod.cleanName || prod.name, 'rakuten');
+    const namePart = (sourceType === 'jisha' && rm.nameTpl) ? applyNameTemplate(rm.nameTpl, prod) : (prod.cleanName || prod.name);
+    const rakutenName = applyMallName(namePart, 'rakuten');
     const genreId = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
-    const catchCopy = prod._catchCopy || prod.productPoint || '';
+    const catchCopy = prod._catchCopy || prod.name || '';
     const imgUrl = generateRakutenImageUrls(prod)[0] || '';
 
     html += '<div class="s3rms-panel" data-idx="' + gi + '" style="display:' + (gi > 0 ? 'none' : 'flex') + '; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden;">';
@@ -4487,7 +4569,8 @@ function convertToRakuten() {
       });
       const hasColor = colorSet.size > 0;
       const hasSize = sizeSet.size > 0;
-      const rakutenName = applyMallName(prod.cleanName || prod.name, 'rakuten');
+      const namePart = (sourceType === 'jisha' && rm.nameTpl) ? applyNameTemplate(rm.nameTpl, prod) : (prod.cleanName || prod.name);
+      const rakutenName = applyMallName(namePart, 'rakuten');
 
       // === 商品行 ===
       const pRow = new Array(rH.length).fill('');
@@ -5849,7 +5932,8 @@ async function testRakutenApi() {
 function buildRakutenApiItem(prod) {
   const rm = MASTER.malls.rakuten;
   const genreId = prod._autoGenreId || rm.genreId || guessGenreId(prod.category, prod.cleanName || prod.name);
-  const itemName = applyMallName(prod.cleanName || prod.name, 'rakuten');
+  const namePart = (sourceType === 'jisha' && rm.nameTpl) ? applyNameTemplate(rm.nameTpl, prod) : (prod.cleanName || prod.name);
+  const itemName = applyMallName(namePart, 'rakuten');
   const catchCopy = prod._catchCopy || prod.productPoint || '';
 
   // バリエーション情報の収集
