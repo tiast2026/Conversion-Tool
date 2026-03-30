@@ -4218,58 +4218,63 @@ function renderStep4Download() {
   const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
 
   if (sourceType === 'jisha') {
-    // 自社Excel→楽天: 専用レイアウト
+    // 自社Excel→楽天: 2サイト横並びフルワイドレイアウト
     document.getElementById('summary-cards-dl').innerHTML = '';
     const rm = MASTER.malls.rakuten;
     const hasApiCreds = rm.serviceSecret && rm.licenseKey;
     const hasNeCreds = rm.corsProxy && rm.neAccessToken && rm.neRefreshToken;
     let html = '';
-    html += '<div style="max-width:640px; margin:0 auto; padding:20px 0;">';
-    // サマリー
-    html += '<div style="display:flex; gap:16px; margin-bottom:24px;">';
-    html += '<div style="flex:1; text-align:center; padding:16px; background:#fff5f5; border-radius:10px; border:1px solid #f0ddd8;"><div style="font-size:28px; font-weight:700; color:#bf0000;">' + totalProducts + '</div><div style="font-size:12px; color:#888;">商品</div></div>';
-    html += '<div style="flex:1; text-align:center; padding:16px; background:#fff5f5; border-radius:10px; border:1px solid #f0ddd8;"><div style="font-size:28px; font-weight:700; color:#bf0000;">' + totalSkus + '</div><div style="font-size:12px; color:#888;">SKU</div></div>';
+    // サマリー帯
+    html += '<div style="display:flex; justify-content:center; gap:40px; padding:20px 0; margin-bottom:24px; background:#f8f5f2; border-radius:10px;">';
+    html += '<div style="text-align:center;"><span style="font-size:32px; font-weight:700; color:#bf0000;">' + totalProducts + '</span><span style="font-size:14px; color:#888; margin-left:6px;">商品</span></div>';
+    html += '<div style="text-align:center;"><span style="font-size:32px; font-weight:700; color:#bf0000;">' + totalSkus + '</span><span style="font-size:14px; color:#888; margin-left:6px;">SKU</span></div>';
+    html += '<div style="text-align:center;"><span style="font-size:14px; color:#888;">自社Excel → 楽天</span></div>';
     html += '</div>';
-    // 楽天CSVダウンロード
-    html += '<div style="background:#fff; border:1px solid #e0d6d0; border-radius:12px; padding:24px; margin-bottom:16px;">';
-    html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">';
-    html += '<div style="width:44px; height:44px; border-radius:10px; background:#bf0000; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px;">R</div>';
-    html += '<div><div style="font-size:16px; font-weight:700; color:#333;">楽天市場 商品一括登録</div>';
-    html += '<div style="font-size:12px; color:#888;">normal-item.csv + item-cat.csv</div></div>';
-    html += '<span style="background:#e3f2fd; color:#2c7be5; font-size:11px; padding:3px 10px; border-radius:10px; font-weight:600;">CSV</span>';
+    // 2カラム: 楽天 | ネクストエンジン
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; padding:0 20px;">';
+    // 楽天カード
+    html += '<div style="background:#fff; border:2px solid #bf000030; border-radius:14px; padding:32px; display:flex; flex-direction:column;">';
+    html += '<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">';
+    html += '<div style="width:52px; height:52px; border-radius:12px; background:#bf0000; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;">R</div>';
+    html += '<div style="flex:1;"><div style="font-size:18px; font-weight:700; color:#333;">楽天市場</div>';
+    html += '<div style="font-size:13px; color:#888;">商品一括登録CSV</div></div>';
+    html += '<span style="background:#e3f2fd; color:#2c7be5; font-size:11px; padding:4px 12px; border-radius:12px; font-weight:600;">CSV</span>';
     html += '</div>';
-    html += '<button class="btn btn-success" style="width:100%; background:#bf0000; border-color:#bf0000; padding:12px; font-size:15px;" onclick="downloadRakutenAll()">⬇ CSVダウンロード</button>';
-    html += '</div>';
-    // API登録
-    html += '<div style="display:flex; gap:12px; margin-bottom:16px;">';
-    // 楽天API
-    html += '<div style="flex:1; background:#fff; border:1px solid #e0d6d0; border-radius:12px; padding:20px; text-align:center;">';
-    html += '<div style="font-size:13px; font-weight:600; color:#bf0000; margin-bottom:10px;">楽天RMS API</div>';
+    html += '<div style="font-size:12px; color:#999; margin-bottom:20px;">normal-item.csv + item-cat.csv をダウンロード</div>';
+    html += '<button class="btn" style="width:100%; background:#bf0000; color:#fff; border:none; padding:14px; font-size:15px; border-radius:8px; cursor:pointer;" onclick="downloadRakutenAll()">⬇ CSVダウンロード</button>';
+    html += '<div style="margin-top:16px; padding-top:16px; border-top:1px solid #eee;">';
     if (hasApiCreds) {
-      html += '<button class="btn" onclick="registerToRakutenApi()" style="background:#c45c5c; color:#fff; border:none; width:100%; padding:10px;">🔗 直接登録</button>';
+      html += '<button class="btn" onclick="registerToRakutenApi()" style="width:100%; background:#fff; color:#bf0000; border:1px solid #bf0000; padding:10px; border-radius:8px; cursor:pointer;">🔗 楽天APIで直接登録</button>';
     } else {
-      html += '<button class="btn btn-outline" disabled style="opacity:0.4; width:100%;">🔗 直接登録</button>';
-      html += '<div style="font-size:10px; color:#999; margin-top:6px;">API認証未設定</div>';
+      html += '<button class="btn" disabled style="width:100%; opacity:0.3; padding:10px; border-radius:8px;">🔗 楽天APIで直接登録</button>';
+      html += '<div style="font-size:11px; color:#bbb; margin-top:6px; text-align:center;">マスタ設定でAPI認証情報を設定</div>';
     }
+    html += '</div></div>';
+    // ネクストエンジンカード
+    html += '<div style="background:#fff; border:2px solid #e67e2230; border-radius:14px; padding:32px; display:flex; flex-direction:column;">';
+    html += '<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">';
+    html += '<div style="width:52px; height:52px; border-radius:12px; background:#e67e22; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px;">NE</div>';
+    html += '<div style="flex:1;"><div style="font-size:18px; font-weight:700; color:#333;">ネクストエンジン</div>';
+    html += '<div style="font-size:13px; color:#888;">NE APIで商品マスタ登録</div></div>';
+    html += '<span style="background:#fff3e0; color:#e67e22; font-size:11px; padding:4px 12px; border-radius:12px; font-weight:600;">API</span>';
     html += '</div>';
-    // NE API
-    html += '<div style="flex:1; background:#fff; border:1px solid #f5e6cc; border-radius:12px; padding:20px; text-align:center;">';
-    html += '<div style="font-size:13px; font-weight:600; color:#e67e22; margin-bottom:10px;">ネクストエンジン</div>';
+    html += '<div style="font-size:12px; color:#999; margin-bottom:20px;">NE APIで商品マスタを直接登録します</div>';
     if (hasNeCreds) {
-      html += '<button class="btn" onclick="registerToNextEngineApi()" style="background:#e67e22; color:#fff; border:none; width:100%; padding:10px;">🔗 直接登録</button>';
+      html += '<button class="btn" onclick="registerToNextEngineApi()" style="width:100%; background:#e67e22; color:#fff; border:none; padding:14px; font-size:15px; border-radius:8px; cursor:pointer;">🔗 NE APIで直接登録</button>';
     } else {
-      html += '<button class="btn btn-outline" disabled style="opacity:0.4; width:100%;">🔗 直接登録</button>';
-      html += '<div style="font-size:10px; color:#999; margin-top:6px;">API認証未設定</div>';
+      html += '<button class="btn" disabled style="width:100%; opacity:0.3; padding:14px; font-size:15px; border-radius:8px;">🔗 NE APIで直接登録</button>';
+      html += '<div style="font-size:11px; color:#bbb; margin-top:6px; text-align:center;">マスタ設定でNE API認証情報を設定</div>';
     }
     html += '</div>';
-    html += '</div>';
+    html += '</div>'; // grid
     // 進捗エリア
-    html += '<div id="api-register-status" style="display:none; border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px;">';
+    html += '<div style="padding:0 20px;">';
+    html += '<div id="api-register-status" style="display:none; border:1px solid var(--border); border-radius:10px; padding:16px; margin-top:20px;">';
     html += '<div style="font-weight:600; margin-bottom:8px; color:var(--primary-dark);">楽天API登録 進捗</div>';
     html += '<div id="api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>';
     html += '<div id="api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>';
     html += '</div>';
-    html += '<div id="ne-api-register-status" style="display:none; border:1px solid #f39c12; border-radius:10px; padding:16px; margin-bottom:12px;">';
+    html += '<div id="ne-api-register-status" style="display:none; border:1px solid #f39c12; border-radius:10px; padding:16px; margin-top:12px;">';
     html += '<div style="font-weight:600; margin-bottom:8px; color:#e67e22;">ネクストエンジンAPI登録 進捗</div>';
     html += '<div id="ne-api-register-progress" style="font-size:13px; margin-bottom:8px; color:var(--text-light);"></div>';
     html += '<div id="ne-api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>';
