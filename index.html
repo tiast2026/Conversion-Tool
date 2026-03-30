@@ -626,6 +626,29 @@
       <div class="rakuten-tab-panel" id="rtab-display" style="display:none;">
         <table class="rms-form">
           <tr>
+            <th>商品名テンプレート<br><span style="font-size:11px; font-weight:400; color:#888;">（自社Excel→楽天用）</span></th>
+            <td>
+              <span class="src-master">マスタ</span> 空欄ならクリーン名をそのまま使用<br>
+              <input type="text" id="mall-rakuten-name-tpl" class="rms-input" style="width:100%; font-size:13px;" placeholder="例: {メール便}{カテゴリ} レディース {カラバリスペース} {季節} ノアル {販売日} {メモ末尾}">
+              <div style="margin-top:8px; font-size:12px; line-height:2; color:#555;">
+                <div style="font-weight:600; color:#333; margin-bottom:2px;">使用できるタグ:</div>
+                <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{商品名}</code>
+                <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">{カテゴリ}</code>
+                <code style="background:#e3f2fd; padding:2px 6px; border-radius:3px;">{カラバリスペース}</code>
+                <span style="font-size:11px; color:#888;">SKU全色をスペース区切り</span><br>
+                <code style="background:#e3f2fd; padding:2px 6px; border-radius:3px;">{季節}</code>
+                <span style="font-size:11px; color:#888;">販売日月から推測（1-3月:春 秋 / 4-6月:夏 / 7-9月:秋 / 10-12月:冬）</span><br>
+                <code style="background:#e3f2fd; padding:2px 6px; border-radius:3px;">{販売日}</code>
+                <span style="font-size:11px; color:#888;">YYMMDD形式</span>
+                <code style="background:#e3f2fd; padding:2px 6px; border-radius:3px;">{メモ末尾}</code>
+                <span style="font-size:11px; color:#888;">メモの末尾数字</span><br>
+                <code style="background:#fff3e0; padding:2px 6px; border-radius:3px;">{配送バナータグ名}</code>
+                <span style="font-size:11px; color:#888;">配送別バナーのタグも使用可（例: {メール便}→【メール便】）</span>
+              </div>
+              <div style="margin-top:4px; font-size:11px; color:#999;">※ namePrefixは自動付与されます（現在: <strong>NOAHL｜</strong>）。キャッチコピーにはExcelの商品名がそのまま入ります。</div>
+            </td>
+          </tr>
+          <tr>
             <th>PC用商品説明文</th>
             <td>
               <span class="src-master">マスタ</span> HTMLテンプレートで生成<br>
