@@ -103,7 +103,7 @@
           "maxProductImages": 20,
           "shippingBanners": [
             {
-              "keyword": "メール便",
+              "keyword": "ネコポス(ヤマト運輸)",
               "tag": "メール便",
               "html": "<!-- メール便 -->\n<IMG src=\"https://image.rakuten.co.jp/noahl/cabinet/banner/06559841/mailbin-1.jpg\"><br><br>"
             }
