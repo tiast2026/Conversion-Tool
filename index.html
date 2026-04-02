@@ -1115,7 +1115,7 @@
     <div class="master-mall-panel" id="mall-rakufashion" style="display:none; padding-top:16px;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
         <span style="font-size:16px; font-weight:700; color:var(--primary-dark);">楽天CSV → 楽天ファッション CSV</span>
-        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">楽天ファッションCSVに出力する固定値を設定</span>
+        <span style="font-size:13px; color:var(--text-light); background:#f0f0f0; padding:3px 10px; border-radius:10px;">楽天ファッションCSV（フラットSKU形式）の固定値を設定</span>
       </div>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
         <label style="font-size:14px; font-weight:600;">価格掛率（%）：</label>
@@ -1130,19 +1130,25 @@
       </div>
       <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">楽天ファッション固有設定</p>
       <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; max-width:500px;">
-        <label style="font-size:14px; font-weight:600;">ブランドコード：</label>
-        <input type="text" id="mall-rakufashion-brand-code" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: BRAND001">
-        <label style="font-size:14px; font-weight:600;">配送方法セット管理番号：</label>
-        <input type="text" id="mall-rakufashion-shipping-set" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 1">
-        <label style="font-size:14px; font-weight:600;">カタログIDなしの理由：</label>
-        <select id="mall-rakufashion-catalog-reason" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:auto;">
-          <option value="1">セット商品</option>
-          <option value="2">サービス商品</option>
-          <option value="3" selected>店舗オリジナル商品</option>
-          <option value="4">項目選択肢在庫商品</option>
-          <option value="5">該当製品コードなし</option>
+        <label style="font-size:14px; font-weight:600;">取引先コード：</label>
+        <input type="text" id="mall-rakufashion-supplier-code" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 7253-00">
+        <label style="font-size:14px; font-weight:600;">商品ブランド：</label>
+        <input type="text" id="mall-rakufashion-brand-name" value="NOAHL" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: NOAHL">
+        <label style="font-size:14px; font-weight:600;">性別：</label>
+        <select id="mall-rakufashion-gender" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:14px; width:auto;">
+          <option value="1" selected>レディース</option>
+          <option value="2">メンズ</option>
+          <option value="3">ユニセックス</option>
         </select>
+        <label style="font-size:14px; font-weight:600;">デフォルト商品カテゴリID：</label>
+        <input type="text" id="mall-rakufashion-default-category-id" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 20005001">
+        <label style="font-size:14px; font-weight:600;">販売開始日時：</label>
+        <input type="text" id="mall-rakufashion-sales-start" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 20260301000000">
+        <label style="font-size:14px; font-weight:600;">販売終了日時：</label>
+        <input type="text" id="mall-rakufashion-sales-end" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:12px;" placeholder="例: 20301231000000">
       </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:12px; margin-bottom:6px;">商品カテゴリIDマップ（キーワード,カテゴリID を1行ずつ）</p>
+      <textarea id="mall-rakufashion-category-map" rows="5" style="width:100%; max-width:500px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:12px; font-family:monospace;" placeholder="シャツ,20005001&#10;パンツ,20025006&#10;ワンピース,20015001"></textarea>
     </div>
     </div><!-- /padding wrapper -->
   </div>

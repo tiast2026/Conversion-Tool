@@ -1264,7 +1264,14 @@
         "rakufashion": {
           "priceRate": 100,
           "namePrefix": "",
-          "nameSuffix": ""
+          "nameSuffix": "",
+          "supplierCode": "",
+          "brandName": "NOAHL",
+          "gender": "1",
+          "defaultCategoryId": "",
+          "salesStartDate": "",
+          "salesEndDate": "",
+          "categoryMap": {}
         }
       }
     }

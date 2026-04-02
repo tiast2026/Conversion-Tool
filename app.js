@@ -216,7 +216,7 @@ let MASTER = {
     futureshop: { columnSettings: { ccGoods: [], vc: [], vd: [], gs: [] } },
     tiktok:     { columnMappings: [], templateData: '' },
     zozo:       { priceRate: 100, namePrefix: '', nameSuffix: '' },
-    rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '', brandCode: '', shippingSet: '', catalogReason: '3' }
+    rakufashion:{ priceRate: 100, namePrefix: '', nameSuffix: '', supplierCode: '', brandName: 'NOAHL', gender: '1', defaultCategoryId: '', salesStartDate: '', salesEndDate: '', categoryMap: {} }
   }
 };
 let PROFILES = {};       // { "NOAHL": {...}, "BrandB": {...} }
@@ -887,9 +887,16 @@ function loadMallMasterUI(mall) {
     });
   }
   if (mall === 'rakufashion') {
-    if (el('mall-rakufashion-brand-code')) el('mall-rakufashion-brand-code').value = m.brandCode || '';
-    if (el('mall-rakufashion-shipping-set')) el('mall-rakufashion-shipping-set').value = m.shippingSet || '';
-    if (el('mall-rakufashion-catalog-reason')) el('mall-rakufashion-catalog-reason').value = m.catalogReason || '3';
+    if (el('mall-rakufashion-supplier-code')) el('mall-rakufashion-supplier-code').value = m.supplierCode || '';
+    if (el('mall-rakufashion-brand-name')) el('mall-rakufashion-brand-name').value = m.brandName || 'NOAHL';
+    if (el('mall-rakufashion-gender')) el('mall-rakufashion-gender').value = m.gender || '1';
+    if (el('mall-rakufashion-default-category-id')) el('mall-rakufashion-default-category-id').value = m.defaultCategoryId || '';
+    if (el('mall-rakufashion-sales-start')) el('mall-rakufashion-sales-start').value = m.salesStartDate || '';
+    if (el('mall-rakufashion-sales-end')) el('mall-rakufashion-sales-end').value = m.salesEndDate || '';
+    if (el('mall-rakufashion-category-map')) {
+      const catMap = m.categoryMap || {};
+      el('mall-rakufashion-category-map').value = Object.entries(catMap).map(([k, v]) => `${k},${v}`).join('\n');
+    }
   }
 }
 
@@ -1683,9 +1690,21 @@ function readMallFormToMaster(mall) {
     m.columnMappings = _tiktokColumnMappings.map(e => Object.assign({}, e));
   }
   if (mall === 'rakufashion') {
-    m.brandCode = el('mall-rakufashion-brand-code')?.value?.trim() || '';
-    m.shippingSet = el('mall-rakufashion-shipping-set')?.value?.trim() || '';
-    m.catalogReason = el('mall-rakufashion-catalog-reason')?.value || '3';
+    m.supplierCode = el('mall-rakufashion-supplier-code')?.value?.trim() || '';
+    m.brandName = el('mall-rakufashion-brand-name')?.value?.trim() || 'NOAHL';
+    m.gender = el('mall-rakufashion-gender')?.value || '1';
+    m.defaultCategoryId = el('mall-rakufashion-default-category-id')?.value?.trim() || '';
+    m.salesStartDate = el('mall-rakufashion-sales-start')?.value?.trim() || '';
+    m.salesEndDate = el('mall-rakufashion-sales-end')?.value?.trim() || '';
+    const catMapText = el('mall-rakufashion-category-map')?.value || '';
+    const catMapObj = {};
+    catMapText.split('\n').map(l => l.trim()).filter(l => l && l.includes(',')).forEach(line => {
+      const idx = line.indexOf(',');
+      const keyword = line.substring(0, idx).trim();
+      const catId = line.substring(idx + 1).trim();
+      if (keyword && catId) catMapObj[keyword] = catId;
+    });
+    m.categoryMap = catMapObj;
   }
 }
 
@@ -5426,368 +5445,153 @@ function convertToZozo() {
 }
 
 // ============================================================
-// CONVERSION: 楽天ファッション
+// CONVERSION: 楽天ファッション（フラットSKU形式）
 // ============================================================
 function convertToRakufashion() {
   const rm = MASTER.malls.rakufashion;
-  // 楽天ファッション CSV ヘッダー（RMS互換 + ファッション特有項目）
+  // 楽天ファッション CSV ヘッダー（1行1SKU フラット形式）
   const rfH = [
-    'コントロールカラム',
-    '商品管理番号（商品URL）','商品番号','商品名',
-    '倉庫指定','サーチ表示',
-    '消費税','消費税率',
-    '販売期間指定（開始日時）','販売期間指定（終了日時）',
-    'ポイント変倍率','ポイント変倍率適用期間（開始日時）','ポイント変倍率適用期間（終了日時）',
-    '注文ボタン','商品問い合わせボタン','在庫表示',
-    'ジャンルID','ブランドコード',
-    'キャッチコピー','PC用商品説明文','スマートフォン用商品説明文','PC用販売説明文'
+    '取引先コード','メーカー品番','メーカーカラーコード','メーカーサイズコード',
+    '商品名','カラー名','サイズ名','商品ブランド','標準売価',
+    '原産国','クリーニング','商品カテゴリID','キャプション',
+    '素材文字列','サイズ文字列','TOP色','性別',
+    '販売開始日時','販売終了日時','モデル情報',
+    'JANコード','SKUコード・商品コード（データ連携用）'
   ];
-  // 商品画像 ×20（タイプ・パス・ALT）
-  for (let i = 1; i <= 20; i++) {
-    rfH.push(`商品画像タイプ${i}`, `商品画像パス${i}`, `商品画像名（ALT）${i}`);
-  }
-  rfH.push(
-    '白背景画像タイプ','白背景画像パス',
-    'バリエーション項目キー定義','バリエーション項目名定義',
-    'バリエーション1選択肢定義','バリエーション2選択肢定義','バリエーション3選択肢定義',
-    'バリエーション4選択肢定義','バリエーション5選択肢定義','バリエーション6選択肢定義',
-    '選択肢タイプ','商品オプション項目名'
-  );
-  // 商品オプション選択肢 ×100
-  for (let i = 1; i <= 100; i++) { rfH.push(`商品オプション選択肢${i}`); }
-  rfH.push(
-    '商品オプション選択必須',
-    'SKU管理番号','システム連携用SKU番号'
-  );
-  // バリエーション項目キー/選択肢 ×6
-  for (let i = 1; i <= 6; i++) { rfH.push(`バリエーション項目キー${i}`, `バリエーション項目選択肢${i}`); }
-  rfH.push(
-    '通常購入販売価格','表示価格','二重価格文言管理番号',
-    '注文受付数','再入荷お知らせボタン',
-    '在庫数','在庫戻しフラグ','在庫切れ時の注文受付',
-    '在庫あり時納期管理番号','在庫切れ時納期管理番号',
-    'SKU倉庫指定',
-    '配送方法セット管理番号','送料','送料区分1','送料区分2',
-    '個別送料',
-    'カタログID','カタログIDなしの理由','セット商品用カタログID',
-    'SKU画像タイプ','SKU画像パス','SKU画像名（ALT）'
-  );
-  // 商品属性 ×100（項目・値・単位）
-  for (let i = 1; i <= 100; i++) { rfH.push(`商品属性（項目）${i}`, `商品属性（値）${i}`, `商品属性（単位）${i}`); }
-  // 自由入力行 ×5
-  for (let i = 1; i <= 5; i++) { rfH.push(`自由入力行（項目）${i}`, `自由入力行（値）${i}`); }
-
   const RI = {};
   rfH.forEach((h, i) => RI[h] = i);
   const rows = [];
 
-  // 楽天CSVソース：商品+SKU構造をそのまま変換
+  // カテゴリIDの解決（カテゴリマップ or デフォルト）
+  function resolveCategoryId(prod) {
+    const catMap = rm.categoryMap || {};
+    const cat = prod.category || '';
+    if (cat && catMap[cat]) return catMap[cat];
+    const pName = prod.cleanName || prod.name || '';
+    for (const [keyword, catId] of Object.entries(catMap)) {
+      if (pName.includes(keyword) || cat.includes(keyword)) return catId;
+    }
+    return rm.defaultCategoryId || '';
+  }
+
   if (sourceType === 'rakuten') {
-    const cabinetPrefix = 'https://image.rakuten.co.jp/noahl/cabinet';
-    const toCabinetPath = (url) => url && url.startsWith(cabinetPrefix) ? url.substring(cabinetPrefix.length) : url;
-
+    // 楽天CSV → 楽天ファッション変換
     products.forEach(prod => {
+      const prodId = prod.id || '';
+      const prodParts = prodId.split('-');
+      const productBase = prodParts[0] || '';
       const name = applyMallName(prod.cleanName || prod.name, 'rakufashion');
+      const caption = prod.spDesc || prod.pcDesc || '';
 
-      // === 商品行 ===
-      const pRow = new Array(rfH.length).fill('');
-      pRow[RI['コントロールカラム']] = 'n';
-      pRow[RI['商品管理番号（商品URL）']] = prod.id || '';
-      pRow[RI['商品番号']] = prod.number || prod.id || '';
-      pRow[RI['商品名']] = name;
-      pRow[RI['倉庫指定']] = prod.warehouse || '0';
-      pRow[RI['サーチ表示']] = prod.searchDisplay || '0';
-      pRow[RI['消費税']] = prod.taxType || '0';
-      pRow[RI['消費税率']] = prod.taxRate || '';
-      pRow[RI['販売期間指定（開始日時）']] = '';
-      pRow[RI['販売期間指定（終了日時）']] = '';
-      pRow[RI['ポイント変倍率']] = prod.pointRate || '1';
-      pRow[RI['ポイント変倍率適用期間（開始日時）']] = prod.pointStart || '';
-      pRow[RI['ポイント変倍率適用期間（終了日時）']] = prod.pointEnd || '';
-      pRow[RI['ジャンルID']] = prod.genreId || '';
-      pRow[RI['ブランドコード']] = rm.brandCode || '';
-      pRow[RI['キャッチコピー']] = prod.catchCopy || '';
-      pRow[RI['PC用商品説明文']] = prod.pcDesc || '';
-      pRow[RI['スマートフォン用商品説明文']] = prod.spDesc || '';
-      pRow[RI['PC用販売説明文']] = prod.pcSaleDesc || '';
-
-      // 商品画像
-      prod.images.forEach((img, i) => {
-        if (i < 20) {
-          pRow[RI[`商品画像タイプ${i + 1}`]] = img.type || 'CABINET';
-          pRow[RI[`商品画像パス${i + 1}`]] = img.path || '';
-          pRow[RI[`商品画像名（ALT）${i + 1}`]] = name;
-        }
-      });
-
-      // バリエーション定義
-      if (prod.varDef) {
-        pRow[RI['バリエーション項目キー定義']] = prod.varDef.keys || '';
-        pRow[RI['バリエーション項目名定義']] = prod.varDef.names || '';
-        prod.varDef.options.forEach((opt, i) => {
-          if (i < 6) pRow[RI[`バリエーション${i + 1}選択肢定義`]] = opt;
-        });
-      }
-
-      // 商品オプション
-      if (prod.options && prod.options.length > 0) {
-        const opt = prod.options[0];
-        pRow[RI['選択肢タイプ']] = opt.type || '';
-        pRow[RI['商品オプション項目名']] = opt.name || '';
-        opt.choices.forEach((ch, ci) => {
-          if (ci < 100) pRow[RI[`商品オプション選択肢${ci + 1}`]] = ch;
-        });
-        pRow[RI['商品オプション選択必須']] = opt.required || '0';
-      }
-
-      rows.push(pRow);
-
-      // === SKU行 ===
       prod.skus.forEach(sku => {
-        const sRow = new Array(rfH.length).fill('');
-        sRow[RI['商品管理番号（商品URL）']] = prod.id || '';
-        sRow[RI['SKU管理番号']] = sku.skuMgmtNo || '';
-        sRow[RI['システム連携用SKU番号']] = sku.systemSku || sku.skuMgmtNo || '';
-
-        // バリエーション項目キー/選択肢
-        sku.variants.forEach((v, vi) => {
-          if (vi < 6) {
-            sRow[RI[`バリエーション項目キー${vi + 1}`]] = v.key;
-            sRow[RI[`バリエーション項目選択肢${vi + 1}`]] = v.value;
-          }
-        });
-
-        // 価格（掛率適用）
-        const basePrice = sku.price || '';
-        sRow[RI['通常購入販売価格']] = calcMallPrice(basePrice, 'rakufashion');
-        sRow[RI['表示価格']] = sku.displayPrice || '';
-        sRow[RI['再入荷お知らせボタン']] = sku.restockBtn || '0';
-        sRow[RI['在庫数']] = sku.stock || '0';
-        sRow[RI['配送方法セット管理番号']] = rm.shippingSet || sku.shippingSet || '';
-        sRow[RI['送料']] = sku.shipping || '0';
-        sRow[RI['カタログID']] = sku.catalogId || '';
-        sRow[RI['カタログIDなしの理由']] = sku.catalogNoReason || rm.catalogReason || '3';
-
-        // SKU画像
-        if (sku.skuImgType || sku.skuImgPath) {
-          sRow[RI['SKU画像タイプ']] = sku.skuImgType || '';
-          sRow[RI['SKU画像パス']] = sku.skuImgPath || '';
+        // カラーコード・サイズコードをシステムSKUから抽出
+        let colorCode = '', sizeCode = '';
+        const fullSku = sku.systemSku || sku.skuMgmtNo || '';
+        if (fullSku.startsWith(prodId) && fullSku.length > prodId.length) {
+          const suffixParts = fullSku.substring(prodId.length).split('-').filter(Boolean);
+          colorCode = suffixParts[0] || '';
+          sizeCode = suffixParts[1] || '';
+        } else {
+          const skuParts = (sku.skuMgmtNo || '').split('-');
+          if (skuParts.length > prodParts.length) colorCode = skuParts[prodParts.length] || '';
+          if (skuParts.length > prodParts.length + 1) sizeCode = skuParts[prodParts.length + 1] || '';
         }
 
-        // 商品属性（カラー・サイズ・ブランド名）
-        let attrIdx = 1;
-        const color = sku.variants?.find(v => v.key === 'カラー')?.value || '';
-        const size = sku.variants?.find(v => v.key === 'サイズ')?.value || '';
-        if (color) {
-          sRow[RI[`商品属性（項目）${attrIdx}`]] = 'カラー';
-          sRow[RI[`商品属性（値）${attrIdx}`]] = color;
-          attrIdx++;
-          const repColor = getRepresentativeColor(color);
-          if (repColor) {
-            sRow[RI[`商品属性（項目）${attrIdx}`]] = '代表カラー';
-            sRow[RI[`商品属性（値）${attrIdx}`]] = repColor;
-            attrIdx++;
-          }
-        }
-        if (size) {
-          sRow[RI[`商品属性（項目）${attrIdx}`]] = 'サイズ';
-          sRow[RI[`商品属性（値）${attrIdx}`]] = size;
-          attrIdx++;
+        const colorName = sku.variants?.find(v => v.key === 'カラー')?.value || sku.variants?.[0]?.value || '';
+        const sizeName = sku.variants?.find(v => v.key === 'サイズ')?.value || sku.variants?.[1]?.value || '';
+
+        // JANコード: 自由入力行「型番」から取得、なければ生成
+        let janCode = '';
+        const typeField = sku.customFields?.find(f => f.label === '型番');
+        if (typeField && typeField.value) {
+          janCode = typeField.value;
+        } else {
+          janCode = (productBase + colorCode + sizeCode + '000').toUpperCase();
         }
 
-        // 自由入力行（JAN等）
-        sku.customFields.forEach((cf, fi) => {
-          if (fi < 5) {
-            sRow[RI[`自由入力行（項目）${fi + 1}`]] = cf.label || '';
-            sRow[RI[`自由入力行（値）${fi + 1}`]] = cf.value || '';
-          }
-        });
-
-        rows.push(sRow);
+        const r = new Array(rfH.length).fill('');
+        r[RI['取引先コード']] = rm.supplierCode || '';
+        r[RI['メーカー品番']] = productBase;
+        r[RI['メーカーカラーコード']] = colorCode;
+        r[RI['メーカーサイズコード']] = sizeCode;
+        r[RI['商品名']] = name;
+        r[RI['カラー名']] = colorName;
+        r[RI['サイズ名']] = sizeName;
+        r[RI['商品ブランド']] = rm.brandName || '';
+        r[RI['標準売価']] = calcMallPrice(sku.price || '', 'rakufashion');
+        r[RI['原産国']] = '';
+        r[RI['クリーニング']] = '';
+        r[RI['商品カテゴリID']] = resolveCategoryId(prod);
+        r[RI['キャプション']] = caption;
+        r[RI['素材文字列']] = '';
+        r[RI['サイズ文字列']] = '';
+        r[RI['TOP色']] = '';
+        r[RI['性別']] = rm.gender || '1';
+        r[RI['販売開始日時']] = rm.salesStartDate || '';
+        r[RI['販売終了日時']] = rm.salesEndDate || '';
+        r[RI['モデル情報']] = '';
+        r[RI['JANコード']] = janCode;
+        r[RI['SKUコード・商品コード（データ連携用）']] = fullSku || (prodId + '-' + colorCode + '-' + sizeCode);
+        rows.push(r);
       });
-
-      // === 商品オプション行（2つ目以降） ===
-      if (prod.options && prod.options.length > 1) {
-        for (let oi = 1; oi < prod.options.length; oi++) {
-          const opt = prod.options[oi];
-          const oRow = new Array(rfH.length).fill('');
-          oRow[RI['商品管理番号（商品URL）']] = prod.id || '';
-          oRow[RI['選択肢タイプ']] = opt.type || '';
-          oRow[RI['商品オプション項目名']] = opt.name || '';
-          opt.choices.forEach((ch, ci) => {
-            if (ci < 100) oRow[RI[`商品オプション選択肢${ci + 1}`]] = ch;
-          });
-          oRow[RI['商品オプション選択必須']] = opt.required || '0';
-          rows.push(oRow);
-        }
-      }
     });
   } else {
     // 自社Excel → 楽天ファッション変換
-    const rkm = MASTER.malls.rakuten;
-    const cabinetPrefix = 'https://image.rakuten.co.jp/noahl/cabinet';
-    const toCabinetPath = (url) => url && url.startsWith(cabinetPrefix) ? url.substring(cabinetPrefix.length) : url;
-
     products.forEach(prod => {
-      const colorSet = new Set();
-      const sizeSet = new Set();
+      const prodNumber = prod.number || '';
+      const prodParts = prodNumber.split('-');
+      const productBase = prodParts[0] || '';
+      const ymCode = prodParts[1] || '';
+      const name = applyMallName(prod.cleanName || prod.name, 'rakufashion');
+
+      // 説明文（楽天の説明テンプレートがあれば流用）
+      const rkm = MASTER.malls.rakuten;
+      let caption = '';
+      if (rkm.spDescTpl) caption = applyDescTemplate(rkm.spDescTpl, prod);
+      else if (rkm.pcDescTpl) caption = applyDescTemplate(rkm.pcDescTpl, prod);
+
       prod.skus.forEach(sku => {
-        if (sku.color) colorSet.add(sku.color);
-        if (sku.size) sizeSet.add(sku.size);
-      });
-      const hasColor = colorSet.size > 0;
-      const hasSize = sizeSet.size > 0;
-      const namePart = prod.cleanName || prod.name;
-      const rfName = applyMallName(namePart, 'rakufashion');
+        const colorCode = sku.colorCode || '';
+        const sizeCode = sku.sizeCode || getRfSizeCode(sku.size);
+        const skuCode = [productBase, ymCode, colorCode, sizeCode].filter(Boolean).join('-');
+        const janCode = sku.jan || (productBase + colorCode + sizeCode + '000').toUpperCase();
 
-      // === 商品行 ===
-      const pRow = new Array(rfH.length).fill('');
-      pRow[RI['コントロールカラム']] = 'n';
-      pRow[RI['商品管理番号（商品URL）']] = prod.number;
-      pRow[RI['商品番号']] = prod.number;
-      pRow[RI['商品名']] = rfName;
-      pRow[RI['倉庫指定']] = '0';
-      pRow[RI['サーチ表示']] = '0';
-      pRow[RI['消費税']] = '0';
-      pRow[RI['ジャンルID']] = guessGenreId(prod.category, namePart);
-      pRow[RI['ブランドコード']] = rm.brandCode || '';
-      pRow[RI['キャッチコピー']] = prod.name || rfName;
-
-      // PC/SP説明文（楽天の説明テンプレートがあれば流用）
-      if (rkm.pcDescTpl) pRow[RI['PC用商品説明文']] = applyDescTemplate(rkm.pcDescTpl, prod);
-      if (rkm.spDescTpl) pRow[RI['スマートフォン用商品説明文']] = applyDescTemplate(rkm.spDescTpl, prod);
-      if (rkm.saleDescTpl) pRow[RI['PC用販売説明文']] = applyDescTemplate(rkm.saleDescTpl, prod);
-
-      // 商品画像
-      const imageUrls = generateRakutenImageUrls(prod);
-      imageUrls.forEach((url, i) => {
-        if (i < 20) {
-          pRow[RI[`商品画像タイプ${i + 1}`]] = 'CABINET';
-          pRow[RI[`商品画像パス${i + 1}`]] = toCabinetPath(url);
-          pRow[RI[`商品画像名（ALT）${i + 1}`]] = rfName;
-        }
-      });
-
-      // バリエーション定義
-      const keyParts = [];
-      const nameParts = [];
-      if (hasColor) { keyParts.push('カラー'); nameParts.push('カラー'); }
-      if (hasSize) { keyParts.push('サイズ'); nameParts.push('サイズ'); }
-      pRow[RI['バリエーション項目キー定義']] = keyParts.join('|');
-      pRow[RI['バリエーション項目名定義']] = nameParts.join('|');
-      if (hasColor) {
-        const sortedColors = [...colorSet].sort((a, b) => {
-          return (MASTER.colorOrder[a] || 9999) - (MASTER.colorOrder[b] || 9999);
-        });
-        pRow[RI['バリエーション1選択肢定義']] = sortedColors.join('|');
-      }
-      if (hasSize) {
-        const sizeOrder = {'S':1, 'M':2, 'L':3, 'XL':4, 'XXL':5, 'F':0, 'F(M)':0, 'フリー':0, 'FREE':0};
-        const sortedSizes = [...sizeSet].sort((a, b) => (sizeOrder[a] || 99) - (sizeOrder[b] || 99));
-        const sizeIdx = hasColor ? 2 : 1;
-        pRow[RI[`バリエーション${sizeIdx}選択肢定義`]] = sortedSizes.join('|');
-      }
-
-      rows.push(pRow);
-
-      // === SKU行 ===
-      prod.skus.forEach(sku => {
-        const sRow = new Array(rfH.length).fill('');
-        sRow[RI['商品管理番号（商品URL）']] = prod.number;
-
-        // SKU管理番号
-        let skuSuffix = '';
-        const skuFull = (sku.skuMgmtNo || '').trim();
-        const parentNo = (prod.number || '').trim();
-        if (skuFull && parentNo && skuFull.startsWith(parentNo)) {
-          skuSuffix = skuFull.substring(parentNo.length);
-        } else if (skuFull && parentNo) {
-          const parts = skuFull.split('-');
-          if (parts.length > 2) skuSuffix = '-' + parts.slice(2).join('-');
-          else skuSuffix = skuFull;
-        } else {
-          skuSuffix = skuFull || sku.jan;
-        }
-        sRow[RI['SKU管理番号']] = skuSuffix;
-        sRow[RI['システム連携用SKU番号']] = sku.skuMgmtNo || (prod.number + skuSuffix);
-
-        // バリエーション項目
-        if (hasColor) { sRow[RI['バリエーション項目キー1']] = 'カラー'; sRow[RI['バリエーション項目選択肢1']] = sku.color; }
-        if (hasSize) {
-          const sizeKeyIdx = hasColor ? 2 : 1;
-          sRow[RI[`バリエーション項目キー${sizeKeyIdx}`]] = 'サイズ';
-          sRow[RI[`バリエーション項目選択肢${sizeKeyIdx}`]] = sku.size;
-        }
-
-        // 価格（掛率適用）
-        sRow[RI['通常購入販売価格']] = calcMallPrice(sku.price || prod.sellPrice, 'rakufashion');
-        sRow[RI['再入荷お知らせボタン']] = '0';
-        sRow[RI['在庫数']] = sku._stock || '0';
-        sRow[RI['配送方法セット管理番号']] = rm.shippingSet || '';
-        sRow[RI['送料']] = '0';
-        sRow[RI['カタログIDなしの理由']] = rm.catalogReason || '3';
-
-        // SKU画像
-        if (sku.colorCode) {
-          const skuParts = (prod.number || '').split('-');
-          if (skuParts.length >= 2) {
-            const skuBase = skuParts[0];
-            const skuYm = skuParts[1];
-            const skuYy = skuYm.substring(0, 2);
-            const skuFolder = `20${skuYy}/20${skuYm}/`;
-            const skuCabinetBase = rkm.imgCabinetBase || '/shohin/';
-            sRow[RI['SKU画像タイプ']] = 'CABINET';
-            sRow[RI['SKU画像パス']] = `${skuCabinetBase}${skuFolder}${skuBase}-${sku.colorCode.toLowerCase()}1.jpg`;
-          }
-        }
-
-        // 商品属性
-        let attrIdx = 1;
-        if (sku.color) {
-          sRow[RI[`商品属性（項目）${attrIdx}`]] = 'カラー';
-          sRow[RI[`商品属性（値）${attrIdx}`]] = sku.color;
-          attrIdx++;
-          const repColor = getRepresentativeColor(sku.color);
-          if (repColor) {
-            sRow[RI[`商品属性（項目）${attrIdx}`]] = '代表カラー';
-            sRow[RI[`商品属性（値）${attrIdx}`]] = repColor;
-            attrIdx++;
-          }
-        }
-        if (sku.size) {
-          sRow[RI[`商品属性（項目）${attrIdx}`]] = 'サイズ';
-          sRow[RI[`商品属性（値）${attrIdx}`]] = sku.size;
-          attrIdx++;
-        }
-        if (prod.material) {
-          sRow[RI[`商品属性（項目）${attrIdx}`]] = '素材（生地・毛糸）';
-          sRow[RI[`商品属性（値）${attrIdx}`]] = prod.material;
-          attrIdx++;
-        }
-        // 採寸サイズから寸法属性を自動設定
-        if (prod.measureSize && sku.size) {
-          const measures = parseMeasureSize(prod.measureSize, sku.size);
-          const measureOrder = ['着丈','総丈','肩幅','身幅','そで丈','ゆき丈','ウエスト','ヒップ','股上','股下','もも幅','裾幅','スカート丈'];
-          measureOrder.forEach(attrName => {
-            if (measures[attrName] && attrIdx <= 100) {
-              sRow[RI[`商品属性（項目）${attrIdx}`]] = attrName;
-              sRow[RI[`商品属性（値）${attrIdx}`]] = measures[attrName];
-              sRow[RI[`商品属性（単位）${attrIdx}`]] = 'cm';
-              attrIdx++;
-            }
-          });
-        }
-
-        // 自由入力行
-        sRow[RI['自由入力行（項目）1']] = '型番';
-        sRow[RI['自由入力行（値）1']] = sku.jan || sku.skuMgmtNo;
-
-        rows.push(sRow);
+        const r = new Array(rfH.length).fill('');
+        r[RI['取引先コード']] = rm.supplierCode || '';
+        r[RI['メーカー品番']] = productBase;
+        r[RI['メーカーカラーコード']] = colorCode;
+        r[RI['メーカーサイズコード']] = sizeCode;
+        r[RI['商品名']] = name;
+        r[RI['カラー名']] = sku.color || '';
+        r[RI['サイズ名']] = sku.size || '';
+        r[RI['商品ブランド']] = rm.brandName || '';
+        r[RI['標準売価']] = calcMallPrice(sku.price || prod.sellPrice, 'rakufashion');
+        r[RI['原産国']] = '';
+        r[RI['クリーニング']] = '';
+        r[RI['商品カテゴリID']] = resolveCategoryId(prod);
+        r[RI['キャプション']] = caption;
+        r[RI['素材文字列']] = '';
+        r[RI['サイズ文字列']] = '';
+        r[RI['TOP色']] = '';
+        r[RI['性別']] = rm.gender || '1';
+        r[RI['販売開始日時']] = rm.salesStartDate || '';
+        r[RI['販売終了日時']] = rm.salesEndDate || '';
+        r[RI['モデル情報']] = '';
+        r[RI['JANコード']] = janCode;
+        r[RI['SKUコード・商品コード（データ連携用）']] = skuCode;
+        rows.push(r);
       });
     });
   }
 
   return { headers: rfH, rows };
+}
+
+// Helper: サイズ名からサイズコードを抽出 (Mサイズ → M, F(M)フリー → F)
+function getRfSizeCode(sizeName) {
+  if (!sizeName) return '';
+  const s = sizeName.replace(/サイズ$/, '').replace(/\(M\)フリー$/, '').replace(/フリー$/, '').trim();
+  return s || sizeName;
 }
 
 // ============================================================
