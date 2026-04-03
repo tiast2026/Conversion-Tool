@@ -5322,7 +5322,7 @@ function convertToTiktok() {
   const ttH = mappings.map(m => m.ttColumn);
   return {
     headers: ttH, rows: dataRows,
-    tiktokXlsx: { binary, sheetIndex, dataRows, startRow: 5, numCols },
+    tiktokXlsx: { binary, sheetIndex, dataRows, startRow: 6, numCols },
   };
 }
 
