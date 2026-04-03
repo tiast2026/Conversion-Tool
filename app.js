@@ -4309,11 +4309,14 @@ function renderStep4Download() {
     html += '<div id="ne-api-register-log" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;"></div>';
     html += '</div>';
     html += '</div>';
-    document.getElementById('download-grid').innerHTML = html;
+    const dlGrid = document.getElementById('download-grid');
+    dlGrid.style.display = 'block';
+    dlGrid.innerHTML = html;
     return;
   }
 
   // 楽天CSV→他モール: 従来レイアウト
+  document.getElementById('download-grid').style.display = '';
   document.getElementById('summary-cards-dl').innerHTML = `
     <div class="summary-card"><div class="num">${totalProducts}</div><div class="label">商品数</div></div>
     <div class="summary-card"><div class="num">${totalSkus}</div><div class="label">SKU数</div></div>
