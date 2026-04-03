@@ -843,6 +843,7 @@ function loadMallMasterUI(mall) {
     if (el('mall-rakuten-service-secret')) el('mall-rakuten-service-secret').value = m.serviceSecret || '';
     if (el('mall-rakuten-license-key')) el('mall-rakuten-license-key').value = m.licenseKey || '';
     if (el('mall-rakuten-cors-proxy')) el('mall-rakuten-cors-proxy').value = m.corsProxy || '';
+    if (el('ne-gas-url')) el('ne-gas-url').value = m.neGasUrl || '';
     // item-cat.csv設定
     if (el('mall-rakuten-itemcat-priority')) el('mall-rakuten-itemcat-priority').value = m.itemCatPriority || '';
     if (el('mall-rakuten-itemcat-default-cat')) el('mall-rakuten-itemcat-default-cat').value = m.itemCatDefaultCat || '';
@@ -5948,36 +5949,26 @@ function copyCorsProxyCode() {
 // ============================================================
 // ネクストエンジンAPI連携
 // ============================================================
-// ネクストエンジン認証情報をGoogle Sheetsから自動取得
-const NE_CREDENTIALS_SHEET_ID = '18MC3yguhDFXAQ67Um9p6YCejtIDtOWLmwZvgp_59IYg';
-const NE_CREDENTIALS_SHEET_GID = '1386414046';
-
+// ネクストエンジン認証情報をGoogle Apps Script Webアプリ経由で取得
 async function fetchNeCredentialsFromSheet() {
   const statusEl = document.getElementById('ne-credentials-status');
-  if (statusEl) statusEl.textContent = 'シートから取得中...';
+  if (statusEl) statusEl.textContent = 'GASから取得中...';
   try {
-    const proxy = (MASTER.malls.rakuten?.corsProxy || '').replace(/\/$/, '');
-    if (!proxy) throw new Error('CORSプロキシが未設定です（楽天タブで設定してください）');
-    // プロキシ経由でGoogle Sheets CSVエクスポートを取得
-    const path = `/spreadsheets/d/${NE_CREDENTIALS_SHEET_ID}/export?format=csv&gid=${NE_CREDENTIALS_SHEET_GID}`;
-    const res = await fetch(proxy + path, {
-      headers: { 'X-Target-Host': 'docs.google.com' },
-      redirect: 'follow',
-    });
+    const gasUrl = (MASTER.malls.rakuten?.neGasUrl || '').trim();
+    if (!gasUrl) throw new Error('GAS WebアプリURLが未設定です（下のフォームで設定してください）');
+    const res = await fetch(gasUrl, { redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const csv = await res.text();
-    const rows = csv.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
-    const map = {};
-    rows.forEach(r => { if (r[0]) map[r[0]] = r[1] || ''; });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
     const m = MASTER.malls.rakuten;
-    if (map['ACCESS_TOKEN']) m.neAccessToken = map['ACCESS_TOKEN'];
-    if (map['REFRESH_TOKEN']) m.neRefreshToken = map['REFRESH_TOKEN'];
-    if (map['CLIENT_ID']) m.neClientId = map['CLIENT_ID'];
-    if (map['CLIENT_SECRET']) m.neClientSecret = map['CLIENT_SECRET'];
-    if (map['UID']) m.neUid = map['UID'];
+    if (data['ACCESS_TOKEN']) m.neAccessToken = data['ACCESS_TOKEN'];
+    if (data['REFRESH_TOKEN']) m.neRefreshToken = data['REFRESH_TOKEN'];
+    if (data['CLIENT_ID']) m.neClientId = data['CLIENT_ID'];
+    if (data['CLIENT_SECRET']) m.neClientSecret = data['CLIENT_SECRET'];
+    if (data['UID']) m.neUid = data['UID'];
 
-    if (statusEl) statusEl.innerHTML = '<span style="color:green;">取得成功 — ACCESS_TOKEN: ...'+  (m.neAccessToken||'').slice(-8) + ' / REFRESH_TOKEN: ...' + (m.neRefreshToken||'').slice(-8) + '</span>';
+    if (statusEl) statusEl.innerHTML = '<span style="color:green;">取得成功 — ACCESS_TOKEN: ...'+ (m.neAccessToken||'').slice(-8) + ' / REFRESH_TOKEN: ...' + (m.neRefreshToken||'').slice(-8) + '</span>';
     markMasterDirty();
     return true;
   } catch(e) {

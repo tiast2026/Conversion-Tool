@@ -898,13 +898,41 @@
           ネクストエンジンAPI 連携
         </summary>
         <div style="padding:16px;">
-          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">ネクストエンジンAPIの認証情報はGoogle Sheetsから自動取得されます。</p>
+          <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">ネクストエンジンAPIの認証情報はGoogle Apps Script Webアプリ経由で取得されます。</p>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">GAS WebアプリURL</label>
+            <input type="text" id="ne-gas-url" placeholder="https://script.google.com/macros/s/xxxxx/exec" style="width:100%; max-width:600px; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px;" onchange="MASTER.malls.rakuten.neGasUrl=this.value; markMasterDirty();">
+            <div style="font-size:11px; color:#999; margin-top:4px;">スプレッドシートのApps Scriptからデプロイした「ウェブアプリ」のURL</div>
+          </div>
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-            <button class="btn btn-primary" onclick="fetchNeCredentialsFromSheet()">シートから認証情報を取得</button>
+            <button class="btn btn-primary" onclick="fetchNeCredentialsFromSheet()">認証情報を取得</button>
             <button class="btn btn-primary" onclick="testNextEngineApi()">接続テスト</button>
             <span id="ne-test-result" style="font-size:12px;"></span>
           </div>
           <div id="ne-credentials-status" style="font-size:12px; color:var(--text-light);"></div>
+          <details style="margin-top:12px;">
+            <summary style="font-size:12px; color:#2c7be5; cursor:pointer;">GASのセットアップ手順</summary>
+            <div style="font-size:11px; color:#666; margin-top:8px; padding:10px; background:#f8f8f8; border-radius:6px; line-height:1.7;">
+              <strong>1.</strong> スプレッドシートを開き「拡張機能 → Apps Script」<br>
+              <strong>2.</strong> 以下のコードを貼り付けて保存:<br>
+              <pre style="background:#fff; border:1px solid #ddd; border-radius:4px; padding:8px; margin:6px 0; font-size:11px; overflow-x:auto; white-space:pre;">function doGet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('認証情報');
+  var data = sheet.getDataRange().getValues();
+  var result = {};
+  for (var i = 0; i &lt; data.length; i++) {
+    if (data[i][0]) result[data[i][0]] = data[i][1] || '';
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+              <strong>3.</strong>「デプロイ → 新しいデプロイ」→ 種類:「ウェブアプリ」<br>
+              <strong>4.</strong> アクセスできるユーザー:「全員」→「デプロイ」<br>
+              <strong>5.</strong> 発行されたURLを上のフォームに貼り付け<br>
+              <em>※ シート名は「認証情報」、A列=キー名、B列=値 の形式</em>
+            </div>
+          </details>
         </div>
       </details>
     </div>
