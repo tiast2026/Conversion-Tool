@@ -115,10 +115,11 @@
           "itemCatDefaultCat": "その他",
           "neClientId": "RAoLNrajOuhf4t",
           "neClientSecret": "pB4zcMKm92OWNUvAZGfETI5SYHPFuRdbyXeDrsak",
-          "neAccessToken": "8cc11972250d1ed10f54d2d5df488dc9c6831d45b7d8bdfc1b3b632e23ea734552e058260523b2ae40dca9484c25a23e9e4e62b327d8d7c1fd4793f1591d534b",
-          "neRefreshToken": "bba4ff3ea493f1b5ff18d20e5148b03cacc3f7de50522cb01ca71659361ae635f15ed192110301939130287fd647b62e2e4cb0906bf875edd176de438961fd91",
+          "neAccessToken": "228bca15c72e5f65c572944c5a7b21f5b5f39b2b2dc5a0edc19f32ccffe18ee4df89728bafef9460abdb420db2e0dc2ec8cde62472babba0625b477e2aa64817",
+          "neRefreshToken": "d893f5160b83f79e305b4f1d6917daa38723f5c276815d693bdadf0ef609fb54590fac60040400d15a55b9ddd472f4fbcf2ce0403027b36bb03c7e185fbd5ab4",
           "neUid": "650ea422cdcf00c612334436cf630c58961a4f7cfb09a7240410446f28e49ab9bfe2f33ee74204fb58fbee4e0d7f7a5f8a53edd19859baf4ddba91697666ad7a",
-          "shopId": "noahl"
+          "shopId": "noahl",
+          "neGasUrl": "https://script.google.com/macros/s/AKfycbz6tFyTmG5bhlSBQWU7z0V_Sv0gtFIB-b2ZaRcNVn5HPkKKRmErkBPLv_vbW4EJNNYQ_g/exec"
         },
         "futureshop": {
           "columnSettings": {
