@@ -602,34 +602,43 @@ async function saveToGitHub() {
   }
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(safeData, null, 2))));
   const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${GH_FILE_PATH}`;
-  try {
-    let sha = '';
-    const getRes = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, {
-      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if (getRes.ok) {
-      const existing = await getRes.json();
-      sha = existing.sha;
-    }
-    const body = { message: `マスタ設定を更新（${ACTIVE_PROFILE}）`, content, branch: GH_BRANCH };
-    if (sha) body.sha = sha;
-    const putRes = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (putRes.ok) {
-      _masterDirty = false;
-      notify('GitHubに保存しました', 'success');
-      return true;
-    } else {
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      let sha = '';
+      const getRes = await fetch(`${apiUrl}?ref=${GH_BRANCH}&t=${Date.now()}`, {
+        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+        cache: 'no-store'
+      });
+      if (getRes.ok) {
+        const existing = await getRes.json();
+        sha = existing.sha;
+      }
+      const body = { message: `マスタ設定を更新（${ACTIVE_PROFILE}）`, content, branch: GH_BRANCH };
+      if (sha) body.sha = sha;
+      const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (putRes.ok) {
+        _masterDirty = false;
+        notify('GitHubに保存しました', 'success');
+        return true;
+      }
       const err = await putRes.json();
+      // SHA不一致(409 Conflict)はリトライ
+      if (putRes.status === 409 && attempt < MAX_RETRIES - 1) {
+        await new Promise(r => setTimeout(r, 500));
+        continue;
+      }
       notify('GitHub保存エラー: ' + (err.message || putRes.status), 'warning');
       return false;
+    } catch(e) {
+      if (attempt < MAX_RETRIES - 1) { await new Promise(r => setTimeout(r, 500)); continue; }
+      notify('GitHub通信エラー: ' + e.message, 'warning');
+      return false;
     }
-  } catch(e) {
-    notify('GitHub通信エラー: ' + e.message, 'warning');
-    return false;
   }
 }
 
