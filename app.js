@@ -575,11 +575,13 @@ function syncMasterToProfile() {
 
 // 全プロファイルをGitHubに保存
 async function saveToGitHub() {
+  const btn = document.getElementById('btn-gh-save');
   const token = getGitHubToken();
   if (!token) {
     notify('GitHub Tokenが未設定です。マスタ設定 → 共通 → GitHub連携 から設定してください。', 'warning');
     return false;
   }
+  if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
   syncMasterToProfile();
   const configData = {
     activeProfile: ACTIVE_PROFILE,
@@ -623,6 +625,7 @@ async function saveToGitHub() {
       });
       if (putRes.ok) {
         _masterDirty = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'GitHubに保存'; }
         notify('GitHubに保存しました', 'success');
         return true;
       }
@@ -632,23 +635,28 @@ async function saveToGitHub() {
         await new Promise(r => setTimeout(r, 500));
         continue;
       }
+      if (btn) { btn.disabled = false; btn.textContent = 'GitHubに保存'; }
       notify('GitHub保存エラー: ' + (err.message || putRes.status), 'warning');
       return false;
     } catch(e) {
       if (attempt < MAX_RETRIES - 1) { await new Promise(r => setTimeout(r, 500)); continue; }
+      if (btn) { btn.disabled = false; btn.textContent = 'GitHubに保存'; }
       notify('GitHub通信エラー: ' + e.message, 'warning');
       return false;
     }
   }
+  if (btn) { btn.disabled = false; btn.textContent = 'GitHubに保存'; }
 }
 
 // GitHubからマスタ設定を取得
 async function loadFromGitHub() {
+  const btn = document.getElementById('btn-gh-load');
   const token = getGitHubToken();
   if (!token) {
     notify('GitHub Tokenが未設定です。上のフィールドにTokenを入力してください。', 'warning');
     return false;
   }
+  if (btn) { btn.disabled = true; btn.textContent = '取得中...'; }
   try {
     const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${GH_FILE_PATH}?ref=${GH_BRANCH}`;
     const res = await fetch(apiUrl, {
@@ -697,13 +705,16 @@ async function loadFromGitHub() {
       updateProfileSelector();
       loadMallMasterUI('rakuten');
       _masterDirty = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'GitHubから取得'; }
       notify('GitHubからマスタ設定を取得しました', 'success');
       return true;
     } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'GitHubから取得'; }
       notify('設定ファイルの形式が正しくありません。', 'warning');
       return false;
     }
   } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'GitHubから取得'; }
     notify('GitHub通信エラー: ' + e.message, 'warning');
     return false;
   }
