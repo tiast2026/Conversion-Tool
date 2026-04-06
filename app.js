@@ -5660,7 +5660,7 @@ function convertToRakufashion() {
       const prodId = prod.id || '';
       const prodParts = prodId.split('-');
       const productBase = prodParts[0] || '';
-      const name = applyMallName(prod.cleanName || prod.name, 'rakufashion');
+      const name = applyMallName(prod.catchCopy || prod.cleanName || prod.name, 'rakufashion');
       const caption = prod.pcDesc || '';
 
       prod.skus.forEach(sku => {
