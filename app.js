@@ -5402,9 +5402,20 @@ function expandProductsToSkuRows(prods) {
     const imgUrls = {};
     for (let i = 1; i <= 10; i++) imgUrls['img' + i] = toFullUrl(prod['img' + i]);
 
-    // サイズ表画像 = 最終画像
-    const sizeChartImg = (prod.images && prod.images.length > 0)
-      ? toFullUrl(prod.images[prod.images.length - 1].path) : '';
+    // 品番ベースの画像URL生成（品番 = 商品管理番号のハイフン前）
+    // 例: nltp363-2507 → nltp363、フォルダは商品画像1のパスから取得
+    const prodCode = (prod.id || prod.number || '').split('-')[0];
+    let imgFolder = '';
+    if (prod.images && prod.images.length > 0 && prod.images[0].path) {
+      const p = prod.images[0].path;
+      const lastSlash = p.lastIndexOf('/');
+      imgFolder = lastSlash >= 0 ? p.substring(0, lastSlash + 1) : '/';
+    }
+    const tiktokImg10 = prodCode ? toFullUrl(imgFolder + prodCode + '-10.jpg') : '';
+    const tiktokImg11 = prodCode ? toFullUrl(imgFolder + prodCode + '-11.jpg') : '';
+
+    // サイズ表画像 = 品番-11.jpg
+    const sizeChartImg = tiktokImg11;
 
     // 説明文（画像タグ含む）= 商品単位で1回計算
     const tiktokDescWithImgs = buildDescWithImgs(prod);
@@ -5413,16 +5424,20 @@ function expandProductsToSkuRows(prods) {
     const tiktokCategory = detectTiktokCategory(prod.name);
     const pkg = getTiktokPackageSize(tiktokCategory);
 
+    const commonExtra = {
+      sizeChartImg, tiktokImg10, tiktokDescWithImgs,
+      tiktokCategory,
+      parcelWeight: pkg.weight, parcelLength: pkg.length,
+      parcelWidth: pkg.width,  parcelHeight: pkg.height,
+    };
+
     if (!prod.skus || prod.skus.length === 0) {
-      flatRows.push(Object.assign({}, prod, imgUrls, {
+      flatRows.push(Object.assign({}, prod, imgUrls, commonExtra, {
         skuCode: prod.id || '', skuPrice: prod.price || '',
         skuImage: toFullUrl(prod.img1),
         var1Name: varNames[0] || '', var1Value: '', var1Image: '',
         var2Name: varNames[1] || '', var2Value: '',
-        stockQty: 0, sizeChartImg, tiktokDescWithImgs,
-        tiktokCategory, tiktokPrice: convertTiktokPrice(prod.price),
-        parcelWeight: pkg.weight, parcelLength: pkg.length,
-        parcelWidth: pkg.width,  parcelHeight: pkg.height,
+        stockQty: 0, tiktokPrice: convertTiktokPrice(prod.price),
       }));
     } else {
       prod.skus.forEach(sku => {
@@ -5430,7 +5445,7 @@ function expandProductsToSkuRows(prods) {
         const v2 = sku.variants && sku.variants[1];
         const skuImg = toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
         const rawPrice = sku.price || prod.price || '';
-        flatRows.push(Object.assign({}, prod, imgUrls, {
+        flatRows.push(Object.assign({}, prod, imgUrls, commonExtra, {
           skuCode: sku.systemSku || sku.skuMgmtNo || '',
           skuPrice: rawPrice,
           tiktokPrice: convertTiktokPrice(rawPrice),
@@ -5441,10 +5456,6 @@ function expandProductsToSkuRows(prods) {
           var2Name:  v2 ? (keyToName[v2.key] || v2.key) : '',
           var2Value: v2 ? v2.value : '',
           stockQty: parseInt(sku.stock) || 0,
-          sizeChartImg, tiktokDescWithImgs,
-          tiktokCategory,
-          parcelWeight: pkg.weight, parcelLength: pkg.length,
-          parcelWidth: pkg.width,  parcelHeight: pkg.height,
         }));
       });
     }
