@@ -5661,7 +5661,7 @@ function convertToRakufashion() {
       const prodParts = prodId.split('-');
       const productBase = prodParts[0] || '';
       const name = applyMallName(prod.cleanName || prod.name, 'rakufashion');
-      const caption = prod.spDesc || prod.pcDesc || '';
+      const caption = prod.pcDesc || '';
 
       prod.skus.forEach(sku => {
         // カラーコード・サイズコードをシステムSKUから抽出
