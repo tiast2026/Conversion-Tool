@@ -7,7 +7,7 @@ let headers = [];
 let products = [];
 let editedFields = {};
 let CI = {};
-let mallColumnSelection = {}; // { zozo: Set([col1,col2,...]), rakufashion: Set(...), tiktok: Set(...) }
+let mallProductSelection = {}; // { zozo: Set([prodCode1,...]), rakufashion: Set(...), tiktok: Set(...) }
 
 // 楽天ジャンルID → ジャンル名パス（静的マップ）
 const GENRE_MAP = {
@@ -3071,6 +3071,14 @@ function switchMallCsvTab(tabId, convertFn) {
 function refreshMallPreview(tabId, mallKey) {
   const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
+
+  const hasProductSelector = ['zozo', 'rakufashion', 'tiktok'].includes(mallKey);
+
+  // 商品選択状態を初期化（初回のみ: 全商品チェック済み）
+  if (hasProductSelector && !mallProductSelection[mallKey]) {
+    mallProductSelection[mallKey] = new Set(products.map(p => p.id || p.number || ''));
+  }
+
   let result;
   try {
     switch (mallKey) {
@@ -3086,7 +3094,8 @@ function refreshMallPreview(tabId, mallKey) {
   }
   if (!result) { area.innerHTML = '<p style="color:#999;">変換データがありません。</p>'; return; }
 
-  const hasColumnSelector = ['zozo', 'rakufashion', 'tiktok'].includes(mallKey);
+  let html = '';
+  if (hasProductSelector) html += buildProductSelectorHtml(mallKey);
 
   // workbook（TikTok xlsx等）: Templateシートをプレビュー表示
   if (result.workbook) {
@@ -3094,21 +3103,17 @@ function refreshMallPreview(tabId, mallKey) {
     const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
     const ws = wb.Sheets[wsName];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    if (!data || data.length === 0) { area.innerHTML = '<p style="color:#999;">データなし</p>'; return; }
+    if (!data || data.length === 0) { area.innerHTML = html + '<p style="color:#999;">データなし</p>'; return; }
     const headers = data[0].map(String);
     const rows = data.slice(6); // 7行目以降がデータ
-    let html = '';
-    if (hasColumnSelector) html += buildColumnSelectorHtml(mallKey, headers);
-    const filtered = hasColumnSelector ? filterBySelectedColumns(mallKey, headers, rows) : { headers, rows };
-    html += '<div style="margin-bottom:8px;"><span style="font-size:11px; color:#888;">(' + filtered.rows.length + '行 × ' + filtered.headers.length + '列) ※Templateシート7行目以降</span></div>';
-    html += buildCsvPreviewTable(filtered.headers, filtered.rows);
+    html += '<div style="margin-bottom:8px;"><span style="font-size:11px; color:#888;">(' + rows.length + '行 × ' + headers.length + '列) ※Templateシート7行目以降</span></div>';
+    html += buildCsvPreviewTable(headers, rows);
     area.innerHTML = html;
     return;
   }
 
   // FutureShopは複数シートを返す
   if (result.sheets) {
-    let html = '';
     result.sheets.forEach((file, fi) => {
       html += '<div style="margin-bottom:20px;">';
       html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
@@ -3120,54 +3125,50 @@ function refreshMallPreview(tabId, mallKey) {
     });
     area.innerHTML = html;
   } else if (result.headers && result.rows) {
-    let html = '';
-    if (hasColumnSelector) html += buildColumnSelectorHtml(mallKey, result.headers);
-    const filtered = hasColumnSelector ? filterBySelectedColumns(mallKey, result.headers, result.rows) : { headers: result.headers, rows: result.rows };
     html += '<div style="margin-bottom:8px;">';
-    html += '<span style="font-size:11px; color:#888;">(' + filtered.rows.length + '行 × ' + filtered.headers.length + '列)</span>';
+    html += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
     html += '</div>';
-    html += buildCsvPreviewTable(filtered.headers, filtered.rows);
+    html += buildCsvPreviewTable(result.headers, result.rows);
     area.innerHTML = html;
   } else {
-    area.innerHTML = '<p style="color:#999;">データなし</p>';
+    area.innerHTML = html + '<p style="color:#999;">データなし</p>';
   }
 }
 
-// 出力項目選択: チェックボックスUI生成
-function buildColumnSelectorHtml(mallKey, allHeaders) {
-  // 初回: 全カラムを選択状態で初期化
-  if (!mallColumnSelection[mallKey]) {
-    mallColumnSelection[mallKey] = new Set(allHeaders);
-  }
-  const sel = mallColumnSelection[mallKey];
-  // 新しいカラムがあれば追加
-  allHeaders.forEach(h => { if (!sel.has(h) && !sel._removed?.has(h)) sel.add(h); });
-
-  const allChecked = allHeaders.every(h => sel.has(h));
-  const noneChecked = allHeaders.every(h => !sel.has(h));
+// 出力商品選択: チェックボックスUI生成
+function buildProductSelectorHtml(mallKey) {
+  const sel = mallProductSelection[mallKey];
+  if (!sel) return '';
+  const allCodes = products.map(p => p.id || p.number || '');
+  const selectedCount = allCodes.filter(c => sel.has(c)).length;
 
   let html = '<div style="margin-bottom:12px; border:1px solid #e0e0e0; border-radius:6px; background:#fafafa;">';
-  html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #e0e0e0; cursor:pointer;" onclick="toggleColumnSelectorPanel(\'' + mallKey + '\')">';
+  html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #e0e0e0; cursor:pointer;" onclick="toggleProductSelectorPanel(\'' + mallKey + '\')">';
   html += '<div style="display:flex; align-items:center; gap:8px;">';
-  html += '<span style="font-size:13px; font-weight:600; color:#333;">出力項目の選択</span>';
-  const selectedCount = allHeaders.filter(h => sel.has(h)).length;
-  html += '<span style="font-size:11px; color:#888;">' + selectedCount + ' / ' + allHeaders.length + ' 項目</span>';
+  html += '<span style="font-size:13px; font-weight:600; color:#333;">出力商品の選択</span>';
+  html += '<span style="font-size:11px; color:#888;">' + selectedCount + ' / ' + allCodes.length + ' 商品</span>';
   html += '</div>';
-  html += '<span id="col-sel-arrow-' + mallKey + '" style="font-size:12px; color:#999; transition:transform 0.2s;">▼</span>';
+  html += '<span id="prod-sel-arrow-' + mallKey + '" style="font-size:12px; color:#999;">▼</span>';
   html += '</div>';
 
-  html += '<div id="col-sel-body-' + mallKey + '" style="display:none; padding:10px 12px;">';
+  html += '<div id="prod-sel-body-' + mallKey + '" style="display:none; padding:10px 12px;">';
   // 全選択 / 全解除ボタン
   html += '<div style="margin-bottom:8px; display:flex; gap:8px;">';
-  html += '<button onclick="mallColSelectAll(\'' + mallKey + '\')" style="font-size:11px; padding:3px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">全選択</button>';
-  html += '<button onclick="mallColDeselectAll(\'' + mallKey + '\')" style="font-size:11px; padding:3px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">全解除</button>';
+  html += '<button onclick="mallProdSelectAll(\'' + mallKey + '\')" style="font-size:11px; padding:3px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">全選択</button>';
+  html += '<button onclick="mallProdDeselectAll(\'' + mallKey + '\')" style="font-size:11px; padding:3px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">全解除</button>';
   html += '</div>';
-  html += '<div style="display:flex; flex-wrap:wrap; gap:4px 12px;">';
-  allHeaders.forEach((h, i) => {
-    const checked = sel.has(h) ? ' checked' : '';
-    html += '<label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#444; cursor:pointer; padding:2px 0; min-width:140px;">';
-    html += '<input type="checkbox" data-mall-col="' + mallKey + '" data-col-name="' + esc(h) + '"' + checked + ' onchange="toggleMallColumn(\'' + mallKey + '\', \'' + esc(h).replace(/'/g, "\\'") + '\', this.checked)" style="margin:0;">';
-    html += esc(h);
+  html += '<div style="display:flex; flex-wrap:wrap; gap:4px 0;">';
+  products.forEach((prod, i) => {
+    const code = prod.id || prod.number || '';
+    const name = prod.cleanName || prod.name || '';
+    const skuCount = prod.skus ? prod.skus.length : 0;
+    const checked = sel.has(code) ? ' checked' : '';
+    const escapedCode = esc(code).replace(/'/g, "\\'");
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#444; cursor:pointer; padding:4px 8px; min-width:280px; border-radius:4px; transition:background 0.1s;" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'transparent\'">';
+    html += '<input type="checkbox" data-mall-prod="' + mallKey + '" data-prod-code="' + esc(code) + '"' + checked + ' onchange="toggleMallProduct(\'' + mallKey + '\', \'' + escapedCode + '\', this.checked)" style="margin:0; flex-shrink:0;">';
+    html += '<span style="font-weight:600; color:#1976d2; min-width:100px;">' + esc(code) + '</span>';
+    html += '<span style="color:#666; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">' + esc(name) + '</span>';
+    html += '<span style="color:#aaa; font-size:11px; flex-shrink:0;">(' + skuCount + 'SKU)</span>';
     html += '</label>';
   });
   html += '</div>';
@@ -3176,48 +3177,50 @@ function buildColumnSelectorHtml(mallKey, allHeaders) {
   return html;
 }
 
-// 項目選択パネルの開閉
-function toggleColumnSelectorPanel(mallKey) {
-  const body = document.getElementById('col-sel-body-' + mallKey);
-  const arrow = document.getElementById('col-sel-arrow-' + mallKey);
+// 商品選択パネルの開閉
+function toggleProductSelectorPanel(mallKey) {
+  const body = document.getElementById('prod-sel-body-' + mallKey);
+  const arrow = document.getElementById('prod-sel-arrow-' + mallKey);
   if (!body) return;
   const isOpen = body.style.display !== 'none';
   body.style.display = isOpen ? 'none' : '';
-  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+  if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
 }
 
-// 個別カラムのオン・オフ
-function toggleMallColumn(mallKey, colName, isChecked) {
-  if (!mallColumnSelection[mallKey]) return;
-  if (isChecked) {
-    mallColumnSelection[mallKey].add(colName);
-  } else {
-    mallColumnSelection[mallKey].delete(colName);
-  }
-  // プレビューテーブルだけ再描画（チェックボックス状態はDOMで保持）
-  refreshMallPreviewTable(mallKey);
+// 個別商品のオン・オフ
+function toggleMallProduct(mallKey, prodCode, isChecked) {
+  if (!mallProductSelection[mallKey]) return;
+  if (isChecked) mallProductSelection[mallKey].add(prodCode);
+  else mallProductSelection[mallKey].delete(prodCode);
+  refreshMallProductPreview(mallKey);
 }
 
 // 全選択
-function mallColSelectAll(mallKey) {
-  const checkboxes = document.querySelectorAll('input[data-mall-col="' + mallKey + '"]');
-  checkboxes.forEach(cb => { cb.checked = true; mallColumnSelection[mallKey].add(cb.dataset.colName); });
-  refreshMallPreviewTable(mallKey);
+function mallProdSelectAll(mallKey) {
+  const cbs = document.querySelectorAll('input[data-mall-prod="' + mallKey + '"]');
+  cbs.forEach(cb => { cb.checked = true; mallProductSelection[mallKey].add(cb.dataset.prodCode); });
+  refreshMallProductPreview(mallKey);
 }
 
 // 全解除
-function mallColDeselectAll(mallKey) {
-  const checkboxes = document.querySelectorAll('input[data-mall-col="' + mallKey + '"]');
-  checkboxes.forEach(cb => { cb.checked = false; mallColumnSelection[mallKey].delete(cb.dataset.colName); });
-  refreshMallPreviewTable(mallKey);
+function mallProdDeselectAll(mallKey) {
+  const cbs = document.querySelectorAll('input[data-mall-prod="' + mallKey + '"]');
+  cbs.forEach(cb => { cb.checked = false; mallProductSelection[mallKey].delete(cb.dataset.prodCode); });
+  refreshMallProductPreview(mallKey);
 }
 
 // プレビューテーブル部分のみ再描画（チェックボックスUIはそのまま）
-function refreshMallPreviewTable(mallKey) {
+function refreshMallProductPreview(mallKey) {
   const tabMap = { zozo: 'mall_zozo', rakufashion: 'mall_rakufashion', tiktok: 'mall_tiktok' };
   const tabId = tabMap[mallKey];
   const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
+
+  // カウント更新
+  const sel = mallProductSelection[mallKey];
+  const allCodes = products.map(p => p.id || p.number || '');
+  const selectedCount = allCodes.filter(c => sel.has(c)).length;
+  const countSpan = area.querySelector('#prod-sel-arrow-' + mallKey)?.parentElement?.querySelector('span:nth-child(1) + span');
 
   let result;
   try {
@@ -3230,46 +3233,34 @@ function refreshMallPreviewTable(mallKey) {
   } catch (e) { return; }
   if (!result || !result.headers) return;
 
-  // テーブル部分のみ更新（col-sel-body の次の兄弟以降）
-  const colSelBody = document.getElementById('col-sel-body-' + mallKey);
-  if (!colSelBody) return;
-  const container = colSelBody.closest('.mall-preview-area');
-  if (!container) return;
-
-  // カウント更新
-  const sel = mallColumnSelection[mallKey];
-  const allH = result.headers;
-  const selectedCount = allH.filter(h => sel.has(h)).length;
-  const countSpan = container.querySelector('div > div > span:last-child');
-
-  const filtered = filterBySelectedColumns(mallKey, result.headers, result.rows);
-
   // セレクターの後のHTML要素だけ置き換え
-  const selectorDiv = colSelBody.parentElement;
-  let newHtml = '<div style="margin-bottom:8px;">';
-  newHtml += '<span style="font-size:11px; color:#888;">(' + filtered.rows.length + '行 × ' + filtered.headers.length + '列)</span>';
-  newHtml += '</div>';
-  newHtml += buildCsvPreviewTable(filtered.headers, filtered.rows);
+  const selectorDiv = document.getElementById('prod-sel-body-' + mallKey)?.parentElement;
+  if (!selectorDiv) return;
 
-  // selectorDivの後ろの要素を全部削除して再挿入
+  // カウント表示を更新
+  const headerDiv = selectorDiv.querySelector('div:first-child');
+  if (headerDiv) {
+    const cntEl = headerDiv.querySelector('span:last-child');
+    if (cntEl) cntEl.textContent = selectedCount + ' / ' + allCodes.length + ' 商品';
+  }
+
+  let newHtml = '<div style="margin-bottom:8px;">';
+  newHtml += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
+  newHtml += '</div>';
+  newHtml += buildCsvPreviewTable(result.headers, result.rows);
+
   while (selectorDiv.nextSibling) selectorDiv.nextSibling.remove();
   const temp = document.createElement('div');
   temp.innerHTML = newHtml;
-  while (temp.firstChild) container.appendChild(temp.firstChild);
+  while (temp.firstChild) area.appendChild(temp.firstChild);
 }
 
-// カラム選択でフィルタリング
-function filterBySelectedColumns(mallKey, allHeaders, allRows) {
-  const sel = mallColumnSelection[mallKey];
-  if (!sel || sel.size === 0) return { headers: allHeaders, rows: allRows };
-  const indices = [];
-  const filteredHeaders = [];
-  allHeaders.forEach((h, i) => {
-    if (sel.has(h)) { indices.push(i); filteredHeaders.push(h); }
-  });
-  if (indices.length === allHeaders.length) return { headers: allHeaders, rows: allRows };
-  const filteredRows = allRows.map(row => indices.map(i => row[i]));
-  return { headers: filteredHeaders, rows: filteredRows };
+// 商品コードが選択されているか判定
+function isProductSelectedForMall(mallKey, prod) {
+  const sel = mallProductSelection[mallKey];
+  if (!sel) return true; // 未初期化なら全出力
+  const code = prod.id || prod.number || '';
+  return sel.has(code);
 }
 
 function buildCsvPreviewTable(headers, rows) {
@@ -4532,26 +4523,6 @@ function downloadMall(mallKey) {
   const bom = '\uFEFF';
   const ts = dateTimeStr();
 
-  // 出力項目フィルタリング適用（ZOZO/楽天ファッション/TikTok）
-  const hasColumnFilter = ['zozo', 'rakufashion', 'tiktok'].includes(mallKey) && mallColumnSelection[mallKey];
-  if (hasColumnFilter && result.headers && result.rows) {
-    const filtered = filterBySelectedColumns(mallKey, result.headers, result.rows);
-    result.headers = filtered.headers;
-    result.rows = filtered.rows;
-    // TikTokのtiktokXlsxデータも更新
-    if (result.tiktokXlsx) {
-      const sel = mallColumnSelection[mallKey];
-      const origHeaders = result.tiktokXlsx._origHeaders || [];
-      // tiktokXlsx.dataRowsもフィルタリング
-      const indices = [];
-      origHeaders.forEach((h, i) => { if (sel.has(h)) indices.push(i); });
-      if (indices.length < origHeaders.length && indices.length > 0) {
-        result.tiktokXlsx.dataRows = result.tiktokXlsx.dataRows.map(row => indices.map(i => row[i]));
-        result.tiktokXlsx.numCols = indices.length;
-      }
-    }
-  }
-
   // TikTok: JSZipでテンプレートxlsxを直接編集（書式完全保持）
   if (result.tiktokXlsx) {
     const { binary, sheetIndex, dataRows, startRow, numCols } = result.tiktokXlsx;
@@ -5471,7 +5442,8 @@ function convertToTiktok() {
   const tm = MASTER.malls.tiktok || {};
   const mappings = tm.columnMappings || [];
   const templateB64 = tm.templateData || '';
-  const flatRows = expandProductsToSkuRows(products);
+  const selectedProducts = products.filter(p => isProductSelectedForMall('tiktok', p));
+  const flatRows = expandProductsToSkuRows(selectedProducts);
 
   // テンプレートなし: シンプルCSVプレビュー
   if (!templateB64) {
@@ -5617,6 +5589,7 @@ function convertToZozo() {
   const zH = ['商品コード','商品名','販売価格','カラー','サイズ'];
   const rows = [];
   products.forEach(prod => {
+    if (!isProductSelectedForMall('zozo', prod)) return;
     const name = prod.cleanName || prod.name;
     prod.skus.forEach(sku => {
       const r = new Array(zH.length).fill('');
@@ -5669,6 +5642,7 @@ function convertToRakufashion() {
   if (sourceType === 'rakuten') {
     // 楽天CSV → 楽天ファッション変換
     products.forEach(prod => {
+      if (!isProductSelectedForMall('rakufashion', prod)) return;
       const prodId = prod.id || '';
       const prodParts = prodId.split('-');
       const productBase = prodParts[0] || '';
@@ -5730,6 +5704,7 @@ function convertToRakufashion() {
   } else {
     // 自社Excel → 楽天ファッション変換
     products.forEach(prod => {
+      if (!isProductSelectedForMall('rakufashion', prod)) return;
       const prodNumber = prod.number || '';
       const prodParts = prodNumber.split('-');
       const productBase = prodParts[0] || '';
