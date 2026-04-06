@@ -3072,7 +3072,7 @@ function refreshMallPreview(tabId, mallKey) {
   const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
 
-  const hasProductSelector = ['zozo', 'rakufashion', 'tiktok'].includes(mallKey);
+  const hasProductSelector = ['futureshop', 'zozo', 'rakufashion', 'tiktok'].includes(mallKey);
 
   // 商品選択状態を初期化（初回のみ: 全商品チェック済み）
   if (hasProductSelector && !mallProductSelection[mallKey]) {
@@ -3211,7 +3211,7 @@ function mallProdDeselectAll(mallKey) {
 
 // プレビューテーブル部分のみ再描画（チェックボックスUIはそのまま）
 function refreshMallProductPreview(mallKey) {
-  const tabMap = { zozo: 'mall_zozo', rakufashion: 'mall_rakufashion', tiktok: 'mall_tiktok' };
+  const tabMap = { futureshop: 'mall_futureshop', zozo: 'mall_zozo', rakufashion: 'mall_rakufashion', tiktok: 'mall_tiktok' };
   const tabId = tabMap[mallKey];
   const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
@@ -3220,18 +3220,18 @@ function refreshMallProductPreview(mallKey) {
   const sel = mallProductSelection[mallKey];
   const allCodes = products.map(p => p.id || p.number || '');
   const selectedCount = allCodes.filter(c => sel.has(c)).length;
-  const countSpan = area.querySelector('#prod-sel-arrow-' + mallKey)?.parentElement?.querySelector('span:nth-child(1) + span');
 
   let result;
   try {
     switch (mallKey) {
+      case 'futureshop': result = convertToFutureshop(); break;
       case 'tiktok': result = convertToTiktok(); break;
       case 'zozo': result = convertToZozo(); break;
       case 'rakufashion': result = convertToRakufashion(); break;
       default: return;
     }
   } catch (e) { return; }
-  if (!result || !result.headers) return;
+  if (!result) return;
 
   // セレクターの後のHTML要素だけ置き換え
   const selectorDiv = document.getElementById('prod-sel-body-' + mallKey)?.parentElement;
@@ -3244,10 +3244,24 @@ function refreshMallProductPreview(mallKey) {
     if (cntEl) cntEl.textContent = selectedCount + ' / ' + allCodes.length + ' 商品';
   }
 
-  let newHtml = '<div style="margin-bottom:8px;">';
-  newHtml += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
-  newHtml += '</div>';
-  newHtml += buildCsvPreviewTable(result.headers, result.rows);
+  let newHtml = '';
+  if (result.sheets) {
+    // FutureShop等の複数シート
+    result.sheets.forEach((file) => {
+      newHtml += '<div style="margin-bottom:20px;">';
+      newHtml += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
+      newHtml += '<h5 style="font-size:14px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
+      newHtml += '<span style="font-size:12px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
+      newHtml += '</div>';
+      newHtml += buildCsvPreviewTable(file.headers, file.rows);
+      newHtml += '</div>';
+    });
+  } else if (result.headers && result.rows) {
+    newHtml += '<div style="margin-bottom:8px;">';
+    newHtml += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
+    newHtml += '</div>';
+    newHtml += buildCsvPreviewTable(result.headers, result.rows);
+  }
 
   while (selectorDiv.nextSibling) selectorDiv.nextSibling.remove();
   const temp = document.createElement('div');
@@ -5101,7 +5115,7 @@ function convertToFutureshop() {
   const sheets = [];
 
   // ========== 各商品のカラー/サイズ情報を事前計算 ==========
-  const prodInfos = products.map(prod => {
+  const prodInfos = products.filter(p => isProductSelectedForMall('futureshop', p)).map(prod => {
     const colorMap = new Map();
     const sizeMap = new Map();
     prod.skus.forEach(sku => {
