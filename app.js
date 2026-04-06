@@ -3291,7 +3291,12 @@ function buildCsvPreviewTable(headers, rows) {
     headers.forEach((h, ci) => {
       const val = row[ci] || '';
       const truncVal = val.length > 60 ? val.substring(0, 60) + '…' : val;
-      html += '<td contenteditable="true" style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+      const isImgUrl = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(val);
+      if (isImgUrl) {
+        html += '<td style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="' + esc(val) + '"><a href="' + esc(val) + '" target="_blank" style="color:#1976d2; text-decoration:underline; cursor:pointer;">' + esc(truncVal) + '</a></td>';
+      } else {
+        html += '<td contenteditable="true" style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+      }
     });
     html += '</tr>';
   });
