@@ -5400,25 +5400,60 @@ function expandProductsToSkuRows(prods) {
   //   例: 3色(br,bk,wh) → 各色 2,3,4.jpg = 合計9枚
   //       1色(br)      → 2〜10.jpg = 9枚
   //       2色(br,bk)   → 各色 2,3,4,5.jpg = 合計8枚
+  // 色コード抽出の優先順:
+  //   1. SKUコード (例: nltp251-2501-BR-F → br) で全SKUから抽出
+  //   2. SKU画像パス (-<色>1.jpg) からのフォールバック
   function buildTiktokNineImages(prod) {
-    const colorEntries = [];
-    const seen = new Set();
+    // Step 1: SKU画像パスからベースパスと拡張子を取得（refBase/refExt）
+    let refBase = '';
+    let refExt = '';
     (prod.skus || []).forEach(sku => {
+      if (refBase) return;
       const path = sku.skuImgPath || '';
       const m = path.match(/^(.+)-([a-zA-Z]+)\d+(\.[a-zA-Z]+)$/);
-      if (m && !seen.has(m[2])) {
-        seen.add(m[2]);
-        colorEntries.push({ code: m[2], basePath: m[1], ext: m[3] });
+      if (m) { refBase = m[1]; refExt = m[3]; }
+    });
+
+    // Step 2: SKUコードから色コードを抽出（2文字または3文字のアルファベット）
+    //         例: nltp251-2501-BR-F → BR → br
+    const colors = [];
+    const seen = new Set();
+    (prod.skus || []).forEach(sku => {
+      const skuCode = sku.skuMgmtNo || sku.systemSku || '';
+      // 先頭セグメント(商品コード)をスキップ、2〜3文字のアルファベット-only セグメントを探す
+      const parts = skuCode.split('-').slice(1);
+      let colorCode = '';
+      for (const part of parts) {
+        if (/^[A-Za-z]{2,3}$/.test(part)) { colorCode = part.toLowerCase(); break; }
+      }
+      if (colorCode && !seen.has(colorCode)) {
+        seen.add(colorCode);
+        colors.push(colorCode);
       }
     });
-    if (colorEntries.length === 0) return null;
-    const imagesPerColor = Math.floor(9 / colorEntries.length);
+
+    // Step 3: フォールバック: SKUコードから取れなかった場合は画像パスから抽出
+    if (colors.length === 0) {
+      (prod.skus || []).forEach(sku => {
+        const path = sku.skuImgPath || '';
+        const m = path.match(/^(.+)-([a-zA-Z]+)\d+(\.[a-zA-Z]+)$/);
+        if (m && !seen.has(m[2])) {
+          seen.add(m[2]);
+          colors.push(m[2]);
+        }
+      });
+    }
+
+    if (colors.length === 0 || !refBase) return null;
+
+    // Step 4: URLを生成
+    const imagesPerColor = Math.floor(9 / colors.length);
     if (imagesPerColor === 0) return null;
     const urls = [];
-    colorEntries.forEach(entry => {
+    colors.forEach(code => {
       for (let i = 0; i < imagesPerColor; i++) {
         const num = 2 + i;
-        urls.push(toFullUrl(entry.basePath + '-' + entry.code + num + entry.ext));
+        urls.push(toFullUrl(refBase + '-' + code + num + refExt));
       }
     });
     return urls.slice(0, 9);
