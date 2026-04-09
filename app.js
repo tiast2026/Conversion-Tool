@@ -7,6 +7,7 @@ let headers = [];
 let products = [];
 let editedFields = {};
 let CI = {};
+let mallProductSelection = {}; // { zozo: Set([prodCode1,...]), rakufashion: Set(...), tiktok: Set(...) }
 
 // 楽天ジャンルID → ジャンル名パス（静的マップ）
 const GENRE_MAP = {
@@ -3070,6 +3071,14 @@ function switchMallCsvTab(tabId, convertFn) {
 function refreshMallPreview(tabId, mallKey) {
   const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
   if (!area) return;
+
+  const hasProductSelector = ['futureshop', 'zozo', 'rakufashion', 'tiktok'].includes(mallKey);
+
+  // 商品選択状態を初期化（初回のみ: 全商品チェック済み）
+  if (hasProductSelector && !mallProductSelection[mallKey]) {
+    mallProductSelection[mallKey] = new Set(products.map(p => p.id || p.number || ''));
+  }
+
   let result;
   try {
     switch (mallKey) {
@@ -3085,16 +3094,19 @@ function refreshMallPreview(tabId, mallKey) {
   }
   if (!result) { area.innerHTML = '<p style="color:#999;">変換データがありません。</p>'; return; }
 
+  let html = '';
+  if (hasProductSelector) html += buildProductSelectorHtml(mallKey);
+
   // workbook（TikTok xlsx等）: Templateシートをプレビュー表示
   if (result.workbook) {
     const wb = result.workbook;
     const wsName = wb.SheetNames.find(n => n === 'Template') || wb.SheetNames[0];
     const ws = wb.Sheets[wsName];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    if (!data || data.length === 0) { area.innerHTML = '<p style="color:#999;">データなし</p>'; return; }
+    if (!data || data.length === 0) { area.innerHTML = html + '<p style="color:#999;">データなし</p>'; return; }
     const headers = data[0].map(String);
     const rows = data.slice(6); // 7行目以降がデータ
-    let html = '<div style="margin-bottom:8px;"><span style="font-size:11px; color:#888;">(' + rows.length + '行 × ' + headers.length + '列) ※Templateシート7行目以降</span></div>';
+    html += '<div style="margin-bottom:8px;"><span style="font-size:11px; color:#888;">(' + rows.length + '行 × ' + headers.length + '列) ※Templateシート7行目以降</span></div>';
     html += buildCsvPreviewTable(headers, rows);
     area.innerHTML = html;
     return;
@@ -3102,7 +3114,6 @@ function refreshMallPreview(tabId, mallKey) {
 
   // FutureShopは複数シートを返す
   if (result.sheets) {
-    let html = '';
     result.sheets.forEach((file, fi) => {
       html += '<div style="margin-bottom:20px;">';
       html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
@@ -3114,14 +3125,156 @@ function refreshMallPreview(tabId, mallKey) {
     });
     area.innerHTML = html;
   } else if (result.headers && result.rows) {
-    let html = '<div style="margin-bottom:8px;">';
+    html += '<div style="margin-bottom:8px;">';
     html += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
     html += '</div>';
     html += buildCsvPreviewTable(result.headers, result.rows);
     area.innerHTML = html;
   } else {
-    area.innerHTML = '<p style="color:#999;">データなし</p>';
+    area.innerHTML = html + '<p style="color:#999;">データなし</p>';
   }
+}
+
+// 出力商品選択: チェックボックスUI生成
+function buildProductSelectorHtml(mallKey) {
+  const sel = mallProductSelection[mallKey];
+  if (!sel) return '';
+  const allCodes = products.map(p => p.id || p.number || '');
+  const selectedCount = allCodes.filter(c => sel.has(c)).length;
+
+  let html = '<div style="margin-bottom:12px; border:1px solid #e0e0e0; border-radius:6px; background:#fafafa;">';
+  html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #e0e0e0; cursor:pointer;" onclick="toggleProductSelectorPanel(\'' + mallKey + '\')">';
+  html += '<div style="display:flex; align-items:center; gap:8px;">';
+  html += '<span style="font-size:13px; font-weight:600; color:#333;">出力商品の選択</span>';
+  html += '<span style="font-size:11px; color:#888;">' + selectedCount + ' / ' + allCodes.length + ' 商品</span>';
+  html += '</div>';
+  html += '<span id="prod-sel-arrow-' + mallKey + '" style="font-size:12px; color:#999;">▼</span>';
+  html += '</div>';
+
+  html += '<div id="prod-sel-body-' + mallKey + '" style="display:none; padding:10px 12px;">';
+  // 全選択 / 全解除ボタン
+  html += '<div style="margin-bottom:8px; display:flex; gap:8px;">';
+  html += '<button onclick="mallProdSelectAll(\'' + mallKey + '\')" style="font-size:11px; padding:3px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">全選択</button>';
+  html += '<button onclick="mallProdDeselectAll(\'' + mallKey + '\')" style="font-size:11px; padding:3px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">全解除</button>';
+  html += '</div>';
+  html += '<div style="display:flex; flex-wrap:wrap; gap:4px 0;">';
+  products.forEach((prod, i) => {
+    const code = prod.id || prod.number || '';
+    const name = prod.cleanName || prod.name || '';
+    const skuCount = prod.skus ? prod.skus.length : 0;
+    const checked = sel.has(code) ? ' checked' : '';
+    const escapedCode = esc(code).replace(/'/g, "\\'");
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#444; cursor:pointer; padding:4px 8px; min-width:280px; border-radius:4px; transition:background 0.1s;" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'transparent\'">';
+    html += '<input type="checkbox" data-mall-prod="' + mallKey + '" data-prod-code="' + esc(code) + '"' + checked + ' onchange="toggleMallProduct(\'' + mallKey + '\', \'' + escapedCode + '\', this.checked)" style="margin:0; flex-shrink:0;">';
+    html += '<span style="font-weight:600; color:#1976d2; min-width:100px;">' + esc(code) + '</span>';
+    html += '<span style="color:#666; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">' + esc(name) + '</span>';
+    html += '<span style="color:#aaa; font-size:11px; flex-shrink:0;">(' + skuCount + 'SKU)</span>';
+    html += '</label>';
+  });
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+// 商品選択パネルの開閉
+function toggleProductSelectorPanel(mallKey) {
+  const body = document.getElementById('prod-sel-body-' + mallKey);
+  const arrow = document.getElementById('prod-sel-arrow-' + mallKey);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
+}
+
+// 個別商品のオン・オフ
+function toggleMallProduct(mallKey, prodCode, isChecked) {
+  if (!mallProductSelection[mallKey]) return;
+  if (isChecked) mallProductSelection[mallKey].add(prodCode);
+  else mallProductSelection[mallKey].delete(prodCode);
+  refreshMallProductPreview(mallKey);
+}
+
+// 全選択
+function mallProdSelectAll(mallKey) {
+  const cbs = document.querySelectorAll('input[data-mall-prod="' + mallKey + '"]');
+  cbs.forEach(cb => { cb.checked = true; mallProductSelection[mallKey].add(cb.dataset.prodCode); });
+  refreshMallProductPreview(mallKey);
+}
+
+// 全解除
+function mallProdDeselectAll(mallKey) {
+  const cbs = document.querySelectorAll('input[data-mall-prod="' + mallKey + '"]');
+  cbs.forEach(cb => { cb.checked = false; mallProductSelection[mallKey].delete(cb.dataset.prodCode); });
+  refreshMallProductPreview(mallKey);
+}
+
+// プレビューテーブル部分のみ再描画（チェックボックスUIはそのまま）
+function refreshMallProductPreview(mallKey) {
+  const tabMap = { futureshop: 'mall_futureshop', zozo: 'mall_zozo', rakufashion: 'mall_rakufashion', tiktok: 'mall_tiktok' };
+  const tabId = tabMap[mallKey];
+  const area = document.querySelector('.mall-preview-area[data-mall="' + tabId + '"]');
+  if (!area) return;
+
+  // カウント更新
+  const sel = mallProductSelection[mallKey];
+  const allCodes = products.map(p => p.id || p.number || '');
+  const selectedCount = allCodes.filter(c => sel.has(c)).length;
+
+  let result;
+  try {
+    switch (mallKey) {
+      case 'futureshop': result = convertToFutureshop(); break;
+      case 'tiktok': result = convertToTiktok(); break;
+      case 'zozo': result = convertToZozo(); break;
+      case 'rakufashion': result = convertToRakufashion(); break;
+      default: return;
+    }
+  } catch (e) { return; }
+  if (!result) return;
+
+  // セレクターの後のHTML要素だけ置き換え
+  const selectorDiv = document.getElementById('prod-sel-body-' + mallKey)?.parentElement;
+  if (!selectorDiv) return;
+
+  // カウント表示を更新
+  const headerDiv = selectorDiv.querySelector('div:first-child');
+  if (headerDiv) {
+    const cntEl = headerDiv.querySelector('span:last-child');
+    if (cntEl) cntEl.textContent = selectedCount + ' / ' + allCodes.length + ' 商品';
+  }
+
+  let newHtml = '';
+  if (result.sheets) {
+    // FutureShop等の複数シート
+    result.sheets.forEach((file) => {
+      newHtml += '<div style="margin-bottom:20px;">';
+      newHtml += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
+      newHtml += '<h5 style="font-size:14px; color:#333; margin:0; font-weight:700;">' + esc(file.name) + '</h5>';
+      newHtml += '<span style="font-size:12px; color:#888;">(' + file.rows.length + '行 × ' + file.headers.length + '列)</span>';
+      newHtml += '</div>';
+      newHtml += buildCsvPreviewTable(file.headers, file.rows);
+      newHtml += '</div>';
+    });
+  } else if (result.headers && result.rows) {
+    newHtml += '<div style="margin-bottom:8px;">';
+    newHtml += '<span style="font-size:11px; color:#888;">(' + result.rows.length + '行 × ' + result.headers.length + '列)</span>';
+    newHtml += '</div>';
+    newHtml += buildCsvPreviewTable(result.headers, result.rows);
+  }
+
+  while (selectorDiv.nextSibling) selectorDiv.nextSibling.remove();
+  const temp = document.createElement('div');
+  temp.innerHTML = newHtml;
+  while (temp.firstChild) area.appendChild(temp.firstChild);
+}
+
+// 商品コードが選択されているか判定
+function isProductSelectedForMall(mallKey, prod) {
+  const sel = mallProductSelection[mallKey];
+  if (!sel) return true; // 未初期化なら全出力
+  const code = prod.id || prod.number || '';
+  return sel.has(code);
 }
 
 function buildCsvPreviewTable(headers, rows) {
@@ -3138,7 +3291,12 @@ function buildCsvPreviewTable(headers, rows) {
     headers.forEach((h, ci) => {
       const val = row[ci] || '';
       const truncVal = val.length > 60 ? val.substring(0, 60) + '…' : val;
-      html += '<td contenteditable="true" style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+      const isImgUrl = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(val);
+      if (isImgUrl) {
+        html += '<td style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="' + esc(val) + '"><a href="' + esc(val) + '" target="_blank" style="color:#1976d2; text-decoration:underline; cursor:pointer;">' + esc(truncVal) + '</a></td>';
+      } else {
+        html += '<td contenteditable="true" style="padding:6px 10px; border:1px solid #eee; max-width:200px; overflow:hidden; text-overflow:ellipsis; outline:none; cursor:text;" title="' + esc(val) + '">' + esc(truncVal) + '</td>';
+      }
     });
     html += '</tr>';
   });
@@ -4962,7 +5120,7 @@ function convertToFutureshop() {
   const sheets = [];
 
   // ========== 各商品のカラー/サイズ情報を事前計算 ==========
-  const prodInfos = products.map(prod => {
+  const prodInfos = products.filter(p => isProductSelectedForMall('futureshop', p)).map(prod => {
     const colorMap = new Map();
     const sizeMap = new Map();
     prod.skus.forEach(sku => {
@@ -5284,9 +5442,20 @@ function expandProductsToSkuRows(prods) {
       for (let i = 1; i <= 8; i++) imgUrls['img' + i] = tiktokNineImgs[i] || '';
     }
 
-    // サイズ表画像 = 最終画像
-    const sizeChartImg = (prod.images && prod.images.length > 0)
-      ? toFullUrl(prod.images[prod.images.length - 1].path) : '';
+    // 品番ベースの画像URL生成（品番 = 商品管理番号のハイフン前）
+    // 例: nltp363-2507 → nltp363、フォルダは商品画像1のパスから取得
+    const prodCode = (prod.id || prod.number || '').split('-')[0];
+    let imgFolder = '';
+    if (prod.images && prod.images.length > 0 && prod.images[0].path) {
+      const p = prod.images[0].path;
+      const lastSlash = p.lastIndexOf('/');
+      imgFolder = lastSlash >= 0 ? p.substring(0, lastSlash + 1) : '/';
+    }
+    const tiktokImg10 = prodCode ? toFullUrl(imgFolder + prodCode + '-10.jpg') : '';
+    const tiktokImg11 = prodCode ? toFullUrl(imgFolder + prodCode + '-11.jpg') : '';
+
+    // サイズ表画像 = 品番-11.jpg
+    const sizeChartImg = tiktokImg11;
 
     // 説明文（画像タグ含む）= 商品単位で1回計算
     const tiktokDescWithImgs = buildDescWithImgs(prod);
@@ -5295,16 +5464,20 @@ function expandProductsToSkuRows(prods) {
     const tiktokCategory = detectTiktokCategory(prod.name);
     const pkg = getTiktokPackageSize(tiktokCategory);
 
+    const commonExtra = {
+      sizeChartImg, tiktokImg10, tiktokDescWithImgs,
+      tiktokCategory,
+      parcelWeight: pkg.weight, parcelLength: pkg.length,
+      parcelWidth: pkg.width,  parcelHeight: pkg.height,
+    };
+
     if (!prod.skus || prod.skus.length === 0) {
-      flatRows.push(Object.assign({}, prod, imgUrls, {
+      flatRows.push(Object.assign({}, prod, imgUrls, commonExtra, {
         skuCode: prod.id || '', skuPrice: prod.price || '',
         skuImage: toFullUrl(prod.img1),
         var1Name: varNames[0] || '', var1Value: '', var1Image: '',
         var2Name: varNames[1] || '', var2Value: '',
-        stockQty: 0, sizeChartImg, tiktokDescWithImgs,
-        tiktokCategory, tiktokPrice: convertTiktokPrice(prod.price),
-        parcelWeight: pkg.weight, parcelLength: pkg.length,
-        parcelWidth: pkg.width,  parcelHeight: pkg.height,
+        stockQty: 0, tiktokPrice: convertTiktokPrice(prod.price),
       }));
     } else {
       prod.skus.forEach(sku => {
@@ -5316,7 +5489,7 @@ function expandProductsToSkuRows(prods) {
         const var1ImgRaw = toFullUrl(sku.skuImgPath) || '';
         const var1Img = var1ImgRaw.replace(/(-[a-zA-Z]+)1(\.[a-zA-Z]+)(\?.*)?$/, (_, p1, p2, p3) => p1 + '2' + p2 + (p3 || ''));
         const rawPrice = sku.price || prod.price || '';
-        flatRows.push(Object.assign({}, prod, imgUrls, {
+        flatRows.push(Object.assign({}, prod, imgUrls, commonExtra, {
           skuCode: sku.systemSku || sku.skuMgmtNo || '',
           skuPrice: rawPrice,
           tiktokPrice: convertTiktokPrice(rawPrice),
@@ -5327,10 +5500,6 @@ function expandProductsToSkuRows(prods) {
           var2Name:  v2 ? (keyToName[v2.key] || v2.key) : '',
           var2Value: v2 ? v2.value : '',
           stockQty: parseInt(sku.stock) || 0,
-          sizeChartImg, tiktokDescWithImgs,
-          tiktokCategory,
-          parcelWeight: pkg.weight, parcelLength: pkg.length,
-          parcelWidth: pkg.width,  parcelHeight: pkg.height,
         }));
       });
     }
@@ -5342,7 +5511,8 @@ function convertToTiktok() {
   const tm = MASTER.malls.tiktok || {};
   const mappings = tm.columnMappings || [];
   const templateB64 = tm.templateData || '';
-  const flatRows = expandProductsToSkuRows(products);
+  const selectedProducts = products.filter(p => isProductSelectedForMall('tiktok', p));
+  const flatRows = expandProductsToSkuRows(selectedProducts);
 
   // テンプレートなし: シンプルCSVプレビュー
   if (!templateB64) {
@@ -5488,6 +5658,7 @@ function convertToZozo() {
   const zH = ['商品コード','商品名','販売価格','カラー','サイズ'];
   const rows = [];
   products.forEach(prod => {
+    if (!isProductSelectedForMall('zozo', prod)) return;
     const name = prod.cleanName || prod.name;
     prod.skus.forEach(sku => {
       const r = new Array(zH.length).fill('');
@@ -5540,11 +5711,13 @@ function convertToRakufashion() {
   if (sourceType === 'rakuten') {
     // 楽天CSV → 楽天ファッション変換
     products.forEach(prod => {
+      if (!isProductSelectedForMall('rakufashion', prod)) return;
       const prodId = prod.id || '';
       const prodParts = prodId.split('-');
       const productBase = prodParts[0] || '';
-      const name = applyMallName(prod.cleanName || prod.name, 'rakufashion');
-      const caption = prod.spDesc || prod.pcDesc || '';
+      const rawName = (prod.catchCopy || prod.cleanName || prod.name || '').replace(/【[^】]*】/g, '').trim();
+      const name = applyMallName(rawName, 'rakufashion');
+      const caption = prod.pcDesc || '';
 
       prod.skus.forEach(sku => {
         // カラーコード・サイズコードをシステムSKUから抽出
@@ -5601,6 +5774,7 @@ function convertToRakufashion() {
   } else {
     // 自社Excel → 楽天ファッション変換
     products.forEach(prod => {
+      if (!isProductSelectedForMall('rakufashion', prod)) return;
       const prodNumber = prod.number || '';
       const prodParts = prodNumber.split('-');
       const productBase = prodParts[0] || '';
