@@ -5238,6 +5238,34 @@ function expandProductsToSkuRows(prods) {
     return before + '\n' + imgHtml + '\n<br>\n' + notices;
   }
 
+  // TikTok用: カラバリから9枚の商品画像URLを生成
+  //   例: 3色(br,bk,wh) → 各色 2,3,4.jpg = 合計9枚
+  //       1色(br)      → 2〜10.jpg = 9枚
+  //       2色(br,bk)   → 各色 2,3,4,5.jpg = 合計8枚
+  function buildTiktokNineImages(prod) {
+    const colorEntries = [];
+    const seen = new Set();
+    (prod.skus || []).forEach(sku => {
+      const path = sku.skuImgPath || '';
+      const m = path.match(/^(.+)-([a-zA-Z]+)\d+(\.[a-zA-Z]+)$/);
+      if (m && !seen.has(m[2])) {
+        seen.add(m[2]);
+        colorEntries.push({ code: m[2], basePath: m[1], ext: m[3] });
+      }
+    });
+    if (colorEntries.length === 0) return null;
+    const imagesPerColor = Math.floor(9 / colorEntries.length);
+    if (imagesPerColor === 0) return null;
+    const urls = [];
+    colorEntries.forEach(entry => {
+      for (let i = 0; i < imagesPerColor; i++) {
+        const num = 2 + i;
+        urls.push(toFullUrl(entry.basePath + '-' + entry.code + num + entry.ext));
+      }
+    });
+    return urls.slice(0, 9);
+  }
+
   const flatRows = [];
   prods.forEach(prod => {
     const varKeys = (prod.varDef && prod.varDef.keys ? prod.varDef.keys : '').split('|').filter(Boolean);
@@ -5248,6 +5276,13 @@ function expandProductsToSkuRows(prods) {
     // img1〜img10 をフルURLに変換（パスのまま出力されるバグを修正）
     const imgUrls = {};
     for (let i = 1; i <= 10; i++) imgUrls['img' + i] = toFullUrl(prod['img' + i]);
+
+    // TikTok用: カラバリベースで9枚画像を生成し、img1〜img8を上書き
+    // （TikTok CSVマッピング: main_image=skuImage, image_2〜image_9=img1〜img8）
+    const tiktokNineImgs = buildTiktokNineImages(prod);
+    if (tiktokNineImgs) {
+      for (let i = 1; i <= 8; i++) imgUrls['img' + i] = tiktokNineImgs[i] || '';
+    }
 
     // サイズ表画像 = 最終画像
     const sizeChartImg = (prod.images && prod.images.length > 0)
@@ -5275,7 +5310,8 @@ function expandProductsToSkuRows(prods) {
       prod.skus.forEach(sku => {
         const v1 = sku.variants && sku.variants[0];
         const v2 = sku.variants && sku.variants[1];
-        const skuImg = toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
+        // TikTok main_image: カラバリ9枚の先頭を使用（商品全体で統一）
+        const skuImg = (tiktokNineImgs && tiktokNineImgs[0]) || toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
         // TikTokカラバリ画像: 末尾 -<色コード>1.<ext> を -<色コード>2.<ext> に置換
         const var1ImgRaw = toFullUrl(sku.skuImgPath) || '';
         const var1Img = var1ImgRaw.replace(/(-[a-zA-Z]+)1(\.[a-zA-Z]+)(\?.*)?$/, (_, p1, p2, p3) => p1 + '2' + p2 + (p3 || ''));
