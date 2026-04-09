@@ -1052,7 +1052,7 @@
             },
             {
               "ttColumn": "product_name",
-              "source": "catchCopy",
+              "source": "cleanName",
               "action": "set",
               "value": ""
             },
