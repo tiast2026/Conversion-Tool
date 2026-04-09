@@ -5449,6 +5449,9 @@ function expandProductsToSkuRows(prods) {
         const v1 = sku.variants && sku.variants[0];
         const v2 = sku.variants && sku.variants[1];
         const skuImg = toFullUrl(sku.skuImgPath) || toFullUrl(prod.img1);
+        // TikTokカラバリ画像: 末尾 -<色コード>1.<ext> を -<色コード>2.<ext> に置換
+        const var1ImgRaw = toFullUrl(sku.skuImgPath) || '';
+        const var1Img = var1ImgRaw.replace(/(-[a-zA-Z]+)1(\.[a-zA-Z]+)(\?.*)?$/, (_, p1, p2, p3) => p1 + '2' + p2 + (p3 || ''));
         const rawPrice = sku.price || prod.price || '';
         flatRows.push(Object.assign({}, prod, imgUrls, commonExtra, {
           skuCode: sku.systemSku || sku.skuMgmtNo || '',
@@ -5457,7 +5460,7 @@ function expandProductsToSkuRows(prods) {
           skuImage: skuImg,
           var1Name:  v1 ? (keyToName[v1.key] || v1.key) : '',
           var1Value: v1 ? v1.value : '',
-          var1Image: toFullUrl(sku.skuImgPath) || '',
+          var1Image: var1Img,
           var2Name:  v2 ? (keyToName[v2.key] || v2.key) : '',
           var2Value: v2 ? v2.value : '',
           stockQty: parseInt(sku.stock) || 0,
