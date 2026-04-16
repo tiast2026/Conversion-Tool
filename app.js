@@ -2135,6 +2135,87 @@ window.addEventListener('message', function(event) {
     return;
   }
 
+  // SKU情報を受信 — 詳細ページから読み取ったカラー/サイズ/JANを既存商品にマージ
+  if (event.data.type === 'addSkuData') {
+    const { productNo, skus } = event.data;
+    if (!productNo || !skus) return;
+    let matched = false;
+    // 既にExcelで読み込んだ rawRows に SKU行を追加
+    if (rawRows.length > 0 && headers.length > 0) {
+      // 商品番号が一致する商品行を探す
+      const prodNoIdx = CI['商品番号'];
+      const colorIdx = CI['カラー'];
+      const sizeIdx = CI['サイズ'];
+      const janIdx = CI['JAN'];
+      if (prodNoIdx !== undefined) {
+        // ヘッダーにカラー/サイズ/JAN列がなければ追加
+        if (colorIdx === undefined) { CI['カラー'] = headers.length; headers.push('カラー'); }
+        if (sizeIdx === undefined) { CI['サイズ'] = headers.length; headers.push('サイズ'); }
+        if (janIdx === undefined) { CI['JAN'] = headers.length; headers.push('JAN'); }
+        for (let r = 0; r < rawRows.length; r++) {
+          const rowProdNo = rawRows[r][prodNoIdx] || '';
+          if (rowProdNo === productNo || rowProdNo.startsWith(productNo)) {
+            matched = true;
+            // この商品行の直後にある既存SKU行を削除
+            let insertAt = r + 1;
+            while (insertAt < rawRows.length) {
+              const nextName = col(rawRows[insertAt], '商品名');
+              if (nextName && nextName.trim()) break; // 次の商品行に到達
+              const nextColor = rawRows[insertAt][CI['カラー']] || '';
+              const nextSize = rawRows[insertAt][CI['サイズ']] || '';
+              const nextJan = rawRows[insertAt][CI['JAN']] || '';
+              if (nextColor || nextSize || nextJan) {
+                rawRows.splice(insertAt, 1); // 既存SKU行を削除
+              } else {
+                break;
+              }
+            }
+            // 新しいSKU行を挿入
+            for (const sku of skus) {
+              const skuRow = new Array(headers.length).fill('');
+              skuRow[prodNoIdx] = sku.skuNo || '';
+              skuRow[CI['カラー']] = sku.color || '';
+              skuRow[CI['サイズ']] = sku.size || '';
+              skuRow[CI['JAN']] = sku.jan || '';
+              rawRows.splice(insertAt, 0, skuRow);
+              insertAt++;
+            }
+            break;
+          }
+        }
+      }
+    }
+    // products 配列にも反映（Step2以降に進んでいる場合）
+    if (matched && products.length > 0) {
+      const prod = products.find(p => p.number === productNo || p.id === productNo ||
+        (p.number && p.number.startsWith(productNo)));
+      if (prod) {
+        prod.skus = skus.map((sku, idx) => ({
+          rowIndex: -1,
+          parentId: prod.id,
+          skuMgmtNo: sku.skuNo || '',
+          systemSku: sku.jan || '',
+          jan: sku.jan || '',
+          color: sku.color || '',
+          colorCode: sku.colorCode || '',
+          size: sku.size || '',
+          price: prod.sellPrice || '',
+          variants: [
+            ...(sku.color ? [{ key: 'カラー', value: sku.color }] : []),
+            ...(sku.size ? [{ key: 'サイズ', value: sku.size }] : [])
+          ],
+          customFields: sku.jan ? [{ label: '型番', value: sku.jan }] : [],
+          raw: []
+        }));
+      }
+    }
+    notify(matched
+      ? `${productNo} にSKU ${skus.length}件を追加しました`
+      : `${productNo} が見つかりません（先にExcelを読み込んでください）`, matched ? 'success' : 'warning');
+    if (event.source) event.source.postMessage({ type: 'skuReceived', matched }, event.origin);
+    return;
+  }
+
   // テーブルデータ（配列形式）を受信 — Tampermonkeyの詳細ページ読み取り
   if (event.data.type === 'loadTableData') {
     if (postMessageFileLoaded) return;

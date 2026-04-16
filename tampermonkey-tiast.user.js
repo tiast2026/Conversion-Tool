@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         TIAST → 楽天変換ツール連携
 // @namespace    https://tiast2026.github.io/
-// @version      2.0
-// @description  TIAST管理画面の詳細ページから商品情報を読み取り変換ツールへ送信
+// @version      3.0
+// @description  TIAST管理画面から変換ツールへ連携（Excel基本＋詳細ページSKU読み取り）
 // @match        *://tiast.rakusuru.space/*
-// @grant        GM_openInTab
+// @grant        none
 // ==/UserScript==
 
 (function() {
@@ -18,180 +18,115 @@
   // ============================
   function addButton() {
     if (document.getElementById('tiast-rakuten-btn')) return;
-    // 詳細ページでなければスキップ
-    if (!isDetailPage()) return;
 
-    const btn = document.createElement('button');
-    btn.id = 'tiast-rakuten-btn';
-    btn.textContent = '🔄 楽天変換ツールで開く';
-    btn.style.cssText = 'background:#bf0000; color:white; border:none; padding:10px 20px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; position:fixed; top:10px; right:10px; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
-    btn.addEventListener('click', handleConvert);
-    document.body.appendChild(btn);
+    if (isDetailPage()) {
+      addDetailPageButton();
+    }
   }
 
   function isDetailPage() {
     return location.pathname.includes('/detail');
   }
 
-  // ============================
-  // 詳細ページからデータを読み取る
-  // ============================
-  function scrapeDetailPage() {
-    const data = {};
+  // 詳細ページ: SKU情報を読み取って送信するボタン
+  function addDetailPageButton() {
+    const btn = document.createElement('button');
+    btn.id = 'tiast-rakuten-btn';
+    btn.textContent = '🔄 SKU情報を変換ツールに送信';
+    btn.style.cssText = 'background:#bf0000; color:white; border:none; padding:10px 20px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; position:fixed; top:10px; right:10px; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    btn.addEventListener('click', handleSendSku);
+    document.body.appendChild(btn);
+  }
 
-    // テーブル内のラベル→値をすべて取得
-    // th/td または ラベル要素を探す
-    const allCells = document.querySelectorAll('th, td, dt, dd, label, .label, .field-label, .field-value');
-
-    // 方法1: th→td ペアを探す
+  // ============================
+  // 詳細ページからSKU情報を読み取る
+  // ============================
+  function scrapeSkuFromDetail() {
+    // th→td ペアからフィールドを取得
+    const fieldMap = {};
     const rows = document.querySelectorAll('tr');
     for (const row of rows) {
-      const th = row.querySelector('th');
-      const td = row.querySelector('td');
-      if (th && td) {
-        const label = th.textContent.trim();
-        if (label) data[label] = td;
+      const ths = row.querySelectorAll('th');
+      const tds = row.querySelectorAll('td');
+      // 1行に複数のth-tdペアがある場合も対応
+      for (let i = 0; i < ths.length && i < tds.length; i++) {
+        const label = ths[i].textContent.trim();
+        if (label) fieldMap[label] = tds[i];
       }
     }
 
-    // 方法2: テーブルがない場合、連続するラベル-値ペアを探す
-    if (Object.keys(data).length === 0) {
-      // div/span ベースのレイアウトを探す
-      const allElements = document.querySelectorAll('[class*="label"], [class*="field"], [class*="key"], [class*="value"], [class*="item"]');
-      // フォールバック: ページ内のすべてのテキストからキーワードで値を抽出
-    }
-
-    return parseScrapedData(data);
-  }
-
-  function parseScrapedData(domMap) {
-    const product = {
-      taskId: getTextValue(domMap, 'タスクID'),
-      productNo: getTextValue(domMap, '商品番号'),
-      productName: getTextValue(domMap, '商品名'),
-      category: getTextValue(domMap, 'カテゴリ'),
-      saleDate: getTextValue(domMap, '販売日'),
-      endDate: getTextValue(domMap, '終了日'),
-      material: getTextValue(domMap, '素材'),
-      costPrice: getTextValue(domMap, '仕入金額(円)') || getTextValue(domMap, '仕入金額'),
-      sellPrice: getTextValue(domMap, '販売金額(税込)') || getTextValue(domMap, '販売金額'),
-      measureSize: getTextValue(domMap, '採寸サイズ'),
-      productPoint: getTextValue(domMap, '商品ポイント'),
-      spec: getTextValue(domMap, '仕様'),
-      modelShootDate: getTextValue(domMap, 'モデル撮影予定日'),
-      productionStaff: getTextValue(domMap, '制作担当者'),
-      laundryLabel: getTextValue(domMap, '洗濯表記') || getLaundryText(domMap),
-      shippingMethod: getShippingMethod(domMap),
-      referenceUrl: getTextValue(domMap, '参考URL'),
-      assignee: getTextValue(domMap, '依頼担当者'),
-      skus: []
-    };
+    // 商品番号を取得
+    const productNo = getTextValue(fieldMap, '商品番号');
 
     // カラーバリエーションを解析
-    product.skus = parseColorVariations(domMap);
+    const skus = parseColorVariations(fieldMap);
 
-    return product;
+    console.log('[TIAST] fieldMap keys:', Object.keys(fieldMap));
+    console.log('[TIAST] 商品番号:', productNo);
+    console.log('[TIAST] SKUs:', skus);
+
+    return { productNo, skus };
   }
 
-  function getTextValue(domMap, label) {
-    // 完全一致
-    if (domMap[label]) return domMap[label].textContent.trim();
-    // 部分一致
-    for (const key of Object.keys(domMap)) {
-      if (key.includes(label)) return domMap[key].textContent.trim();
+  function getTextValue(map, label) {
+    if (map[label]) return map[label].textContent.trim();
+    for (const key of Object.keys(map)) {
+      if (key.includes(label)) return map[key].textContent.trim();
     }
     return '';
   }
 
-  // 洗濯表記のテキストコードを取得（アイコンの前のテキスト部分）
-  function getLaundryText(domMap) {
-    const el = domMap['洗濯表記'];
-    if (!el) return '';
-    // 最初のテキストノードまたはinput/spanの値を取得
-    const input = el.querySelector('input, textarea');
-    if (input) return input.value || '';
-    // テキストノードだけ取得（アイコンを除く）
-    let text = '';
-    for (const node of el.childNodes) {
-      if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
-      else if (node.tagName === 'SPAN' || node.tagName === 'DIV') text += node.textContent;
-    }
-    return text.trim();
-  }
-
-  // 配送方法（選択されているラジオボタンの値）
-  function getShippingMethod(domMap) {
-    const el = domMap['配送方法'];
-    if (!el) return '';
-    const checked = el.querySelector('input[type="radio"]:checked');
-    if (checked) {
-      const label = checked.parentElement;
-      return label ? label.textContent.trim() : checked.value;
-    }
-    return el.textContent.trim();
-  }
-
   // カラーバリエーションのDOM解析
-  function parseColorVariations(domMap) {
+  function parseColorVariations(fieldMap) {
     const skus = [];
-    const colorEl = domMap['カラー'];
-    if (!colorEl) return skus;
-
-    // カラー欄内の各バリエーション項目を探す
-    // 画像の横にカラー名・SKU番号・JANコードが並んでいる構造
-    // まず、テキスト全体を取得して解析
-    const colorHTML = colorEl.innerHTML;
-    const colorText = colorEl.textContent;
-
-    // 方法1: 個別の要素（div, span, img）から解析
-    const colorBlocks = colorEl.querySelectorAll('div, span, li, a, p');
-    const blockTexts = [];
-    for (const block of colorBlocks) {
-      const t = block.textContent.trim();
-      if (t && !blockTexts.includes(t)) blockTexts.push(t);
+    const colorEl = fieldMap['カラー'];
+    if (!colorEl) {
+      console.log('[TIAST] カラー欄が見つかりません');
+      return skus;
     }
 
-    // 方法2: テキスト全体からパターン抽出
-    // SKU番号パターン: xxxx-YYMM-CC-S (例: ndpt3957-2604-WH-F)
+    const colorText = colorEl.textContent;
+    console.log('[TIAST] カラー欄テキスト:', colorText);
+    console.log('[TIAST] カラー欄HTML:', colorEl.innerHTML);
+
+    // SKU番号パターン: 英字+数字-4桁-英字-英数字 (例: ndpt3957-2604-WH-F)
     const skuPattern = /([a-zA-Z]+\d+[-]\d{4}[-][A-Za-z]+-[A-Za-z0-9]+)/g;
     const skuMatches = colorText.match(skuPattern) || [];
 
-    // JANコードパターン: 大文字英数字のみ (例: NDPT3957WHF00)
+    // JANコードパターン: 大文字英数字 6文字以上 (例: NDPT3957WHF00)
     const janPattern = /\b([A-Z]{2,}[A-Z0-9]{6,})\b/g;
     const janMatches = colorText.match(janPattern) || [];
 
-    // カラー名パターン: SKUでもJANでもないテキストブロック
-    // カラー名を抽出するため、SKUとJANを除いたテキストを解析
+    // カラー名を抽出
+    const colorNames = findColorNames(colorEl);
 
-    if (skuMatches.length > 0) {
-      for (let i = 0; i < skuMatches.length; i++) {
-        const skuNo = skuMatches[i];
-        const jan = janMatches[i] || '';
+    console.log('[TIAST] SKUマッチ:', skuMatches);
+    console.log('[TIAST] JANマッチ:', janMatches);
+    console.log('[TIAST] カラー名:', colorNames);
 
-        // SKU番号を分解: ndpt3957-2604-WH-F → colorCode=WH, sizeCode=F
-        const parts = skuNo.split('-');
-        const colorCode = parts.length >= 3 ? parts[2] : '';
-        const sizeCode = parts.length >= 4 ? parts[3] : '';
+    for (let i = 0; i < skuMatches.length; i++) {
+      const skuNo = skuMatches[i];
+      const jan = janMatches[i] || '';
 
-        // カラー名を探す（SKU番号の前にあるテキスト）
-        const colorName = findColorName(colorEl, skuNo, i);
+      // SKU分解: ndpt3957-2604-WH-F → colorCode=WH, size=F
+      const parts = skuNo.split('-');
+      const colorCode = parts.length >= 3 ? parts[2] : '';
+      const sizeCode = parts.length >= 4 ? parts[3] : '';
 
-        skus.push({
-          skuNo: skuNo,
-          color: colorName,
-          colorCode: colorCode,
-          size: sizeCode,
-          jan: jan
-        });
-      }
+      skus.push({
+        skuNo: skuNo,
+        color: colorNames[i] || '',
+        colorCode: colorCode,
+        size: sizeCode,
+        jan: jan
+      });
     }
 
     return skus;
   }
 
-  // カラー名をDOM内から探す
-  function findColorName(containerEl, skuNo, index) {
-    // コンテナ内のテキストノードを走査
+  // カラー名をDOMから抽出（SKU番号・JANコード以外のテキスト）
+  function findColorNames(containerEl) {
     const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, null, false);
     const textNodes = [];
     let node;
@@ -200,97 +135,51 @@
       if (t && t.length > 0) textNodes.push(t);
     }
 
-    // SKU番号・JANコード以外のテキストをカラー名候補とする
-    const skuPattern = /^[a-zA-Z]+\d+[-]\d{4}[-]/;
-    const janPattern = /^[A-Z]{2,}[A-Z0-9]{6,}$/;
-    const colorNames = textNodes.filter(t =>
-      !skuPattern.test(t) &&
-      !janPattern.test(t) &&
+    const skuPat = /^[a-zA-Z]+\d+[-]\d{4}[-]/;
+    const janPat = /^[A-Z]{2,}[A-Z0-9]{6,}$/;
+    const names = textNodes.filter(t =>
+      !skuPat.test(t) &&
+      !janPat.test(t) &&
       t.length < 30 &&
-      t !== 'カラー'
+      t !== 'カラー' &&
+      !/^\d+$/.test(t)
     );
 
-    return colorNames[index] || '';
+    return names;
   }
 
   // ============================
-  // データをExcel互換の配列形式に変換
+  // SKU情報を変換ツールに送信
   // ============================
-  function buildTableData(product) {
-    const headers = [
-      'タスクID', '商品番号', '商品名', 'カテゴリ', '販売日', '終了日',
-      '素材', 'カラー', 'サイズ', 'JAN',
-      '仕入金額(円)', '販売金額(税込)', '採寸サイズ',
-      '商品ポイント', '仕様', 'モデル撮影予定日', '制作担当者',
-      '洗濯表記', '配送方法', '参考URL', '依頼担当'
-    ];
-
-    const rows = [];
-
-    // 商品行（親行）
-    const productRow = new Array(headers.length).fill('');
-    productRow[0] = product.taskId;
-    productRow[1] = product.productNo;
-    productRow[2] = product.productName;
-    productRow[3] = product.category;
-    productRow[4] = product.saleDate;
-    productRow[5] = product.endDate;
-    productRow[6] = product.material;
-    // カラー・サイズ・JANは空（SKU行で設定）
-    productRow[10] = product.costPrice;
-    productRow[11] = product.sellPrice;
-    productRow[12] = product.measureSize;
-    productRow[13] = product.productPoint;
-    productRow[14] = product.spec;
-    productRow[15] = product.modelShootDate;
-    productRow[16] = product.productionStaff;
-    productRow[17] = product.laundryLabel;
-    productRow[18] = product.shippingMethod;
-    productRow[19] = product.referenceUrl;
-    productRow[20] = product.assignee;
-    rows.push(productRow);
-
-    // SKU行（各カラー・サイズ）
-    for (const sku of product.skus) {
-      const skuRow = new Array(headers.length).fill('');
-      skuRow[1] = sku.skuNo;     // 商品番号 = SKU番号
-      skuRow[7] = sku.color;      // カラー
-      skuRow[8] = sku.size;       // サイズ
-      skuRow[9] = sku.jan;        // JAN
-      rows.push(skuRow);
-    }
-
-    return { headers, rows };
-  }
-
-  // ============================
-  // メイン処理: DOM読み取り → 変換ツールに送信
-  // ============================
-  async function handleConvert() {
+  async function handleSendSku() {
     const btn = document.getElementById('tiast-rakuten-btn');
     const origText = btn.textContent;
     btn.textContent = '⏳ 読み取り中...';
     btn.disabled = true;
 
     try {
-      // Step 1: ページからデータを読み取る
-      const product = scrapeDetailPage();
+      const { productNo, skus } = scrapeSkuFromDetail();
 
-      if (!product.productNo && !product.productName) {
-        alert('商品情報を読み取れませんでした。\n詳細ページで実行してください。');
+      if (!productNo) {
+        alert('商品番号を読み取れませんでした。');
         btn.textContent = origText;
         btn.disabled = false;
         return;
       }
 
-      // Step 2: Excel互換の配列形式に変換
-      const tableData = buildTableData(product);
+      if (skus.length === 0) {
+        alert('SKU情報（カラー・サイズ）を読み取れませんでした。\nF12 → Console でログを確認してください。');
+        btn.textContent = origText;
+        btn.disabled = false;
+        return;
+      }
 
-      console.log('[TIAST→変換ツール] 読み取りデータ:', product);
-      console.log('[TIAST→変換ツール] テーブルデータ:', tableData);
+      console.log('[TIAST→変換ツール] 送信データ:', { productNo, skus });
 
-      // Step 3: 変換ツールを開く
-      btn.textContent = '⏳ 変換ツールに送信中...';
+      // 変換ツールに送信
+      btn.textContent = '⏳ 送信中...';
+
+      // 既に開いている変換ツールのウィンドウを探す、なければ開く
       const toolWindow = window.open(TOOL_URL, 'conversion-tool');
 
       if (!toolWindow) {
@@ -300,50 +189,52 @@
         return;
       }
 
-      // Step 4: 変換ツールにデータを送信
-      let sent = false;
+      let done = false;
       let timeoutId;
 
       function onMessage(e) {
         if (e.origin !== TOOL_ORIGIN) return;
-        if (e.data && e.data.type === 'ready' && !sent) {
-          sent = true;
+
+        if (e.data && (e.data.type === 'ready' || e.data.type === 'pong') && !done) {
+          done = true;
           toolWindow.postMessage({
-            type: 'loadTableData',
-            headers: tableData.headers,
-            rows: tableData.rows,
-            source: 'tiast-detail'
+            type: 'addSkuData',
+            productNo: productNo,
+            skus: skus
           }, TOOL_ORIGIN);
         }
-        if (e.data && e.data.type === 'fileReceived') {
+
+        if (e.data && e.data.type === 'skuReceived') {
           window.removeEventListener('message', onMessage);
           clearTimeout(timeoutId);
-          btn.textContent = '✅ 送信完了';
-          setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+          const msg = e.data.matched
+            ? `✅ ${productNo} にSKU ${skus.length}件を追加`
+            : `⚠️ ${productNo} が見つかりません（先にExcelを読み込んでください）`;
+          btn.textContent = msg;
+          setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
         }
       }
+
       window.addEventListener('message', onMessage);
 
-      // フォールバック
+      // フォールバック: 0.5秒ごとに送信試行
       let attempts = 0;
-      const fallbackInterval = setInterval(() => {
-        if (sent) { clearInterval(fallbackInterval); return; }
+      const fallback = setInterval(() => {
+        if (done) { clearInterval(fallback); return; }
         attempts++;
         try {
           toolWindow.postMessage({
-            type: 'loadTableData',
-            headers: tableData.headers,
-            rows: tableData.rows,
-            source: 'tiast-detail'
+            type: 'addSkuData',
+            productNo: productNo,
+            skus: skus
           }, TOOL_ORIGIN);
         } catch(e) {}
-        if (attempts > 20) clearInterval(fallbackInterval);
+        if (attempts > 20) clearInterval(fallback);
       }, 500);
 
       timeoutId = setTimeout(() => {
-        clearInterval(fallbackInterval);
+        clearInterval(fallback);
         window.removeEventListener('message', onMessage);
-        if (!sent) alert('変換ツールへの送信がタイムアウトしました。');
         btn.textContent = origText;
         btn.disabled = false;
       }, 15000);
