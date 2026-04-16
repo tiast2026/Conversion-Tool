@@ -156,48 +156,30 @@
     const colorEl = fieldMap['カラー'];
     if (!colorEl) return skus;
 
-    const colorText = colorEl.textContent;
+    // 各カラーブロック: div.col-3.d-flex > div.flex-fill > span.d-block × 3
+    const colorBlocks = colorEl.querySelectorAll('.col-3.d-flex, .col-3');
+    for (const block of colorBlocks) {
+      const spans = block.querySelectorAll('.d-block');
+      if (spans.length < 2) continue; // 最低でもカラー名+SKU番号が必要
 
-    // SKU番号: ndpt3957-2604-WH-F
-    const skuPattern = /([a-zA-Z]+\d+[-]\d{4}[-][A-Za-z]+-[A-Za-z0-9]+)/g;
-    const skuMatches = colorText.match(skuPattern) || [];
+      const colorName = spans[0] ? spans[0].textContent.trim() : '';
+      const skuNo = spans[1] ? spans[1].textContent.trim() : '';
+      const jan = spans[2] ? spans[2].textContent.trim() : '';
 
-    // JANコード: NDPT3957WHF00
-    const janPattern = /\b([A-Z]{2,}[A-Z0-9]{6,})\b/g;
-    const janMatches = colorText.match(janPattern) || [];
+      if (!skuNo) continue;
 
-    // カラー名
-    const colorNames = findColorNames(colorEl);
-
-    for (let i = 0; i < skuMatches.length; i++) {
-      const skuNo = skuMatches[i];
+      // SKU番号を分解: ndpt3957-2604-WH-F → colorCode=WH, size=F
       const parts = skuNo.split('-');
       skus.push({
         skuNo: skuNo,
-        color: colorNames[i] || '',
+        color: colorName,
         colorCode: parts.length >= 3 ? parts[2] : '',
         size: parts.length >= 4 ? parts[3] : '',
-        jan: janMatches[i] || ''
+        jan: jan
       });
     }
 
     return skus;
-  }
-
-  function findColorNames(containerEl) {
-    const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, null, false);
-    const texts = [];
-    let node;
-    while (node = walker.nextNode()) {
-      const t = node.textContent.trim();
-      if (t) texts.push(t);
-    }
-    const skuPat = /^[a-zA-Z]+\d+[-]\d{4}[-]/;
-    const janPat = /^[A-Z]{2,}[A-Z0-9]{6,}$/;
-    return texts.filter(t =>
-      !skuPat.test(t) && !janPat.test(t) &&
-      t.length < 30 && t !== 'カラー' && !/^\d+$/.test(t)
-    );
   }
 
   // ============================
