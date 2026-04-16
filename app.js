@@ -2135,11 +2135,50 @@ window.addEventListener('message', function(event) {
     return;
   }
 
+  // テーブルデータ（配列形式）を受信 — Tampermonkeyの詳細ページ読み取り
+  if (event.data.type === 'loadTableData') {
+    if (postMessageFileLoaded) return;
+    const { headers: h, rows: r } = event.data;
+    if (!h || !r || !h.length || !r.length) return;
+    postMessageFileLoaded = true;
+    selectSource('jisha');
+    headers = h;
+    rawRows = r.map(row => row.map(cell => String(cell)));
+    CI = {};
+    headers.forEach((name, i) => { CI[name] = i; });
+    // ログ表示
+    const log = document.getElementById('parse-log');
+    const requiredCols = ['タスクID', '商品番号', '商品名', 'カラー', '販売金額(税込)'];
+    const found = requiredCols.filter(c => CI[c] !== undefined);
+    const missing = requiredCols.filter(c => CI[c] === undefined);
+    let logHTML = `<div style="color:var(--success);">✓ 管理画面から受信: ${headers.length}列 × ${rawRows.length}行</div>`;
+    logHTML += `<div style="color:var(--success);">✓ 検出列: ${found.join(', ')}</div>`;
+    if (missing.length > 0) logHTML += `<div style="color:var(--danger);">✗ 未検出列: ${missing.join(', ')}</div>`;
+    let prodCount = 0, skuCount = 0;
+    rawRows.forEach(row => {
+      const name = col(row, '商品名');
+      if (name && name.trim()) prodCount++;
+      else if (col(row, 'カラー') || col(row, 'サイズ') || col(row, 'JAN')) skuCount++;
+    });
+    logHTML += `<div>→ 商品行: ${prodCount}, SKU行: ${skuCount}, 合計: ${rawRows.length}行</div>`;
+    log.innerHTML = logHTML;
+    log.style.display = 'block';
+    document.getElementById('file-name').textContent = '管理画面から直接読み取り';
+    document.getElementById('file-info').textContent = `${headers.length}列 × ${rawRows.length}行 ｜ ソース: 自社システム（管理画面）`;
+    document.getElementById('upload-status').style.display = 'block';
+    document.getElementById('upload-area').classList.add('has-file');
+    document.getElementById('btn-next-1').disabled = false;
+    notify('管理画面からデータを受信しました', 'success');
+    if (event.source) event.source.postMessage({ type: 'fileReceived' }, event.origin);
+    setTimeout(() => { postMessageFileLoaded = false; }, 5000);
+    return;
+  }
+
+  // Excelファイルを受信（従来方式）
   if (event.data.type !== 'loadExcelFile') return;
-  if (postMessageFileLoaded) return; // 重複受信を防止
+  if (postMessageFileLoaded) return;
 
   const { data, arrayBuffer, fileName } = event.data;
-  // data（Array）またはarrayBuffer（ArrayBuffer）を受け取る
   let uint8;
   if (data && Array.isArray(data)) {
     uint8 = new Uint8Array(data);
@@ -2154,9 +2193,7 @@ window.addEventListener('message', function(event) {
   const fakeFile = new File([uint8], fileName || 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   parseExcelFile(uint8, fakeFile);
   notify('管理画面からファイルを受信しました', 'success');
-  // 送信元に受信確認を返す
   if (event.source) event.source.postMessage({ type: 'fileReceived' }, event.origin);
-  // 次回の受信を許可（5秒後）
   setTimeout(() => { postMessageFileLoaded = false; }, 5000);
 });
 
