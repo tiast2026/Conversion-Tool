@@ -2255,6 +2255,77 @@ window.addEventListener('message', function(event) {
     return;
   }
 
+  // Excel＋SKU情報を一括受信（一覧ページから）
+  if (event.data.type === 'loadExcelWithSkus') {
+    if (postMessageFileLoaded) return;
+    const { data: d, fileName: fn, skuMap } = event.data;
+    if (!d || !Array.isArray(d)) return;
+    postMessageFileLoaded = true;
+    selectSource('jisha');
+    const u8 = new Uint8Array(d);
+    const ff = new File([u8], fn || 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    parseExcelFile(u8, ff);
+    // SKUマージ: Excelの各商品行の後にSKU行を追加
+    if (skuMap && Object.keys(skuMap).length > 0) {
+      // ヘッダーにカラー/サイズ/JAN列がなければ追加
+      if (CI['カラー'] === undefined) { CI['カラー'] = headers.length; headers.push('カラー'); }
+      if (CI['サイズ'] === undefined) { CI['サイズ'] = headers.length; headers.push('サイズ'); }
+      if (CI['JAN'] === undefined) { CI['JAN'] = headers.length; headers.push('JAN'); }
+      const prodNoIdx = CI['商品番号'];
+      let merged = 0;
+      if (prodNoIdx !== undefined) {
+        for (let r = rawRows.length - 1; r >= 0; r--) {
+          const rowProdNo = rawRows[r][prodNoIdx] || '';
+          const rowName = col(rawRows[r], '商品名');
+          if (!rowName || !rowName.trim()) continue; // 商品行のみ対象
+          // 商品番号でskuMapを検索
+          let matchKey = null;
+          for (const key of Object.keys(skuMap)) {
+            if (rowProdNo === key || rowProdNo.startsWith(key) || key.startsWith(rowProdNo)) {
+              matchKey = key;
+              break;
+            }
+          }
+          if (!matchKey) continue;
+          // この商品行の直後にある既存SKU行を削除
+          let insertAt = r + 1;
+          while (insertAt < rawRows.length) {
+            const nextName = col(rawRows[insertAt], '商品名');
+            if (nextName && nextName.trim()) break;
+            const nc = rawRows[insertAt][CI['カラー']] || '';
+            const ns = rawRows[insertAt][CI['サイズ']] || '';
+            const nj = rawRows[insertAt][CI['JAN']] || '';
+            if (nc || ns || nj) { rawRows.splice(insertAt, 1); }
+            else break;
+          }
+          // SKU行を挿入
+          for (const sku of skuMap[matchKey]) {
+            const skuRow = new Array(headers.length).fill('');
+            skuRow[prodNoIdx] = sku.skuNo || '';
+            skuRow[CI['カラー']] = sku.color || '';
+            skuRow[CI['サイズ']] = sku.size || '';
+            skuRow[CI['JAN']] = sku.jan || '';
+            rawRows.splice(insertAt, 0, skuRow);
+            insertAt++;
+          }
+          merged++;
+          delete skuMap[matchKey];
+        }
+      }
+      // ログ更新
+      const log = document.getElementById('parse-log');
+      const skuTotal = rawRows.filter(row => {
+        const name = col(row, '商品名');
+        return !name || !name.trim();
+      }).length;
+      log.innerHTML += `<div style="color:var(--success);">✓ SKU情報マージ: ${merged}商品にバリエーション追加（SKU計${skuTotal}行）</div>`;
+      notify(`Excel + SKU情報(${merged}商品分)を受信しました`, 'success');
+    }
+    if (event.source) event.source.postMessage({ type: 'fileReceived' }, event.origin);
+    setTimeout(() => { postMessageFileLoaded = false; }, 5000);
+    return;
+  }
+
   // Excelファイルを受信（従来方式）
   if (event.data.type !== 'loadExcelFile') return;
   if (postMessageFileLoaded) return;
