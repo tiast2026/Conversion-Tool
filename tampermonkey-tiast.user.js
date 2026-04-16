@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TIAST → 楽天変換ツール連携
 // @namespace    https://tiast2026.github.io/
-// @version      4.0
-// @description  一覧ページからExcel＋全商品SKU情報を自動取得して変換ツールに送信
+// @version      5.0
+// @description  一覧ページからExcelをダウンロードして変換ツールに送信
 // @match        *://tiast.rakusuru.space/*
 // @grant        GM_xmlhttpRequest
 // @connect      tiast.rakusuru.space
@@ -16,11 +16,10 @@
   const LS_KEY = 'tiast_rakuten_download_url';
 
   // ============================
-  // ボタン追加（一覧ページ）
+  // ボタン追加
   // ============================
   function addButton() {
     if (document.getElementById('tiast-rakuten-btn')) return;
-    if (!isListPage()) return;
 
     const allBtns = document.querySelectorAll('button, a, .btn');
     let targetArea = null;
@@ -35,7 +34,7 @@
     btn.id = 'tiast-rakuten-btn';
     btn.textContent = '🔄 楽天変換ツールで開く';
     btn.style.cssText = 'background:#bf0000; color:white; border:none; padding:8px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; margin-left:8px;';
-    btn.addEventListener('click', handleFullExport);
+    btn.addEventListener('click', handleExcelSend);
 
     if (targetArea) {
       targetArea.appendChild(btn);
@@ -49,141 +48,8 @@
     }
   }
 
-  function isListPage() {
-    return location.pathname.includes('/task/');
-  }
-
   // ============================
-  // 一覧ページから全商品の詳細ページURLを取得
-  // ============================
-  function getDetailPageUrls() {
-    const urls = [];
-    // テーブル内のリンクから詳細ページURLを探す
-    const links = document.querySelectorAll('a[href]');
-    for (const link of links) {
-      const href = link.getAttribute('href') || '';
-      // /task/cameras/1234/detail パターン
-      if (/\/task\/[^/]+\/\d+\/detail/.test(href)) {
-        const fullUrl = new URL(href, location.origin).href;
-        if (!urls.includes(fullUrl)) urls.push(fullUrl);
-      }
-    }
-
-    // リンクが見つからない場合、行の編集ボタンからIDを推測
-    if (urls.length === 0) {
-      const editLinks = document.querySelectorAll('a[href*="/edit"], a[href*="/detail"]');
-      for (const link of editLinks) {
-        const href = link.getAttribute('href') || '';
-        const match = href.match(/\/task\/([^/]+)\/(\d+)/);
-        if (match) {
-          const detailUrl = `${location.origin}/task/${match[1]}/${match[2]}/detail`;
-          if (!urls.includes(detailUrl)) urls.push(detailUrl);
-        }
-      }
-    }
-
-    // それでも見つからない場合、テーブルの行からリンクを探す
-    if (urls.length === 0) {
-      const tableRows = document.querySelectorAll('table tbody tr, .table-row, tr');
-      for (const row of tableRows) {
-        const rowLinks = row.querySelectorAll('a[href]');
-        for (const link of rowLinks) {
-          const href = link.getAttribute('href') || '';
-          const match = href.match(/\/task\/([^/]+)\/(\d+)/);
-          if (match) {
-            const detailUrl = `${location.origin}/task/${match[1]}/${match[2]}/detail`;
-            if (!urls.includes(detailUrl)) urls.push(detailUrl);
-          }
-        }
-      }
-    }
-
-    console.log('[TIAST] 詳細ページURL:', urls);
-    return urls;
-  }
-
-  // ============================
-  // 詳細ページHTMLからSKU情報を抽出
-  // ============================
-  function fetchDetailPage(url) {
-    return new Promise((resolve, reject) => {
-      GM_xmlhttpRequest({
-        method: 'GET',
-        url: url,
-        onload: function(res) {
-          if (res.status >= 200 && res.status < 300) {
-            resolve(res.responseText);
-          } else {
-            reject(new Error('HTTP ' + res.status));
-          }
-        },
-        onerror: function() { reject(new Error('通信エラー')); }
-      });
-    });
-  }
-
-  function parseSkuFromHtml(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    // th→td ペアを取得
-    const fieldMap = {};
-    const rows = doc.querySelectorAll('tr');
-    for (const row of rows) {
-      const ths = row.querySelectorAll('th');
-      const tds = row.querySelectorAll('td');
-      for (let i = 0; i < ths.length && i < tds.length; i++) {
-        const label = ths[i].textContent.trim();
-        if (label) fieldMap[label] = tds[i];
-      }
-    }
-
-    const productNo = getTextValue(fieldMap, '商品番号');
-    const skus = parseColorVariations(fieldMap);
-
-    return { productNo, skus };
-  }
-
-  function getTextValue(map, label) {
-    if (map[label]) return map[label].textContent.trim();
-    for (const key of Object.keys(map)) {
-      if (key.includes(label)) return map[key].textContent.trim();
-    }
-    return '';
-  }
-
-  function parseColorVariations(fieldMap) {
-    const skus = [];
-    const colorEl = fieldMap['カラー'];
-    if (!colorEl) return skus;
-
-    // 各カラーブロック: div.col-3.d-flex > div.flex-fill > span.d-block × 3
-    const colorBlocks = colorEl.querySelectorAll('.col-3.d-flex, .col-3');
-    for (const block of colorBlocks) {
-      const spans = block.querySelectorAll('.d-block');
-      if (spans.length < 2) continue; // 最低でもカラー名+SKU番号が必要
-
-      const colorName = spans[0] ? spans[0].textContent.trim() : '';
-      const skuNo = spans[1] ? spans[1].textContent.trim() : '';
-      const jan = spans[2] ? spans[2].textContent.trim() : '';
-
-      if (!skuNo) continue;
-
-      // SKU番号を分解: ndpt3957-2604-WH-F → colorCode=WH, size=F
-      const parts = skuNo.split('-');
-      skus.push({
-        skuNo: skuNo,
-        color: colorName,
-        colorCode: parts.length >= 3 ? parts[2] : '',
-        size: parts.length >= 4 ? parts[3] : '',
-        jan: jan
-      });
-    }
-
-    return skus;
-  }
-
-  // ============================
-  // Excel ダウンロード
+  // ダウンロードURL検出
   // ============================
   function detectDownloadUrl() {
     const saved = localStorage.getItem(LS_KEY);
@@ -221,6 +87,9 @@
     };
   }
 
+  // ============================
+  // Excel ダウンロード
+  // ============================
   function downloadExcel(url) {
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
@@ -240,15 +109,15 @@
   }
 
   // ============================
-  // メイン処理: Excel DL + 全詳細ページSKU取得 → 変換ツール送信
+  // メイン処理
   // ============================
-  async function handleFullExport() {
+  async function handleExcelSend() {
     const btn = document.getElementById('tiast-rakuten-btn');
     const origText = btn.textContent;
     btn.disabled = true;
 
     try {
-      // --- Step 1: Excel DL URL取得 ---
+      // URL取得
       btn.textContent = '⏳ 準備中...';
       let downloadUrl = detectDownloadUrl();
 
@@ -280,34 +149,11 @@
         localStorage.setItem(LS_KEY, downloadUrl);
       }
 
-      // --- Step 2: Excelダウンロード ---
+      // ダウンロード
       btn.textContent = '⏳ Excel取得中...';
       const arrayBuffer = await downloadExcel(downloadUrl);
-      console.log('[TIAST] Excel取得完了:', arrayBuffer.byteLength, 'bytes');
 
-      // --- Step 3: 全商品の詳細ページからSKU取得 ---
-      const detailUrls = getDetailPageUrls();
-      const skuMap = {}; // { productNo: [sku, ...] }
-      let fetched = 0;
-
-      for (const url of detailUrls) {
-        fetched++;
-        btn.textContent = `⏳ SKU取得中... (${fetched}/${detailUrls.length})`;
-        try {
-          const html = await fetchDetailPage(url);
-          const { productNo, skus } = parseSkuFromHtml(html);
-          if (productNo && skus.length > 0) {
-            skuMap[productNo] = skus;
-            console.log(`[TIAST] ${productNo}: ${skus.length}件のSKU取得`);
-          }
-        } catch(e) {
-          console.warn('[TIAST] 詳細ページ取得失敗:', url, e.message);
-        }
-      }
-
-      console.log('[TIAST] SKU取得完了:', Object.keys(skuMap).length, '商品');
-
-      // --- Step 4: 変換ツールに送信 ---
+      // 変換ツールを開く
       btn.textContent = '⏳ 変換ツールに送信中...';
       const toolWindow = window.open(TOOL_URL, 'conversion-tool');
 
@@ -318,19 +164,17 @@
         return;
       }
 
-      const uint8 = new Uint8Array(arrayBuffer);
-      const dataArray = Array.from(uint8);
-
+      // 送信
+      const dataArray = Array.from(new Uint8Array(arrayBuffer));
       const message = {
-        type: 'loadExcelWithSkus',
+        type: 'loadExcelFile',
         data: dataArray,
-        fileName: 'tiast_download.xlsx',
-        skuMap: skuMap
+        fileName: 'tiast_download.xlsx'
       };
 
-      // 送信
       let done = false;
       let timeoutId;
+
       function onMessage(e) {
         if (e.origin !== TOOL_ORIGIN) return;
         if (e.data && e.data.type === 'ready' && !done) {
@@ -341,9 +185,8 @@
           window.removeEventListener('message', onMessage);
           clearTimeout(timeoutId);
           clearInterval(fallback);
-          const skuCount = Object.values(skuMap).reduce((sum, arr) => sum + arr.length, 0);
-          btn.textContent = `✅ 送信完了（SKU ${skuCount}件）`;
-          setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
+          btn.textContent = '✅ 送信完了';
+          setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
         }
       }
       window.addEventListener('message', onMessage);
@@ -361,10 +204,9 @@
         window.removeEventListener('message', onMessage);
         btn.textContent = origText;
         btn.disabled = false;
-      }, 30000);
+      }, 15000);
 
     } catch(e) {
-      console.error('[TIAST] エラー:', e);
       alert('エラー: ' + e.message);
       btn.textContent = origText;
       btn.disabled = false;
