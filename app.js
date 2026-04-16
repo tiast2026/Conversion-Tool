@@ -2122,6 +2122,19 @@ function handleDrop(e) {
   if (file) handleFile(file);
 }
 
+// 外部（Tampermonkeyスクリプト等）からpostMessageでファイルを受け取る
+window.addEventListener('message', function(event) {
+  if (!event.data || event.data.type !== 'loadExcelFile') return;
+  const { arrayBuffer, fileName } = event.data;
+  if (!arrayBuffer) return;
+  selectSource('jisha');
+  const fakeFile = new File([arrayBuffer], fileName || 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  parseExcelFile(new Uint8Array(arrayBuffer), fakeFile);
+  notify('管理画面からファイルを受信しました', 'success');
+  // 送信元に受信確認を返す
+  if (event.source) event.source.postMessage({ type: 'fileReceived' }, '*');
+});
+
 function handleFile(file) {
   if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
