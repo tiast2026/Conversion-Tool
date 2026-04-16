@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TIAST → 楽天変換ツール連携
 // @namespace    https://tiast2026.github.io/
-// @version      1.0
+// @version      1.1
 // @description  TIAST管理画面から変換ツールへExcelを自動送信
 // @match        https://tiast.rakusuru.space/*
 // @grant        GM_xmlhttpRequest
@@ -12,25 +12,24 @@
 (function() {
   'use strict';
 
-  // 変換ツールのURL
   const TOOL_URL = 'https://tiast2026.github.io/Conversion-Tool/index.html';
+  const TOOL_ORIGIN = 'https://tiast2026.github.io';
+  const LS_KEY = 'tiast_rakuten_download_url';
 
   // ダウンロードボタンの近くに「楽天変換」ボタンを追加
   function addButton() {
-    // 既にボタンがあれば追加しない
     if (document.getElementById('tiast-rakuten-btn')) return;
 
     // ダウンロードボタンを探す
-    const downloadBtns = document.querySelectorAll('button, a, .btn');
+    const allBtns = document.querySelectorAll('button, a, .btn');
     let targetArea = null;
-    for (const btn of downloadBtns) {
+    for (const btn of allBtns) {
       if (btn.textContent.includes('ダウンロード')) {
         targetArea = btn.parentElement;
         break;
       }
     }
 
-    // 見つからなければページ上部に固定表示
     const btn = document.createElement('button');
     btn.id = 'tiast-rakuten-btn';
     btn.textContent = '🔄 楽天変換ツールで開く';
@@ -48,18 +47,19 @@
     }
   }
 
-  // 「商品登録用」ダウンロードのURLを検出
+  // 「商品登録用」ダウンロードURLを検出
   function detectDownloadUrl() {
-    // ドロップダウン内のリンクを探す
+    // 1. localStorageに保存済みのURLを確認
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) return saved;
+
+    // 2. ページ内のリンク/ボタンから探す
     const links = document.querySelectorAll('a[href], button[data-url], [onclick]');
     for (const el of links) {
       const text = el.textContent.trim();
       if (text === '商品登録用') {
-        // hrefがあればそのURL
-        if (el.href) return el.href;
-        // data-url属性
-        if (el.dataset.url) return el.dataset.url;
-        // onclick属性から抽出
+        if (el.href && el.href !== '#' && el.href !== window.location.href) return el.href;
+        if (el.dataset && el.dataset.url) return el.dataset.url;
         const onclick = el.getAttribute('onclick') || '';
         const urlMatch = onclick.match(/['"]([^'"]*download[^'"]*)['"]/i);
         if (urlMatch) return urlMatch[1];
@@ -68,25 +68,65 @@
     return null;
   }
 
-  // ダウンロード→変換ツールに送信
+  // Networkリクエストを監視してダウンロードURLをキャプチャ
+  function interceptDownloadUrl() {
+    const origFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
+      if (url && (url.includes('download') || url.includes('export') || url.includes('excel'))) {
+        localStorage.setItem(LS_KEY, url);
+      }
+      return origFetch.apply(this, args);
+    };
+
+    const origOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      if (url && (url.includes('download') || url.includes('export') || url.includes('excel'))) {
+        localStorage.setItem(LS_KEY, url);
+      }
+      return origOpen.apply(this, arguments);
+    };
+  }
+
+  // GM_xmlhttpRequestでExcelをダウンロード（Cookie付き）
+  function downloadExcel(url) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: url,
+        responseType: 'arraybuffer',
+        onload: function(res) {
+          if (res.status >= 200 && res.status < 300) {
+            resolve(res.response);
+          } else {
+            reject(new Error('ダウンロード失敗: HTTP ' + res.status));
+          }
+        },
+        onerror: function(err) {
+          reject(new Error('ダウンロード通信エラー'));
+        }
+      });
+    });
+  }
+
+  // メイン処理: ダウンロード → 変換ツールに送信
   async function handleRakutenConvert() {
     const btn = document.getElementById('tiast-rakuten-btn');
     const origText = btn.textContent;
-    btn.textContent = '⏳ ダウンロード中...';
+    btn.textContent = '⏳ 準備中...';
     btn.disabled = true;
 
     try {
-      // Step 1: ダウンロードURLを検出
-      // まず「ダウンロード」ドロップダウンを開いて「商品登録用」リンクを探す
+      // Step 1: ダウンロードURLを取得
       let downloadUrl = detectDownloadUrl();
 
       if (!downloadUrl) {
-        // ドロップダウンを開いてみる
+        // ドロップダウンを開いてリンクを探す
         const dropdowns = document.querySelectorAll('[data-toggle="dropdown"], .dropdown-toggle, button');
         for (const dd of dropdowns) {
           if (dd.textContent.includes('ダウンロード')) {
             dd.click();
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 500));
             break;
           }
         }
@@ -94,68 +134,99 @@
       }
 
       if (!downloadUrl) {
-        // 検出できなかった場合はユーザーに入力してもらう
         downloadUrl = prompt(
           '「商品登録用」のダウンロードURLを入力してください。\n\n' +
-          '確認方法: ブラウザのDevTools(F12)を開き、\n' +
-          '「商品登録用」をクリックしてNetworkタブでURLを確認してください。'
+          '確認方法:\n' +
+          '1. F12でDevToolsを開く\n' +
+          '2. Networkタブを選択\n' +
+          '3. 「商品登録用」をクリック\n' +
+          '4. 表示されたリクエストのURLをコピー'
         );
         if (!downloadUrl) {
           btn.textContent = origText;
           btn.disabled = false;
           return;
         }
-        // 次回のためにlocalStorageに保存
-        localStorage.setItem('tiast_download_url', downloadUrl);
+        localStorage.setItem(LS_KEY, downloadUrl);
       }
 
-      // Step 2: Excelをダウンロード
+      // Step 2: Excelダウンロード
       btn.textContent = '⏳ Excelを取得中...';
-      const response = await fetch(downloadUrl, { credentials: 'include' });
-      if (!response.ok) throw new Error('ダウンロード失敗: HTTP ' + response.status);
-      const arrayBuffer = await response.arrayBuffer();
+      const arrayBuffer = await downloadExcel(downloadUrl);
 
-      // Step 3: 変換ツールを開いてファイルを送信
-      btn.textContent = '⏳ 変換ツールに送信中...';
+      // Step 3: 変換ツールを開く
+      btn.textContent = '⏳ 変換ツールを起動中...';
       const toolWindow = window.open(TOOL_URL, 'conversion-tool');
 
-      // 変換ツールの読み込みを待ってからpostMessage
-      const sendFile = () => {
-        toolWindow.postMessage({
-          type: 'loadExcelFile',
-          arrayBuffer: arrayBuffer,
-          fileName: 'tiast_download.xlsx'
-        }, '*');
-      };
+      if (!toolWindow) {
+        alert('ポップアップがブロックされました。\nブラウザの設定でポップアップを許可してください。');
+        btn.textContent = origText;
+        btn.disabled = false;
+        return;
+      }
 
-      // ページ読み込み完了を待つ（最大10秒）
-      let attempts = 0;
-      const interval = setInterval(() => {
-        attempts++;
-        try {
-          sendFile();
-        } catch(e) { /* cross-origin, retry */ }
-        if (attempts > 20) {
-          clearInterval(interval);
-          alert('変換ツールへの送信に失敗しました。手動でファイルをアップロードしてください。');
+      // Step 4: 変換ツールの準備完了を待ってからファイルを送信
+      btn.textContent = '⏳ 変換ツールに送信中...';
+
+      // ArrayBufferをUint8Arrayに変換（postMessageで確実に転送するため）
+      const uint8 = new Uint8Array(arrayBuffer);
+      const dataArray = Array.from(uint8);
+
+      let sent = false;
+      let timeoutId;
+
+      // 変換ツールからの「準備完了」メッセージを待つ
+      function onMessage(e) {
+        if (e.origin !== TOOL_ORIGIN) return;
+
+        if (e.data && e.data.type === 'ready' && !sent) {
+          // ツールが準備完了 → ファイルを送信
+          sent = true;
+          toolWindow.postMessage({
+            type: 'loadExcelFile',
+            data: dataArray,
+            fileName: 'tiast_download.xlsx'
+          }, TOOL_ORIGIN);
         }
-      }, 500);
 
-      // 変換ツール側で受信したら通知
-      window.addEventListener('message', function onAck(e) {
         if (e.data && e.data.type === 'fileReceived') {
-          clearInterval(interval);
-          window.removeEventListener('message', onAck);
+          // 受信確認 → 完了
+          window.removeEventListener('message', onMessage);
+          clearTimeout(timeoutId);
           btn.textContent = '✅ 送信完了';
           setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
         }
-      });
+      }
 
-      // タイムアウト後にボタンリセット
-      setTimeout(() => {
+      window.addEventListener('message', onMessage);
+
+      // フォールバック: readyメッセージが来ない場合は定期的にファイルを送信
+      let attempts = 0;
+      const fallbackInterval = setInterval(() => {
+        if (sent) { clearInterval(fallbackInterval); return; }
+        attempts++;
+        try {
+          toolWindow.postMessage({
+            type: 'loadExcelFile',
+            data: dataArray,
+            fileName: 'tiast_download.xlsx'
+          }, TOOL_ORIGIN);
+        } catch(e) { /* ignore */ }
+        if (attempts > 20) {
+          clearInterval(fallbackInterval);
+        }
+      }, 500);
+
+      // タイムアウト: 15秒
+      timeoutId = setTimeout(() => {
+        clearInterval(fallbackInterval);
+        window.removeEventListener('message', onMessage);
+        if (!sent) {
+          alert('変換ツールへの送信がタイムアウトしました。\n手動でファイルをアップロードしてください。');
+        }
         btn.textContent = origText;
         btn.disabled = false;
-      }, 12000);
+      }, 15000);
 
     } catch(e) {
       alert('エラー: ' + e.message);
@@ -164,7 +235,8 @@
     }
   }
 
-  // ページ読み込み後にボタンを追加（DOMの変更にも対応）
+  // 初期化
+  interceptDownloadUrl();
   const observer = new MutationObserver(() => addButton());
   observer.observe(document.body, { childList: true, subtree: true });
   addButton();

@@ -2123,17 +2123,47 @@ function handleDrop(e) {
 }
 
 // 外部（Tampermonkeyスクリプト等）からpostMessageでファイルを受け取る
+const ALLOWED_ORIGINS = ['https://tiast.rakusuru.space'];
+let postMessageFileLoaded = false;
+
 window.addEventListener('message', function(event) {
-  if (!event.data || event.data.type !== 'loadExcelFile') return;
-  const { arrayBuffer, fileName } = event.data;
-  if (!arrayBuffer) return;
+  if (!event.data) return;
+
+  // readyリクエストに応答（ツールが準備完了していることを通知）
+  if (event.data.type === 'ping') {
+    if (event.source) event.source.postMessage({ type: 'ready' }, event.origin);
+    return;
+  }
+
+  if (event.data.type !== 'loadExcelFile') return;
+  if (postMessageFileLoaded) return; // 重複受信を防止
+
+  const { data, arrayBuffer, fileName } = event.data;
+  // data（Array）またはarrayBuffer（ArrayBuffer）を受け取る
+  let uint8;
+  if (data && Array.isArray(data)) {
+    uint8 = new Uint8Array(data);
+  } else if (arrayBuffer) {
+    uint8 = new Uint8Array(arrayBuffer);
+  } else {
+    return;
+  }
+
+  postMessageFileLoaded = true;
   selectSource('jisha');
-  const fakeFile = new File([arrayBuffer], fileName || 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  parseExcelFile(new Uint8Array(arrayBuffer), fakeFile);
+  const fakeFile = new File([uint8], fileName || 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  parseExcelFile(uint8, fakeFile);
   notify('管理画面からファイルを受信しました', 'success');
   // 送信元に受信確認を返す
-  if (event.source) event.source.postMessage({ type: 'fileReceived' }, '*');
+  if (event.source) event.source.postMessage({ type: 'fileReceived' }, event.origin);
+  // 次回の受信を許可（5秒後）
+  setTimeout(() => { postMessageFileLoaded = false; }, 5000);
 });
+
+// ページ読み込み完了時に、開いた元ウィンドウにreadyを通知
+if (window.opener) {
+  try { window.opener.postMessage({ type: 'ready' }, '*'); } catch(e) {}
+}
 
 function handleFile(file) {
   if (!file) return;
